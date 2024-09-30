@@ -15,10 +15,10 @@
 * ---------------------------------------------------------*/
 
 #include <stdio.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
 #include "cprocessing.h"
+
 
 
 
@@ -44,7 +44,6 @@ CP_Color randomColors[] = {
 void ParticleCreate(Particle *part) {
     int canvasWidth = CP_System_GetWindowWidth();
     int canvasHeight = CP_System_GetWindowHeight();
-    
     part->pos.x = CP_Random_RangeFloat(0, (float)canvasWidth);
     part->pos.y = CP_Random_RangeFloat(0, (float)canvasHeight);
     part->vel.x = CP_Random_RangeFloat(-150, 150);
@@ -58,9 +57,7 @@ void ParticleDisplay(Particle *part)
 }
 
 void ParticleUpdate(Particle *part)
-{
-    
-    
+{   
     int canvasWidth = CP_System_GetWindowWidth();
     int canvasHeight = CP_System_GetWindowHeight();
     
