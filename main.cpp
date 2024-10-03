@@ -1,25 +1,8 @@
 
-
-/*---------------------------------------------------------
- * file:	main.c
- * author:	[NAME]
- * email:	[DIGIPEN EMAIL ADDRESS]
-*
- * brief:	Main entry point for the sample project
-            * of the CProcessing library
-*
- * documentation link:
- * https://inside.digipen.edu/main/GSDP:GAM100/CProcessing
-*
- * Copyright © 2020 DigiPen, All rights reserved.
-* ---------------------------------------------------------*/
-
-#include <stdio.h>
-#include <stdbool.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdbool>
+#include "pch.h"
 #include "cprocessing.h"
-
-
 
 
 typedef struct _Particle
