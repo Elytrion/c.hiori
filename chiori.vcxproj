@@ -212,8 +212,14 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="aabb.h" />
+    <ClInclude Include="aabbtree.h" />
     <ClInclude Include="commons.h" />
+    <ClInclude Include="gjk.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="rigidbody.h" />
+    <ClInclude Include="shape.h" />
+    <ClInclude Include="simplex.h" />
     <ClInclude Include="vector2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
