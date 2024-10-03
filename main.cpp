@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdbool>
 #include "pch.h"
+#include "vector2.h"
 #include "cprocessing.h"
 
 
