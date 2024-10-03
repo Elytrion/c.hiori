@@ -1,6 +1,5 @@
 #pragma once
 
-#include "pch.h"
 #include "vector2.h"
 #include <array>
 
@@ -13,5 +12,10 @@ namespace chiori
 		vec2 w{ 0,0 }; // support point on CSO aka minkowski difference between points a and b (a - b)
 		
 		MVert(vec2 inA = vec2::zero, vec2 inB = vec2::zero) : a(inA), b(inB), w(inA - inB) {}
+	};
+
+	class simplex
+	{
+
 	};
 }
