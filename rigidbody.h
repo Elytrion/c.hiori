@@ -4,7 +4,7 @@
 
 namespace chiori
 {
-	class rigidbody // holds 
+	class Rigidbody
 	{
 
 	};

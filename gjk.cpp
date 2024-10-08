@@ -4,7 +4,7 @@
 
 namespace chiori
 {
-	vec2 gjkobject::getSupportPoint(const vec2& inDir) const
+	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
 		vec2 result = vertices[0];
 		float maxDot = result.dot(inDir);
@@ -21,7 +21,7 @@ namespace chiori
 		return result;
 	}
 
-	vec2 gjkobject::getSupportPoint(const gjkobject& inOther, const vec2& inDir) const
+	vec2 GJKobject::getSupportPoint(const GJKobject& inOther, const vec2& inDir) const
 	{
 		return getSupportPoint(inDir) - inOther.getSupportPoint(-inDir);
 	}

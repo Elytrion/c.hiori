@@ -14,7 +14,7 @@ namespace chiori
 		MVert(vec2 inA = vec2::zero, vec2 inB = vec2::zero) : a(inA), b(inB), w(inA - inB) {}
 	};
 
-	class simplex
+	class Simplex
 	{
 
 	};
