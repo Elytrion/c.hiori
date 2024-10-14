@@ -19,6 +19,12 @@
     <ClCompile Include="vector2.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="cActor.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="physicsWorld.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -57,6 +63,12 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="flag.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="cActor.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="physicsWorld.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
