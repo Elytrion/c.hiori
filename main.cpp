@@ -3,7 +3,35 @@
 #include <cstdbool>
 #include "pch.h"
 #include "vector2.h"
+#include "cActor.h"
 #include "cprocessing.h"
+
+using namespace chiori;
+std::vector<cActor> actors;
+
+CP_Color randomColors[] = {
+    { 128, 0,   0,   255 },
+    { 128, 128, 0,   255 },
+    { 0,   128, 0,   255 },
+    { 0,   128, 128, 255 },
+    { 0,   0,   128, 255 },
+    { 128, 0,   128, 255 } };
+
+
+void DrawActor(const cActor& inActor)
+{
+	const std::vector<vec2>& baseVertices = inActor.getVertices();
+    for (int i = 0; i < baseVertices.size(); i++)
+    {
+        CP_Settings_Fill(CP_Color_Create(127, 127, 127, 255));
+        vec2 vert = inActor.position + baseVertices[i];
+        vec2 nxtVert = inActor.position + baseVertices[(i + 1) % baseVertices.size()];
+        CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 10);
+        CP_Graphics_DrawCircle(vert.x, vert.y, 5);
+        CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
+        CP_Settings_Fill(CP_Color_Create(127, 127, 127, 255));
+    }
+}
 
 
 typedef struct _Particle
@@ -17,13 +45,7 @@ const float EPSILON = 0.0000001f;
 
 float particleSize = 3.0f;
 
-CP_Color randomColors[] = {
-    { 128, 0,   0,   255 },
-    { 128, 128, 0,   255 },
-    { 0,   128, 0,   255 },
-    { 0,   128, 128, 255 },
-    { 0,   0,   128, 255 },
-    { 128, 0,   128, 255 } };
+
 
 void ParticleCreate(Particle* part) {
     int canvasWidth = CP_System_GetWindowWidth();

@@ -31,6 +31,7 @@ namespace chiori
 
 		Flag_8 getFlags() const;
 		void setFlags(Flag_8 inFlags);
-		
+
+		const std::vector<vec2>& getVertices() const;
 	};
 }
