@@ -8,11 +8,29 @@ namespace chiori
 {
 	class cActor
 	{
-	private:
-		Rigidbody m_rigidbody;
-		Shape m_shape;
-		
+	private:		
+		Flag_8 flags = 0 | (1 << 0) | (1 << 1);
+		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it
+
 	public:
+		enum
+		{
+			SIMULATION_SHAPE = (1 << 0),
+			SCENE_QUERY_SHAPE = (1 << 1),
+			TRIGGER_SHAPE = (1 << 2),
+			IS_KINEMATIC = (1 << 3),
+			IS_STATIC = (1 << 4)
+		};
+		
+		vec2 position = vec2::zero;
+		vec2 scale = vec2::one;
+		float rotation = 0.0f;
+
+		vec2 velocity = vec2::zero;
+		float angularVelocity = 0.0f;
+
+		Flag_8 getFlags() const;
+		void setFlags(Flag_8 inFlags);
 		
 	};
 }
