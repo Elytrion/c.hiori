@@ -21,6 +21,13 @@ namespace chiori
 			IS_KINEMATIC = (1 << 3),
 			IS_STATIC = (1 << 4)
 		};
+
+		cActor(const std::vector<vec2>& inVertices, const vec2& inPosition = vec2::zero, const vec2& inScale = vec2::one, float inRotation = 0.0f) :
+			baseVertices(inVertices),
+			position(inPosition),
+			scale(inScale),
+			rotation(inRotation)
+		{}
 		
 		vec2 position = vec2::zero;
 		vec2 scale = vec2::one;
@@ -32,6 +39,6 @@ namespace chiori
 		Flag_8 getFlags() const;
 		void setFlags(Flag_8 inFlags);
 
-		const std::vector<vec2>& getVertices() const;
+		const std::vector<vec2>& getVertices() const { return baseVertices; }
 	};
 }

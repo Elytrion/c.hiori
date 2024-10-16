@@ -23,14 +23,48 @@ void DrawActor(const cActor& inActor)
 	const std::vector<vec2>& baseVertices = inActor.getVertices();
     for (int i = 0; i < baseVertices.size(); i++)
     {
-        CP_Settings_Fill(CP_Color_Create(127, 127, 127, 255));
+        CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
         vec2 vert = inActor.position + baseVertices[i];
         vec2 nxtVert = inActor.position + baseVertices[(i + 1) % baseVertices.size()];
         CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 10);
         CP_Graphics_DrawCircle(vert.x, vert.y, 5);
+        CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
-        CP_Settings_Fill(CP_Color_Create(127, 127, 127, 255));
     }
+}
+
+cActor& CreateActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
+{
+    bool validAngle = false;
+	std::vector<vec2> vertices;
+    std::vector<float> angles;
+    while (angles.size() < vertexCount)
+    {
+        validAngle = false;
+        float newAngle = CP_Random_RangeFloat(0.0f, 2.0f * commons::PI);
+        for (int i = 0; i < angles.size(); i++)
+        {
+            if ((newAngle <= angles[i] + 0.5f && newAngle >= angles[i] - 0.5f))
+            {
+                validAngle = true;
+            }
+        }
+        if (!validAngle)
+            angles.push_back(newAngle);
+    }
+    
+    std::sort(angles.begin(), angles.end());
+
+    for (int i = 0; i < vertexCount; i++)
+    {
+        float xcoord = radius * cos(angles[i]);
+        float ycoord = radius * sin(angles[i]);
+        vertices.push_back({ xcoord, ycoord });
+    }
+
+	cActor newActor(vertices, centrePos);
+	actors.push_back(newActor);
+	return actors[actors.size() - 1];
 }
 
 
@@ -173,16 +207,30 @@ int recommendedHeight = 900;
 bool drawColors = true;
 bool drawFPS = true;
 
+void InitPhysics()
+{
+    vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
+    CreateActor(10,50, middle);
+}
 
 void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
+    //CP_System_ShowConsole();
     //setFrameRate(60.0f);
+	InitPhysics();
+    //for (int i = 0; i < numParticles; ++i) {
+    //    ParticleCreate(&particles[i]);
+    //}
+}
 
-    for (int i = 0; i < numParticles; ++i) {
-        ParticleCreate(&particles[i]);
-    }
+void UpdatePhysics()
+{
+	for (cActor& actor : actors)
+	{
+        DrawActor(actor);
+	}
 }
 
 void game_update(void)
@@ -193,61 +241,65 @@ void game_update(void)
     //CP_Graphics_ClearBackground(color((int)(mouseX / canvasWidth * 255.0f), 0, 0, 255));
     //CP_Graphics_Background(CP_CreateColor((int)(CP_Input_GetMouseX() / CP_Graphics_GetCanvasWidth() * 255.0f), 0, 0, 255));
 
-    CP_Settings_NoStroke();
+    //CP_Settings_NoStroke();
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
 
-    for (int i = 0; i < numParticles; ++i)
-    {
-        ParticleUpdate(&particles[i]);
-        ParticleDisplay(&particles[i]);
-    }
+    UpdatePhysics();
 
-    CP_Settings_BlendMode(CP_BLEND_ADD);
-    CP_Settings_StrokeWeight(3);
-    CP_Color lineColor;
-    float mouseX = CP_Input_GetMouseX();
-    float mouseY = CP_Input_GetMouseY();
+	#pragma region Particle Update
+    //for (int i = 0; i < numParticles; ++i)
+    //{
+    //    ParticleUpdate(&particles[i]);
+    //    ParticleDisplay(&particles[i]);
+    //}
 
-    for (int i = 0; i < numParticles; ++i)
-    {
-        // draw white lines from the particles to the mouse position
-        float distXMouse = (float)fabsf(particles[i].pos.x - mouseX);
-        float distYMouse = (float)fabsf(particles[i].pos.y - mouseY);
-        if (distXMouse < mouseProximityDistance && distYMouse < mouseProximityDistance)
-        {
-            lineColor.r = 128;
-            lineColor.g = 128;
-            lineColor.b = 128;
-            lineColor.a = (unsigned char)(255.0f * min(1.0f, (mouseProximityDistance - max(distXMouse, distYMouse)) / (mouseProximityDistance * 0.3f)));
-            CP_Settings_Stroke(lineColor);
-            CP_Graphics_DrawLine(particles[i].pos.x, particles[i].pos.y, mouseX, mouseY);
-        }
+    //CP_Settings_BlendMode(CP_BLEND_ADD);
+    //CP_Settings_StrokeWeight(3);
+    //CP_Color lineColor;
+    //float mouseX = CP_Input_GetMouseX();
+    //float mouseY = CP_Input_GetMouseY();
 
-        // draw lines between particles based on the additive color of both particles
-        if (!drawColors)
-        {
-            continue;
-        }
-        for (int j = i + 1; j < numParticles; ++j)
-        {
-            float distX = (float)fabsf(particles[i].pos.x - particles[j].pos.x);
-            float distY = (float)fabsf(particles[i].pos.y - particles[j].pos.y);
-            if (distX < lineProximityDistance && distY < lineProximityDistance)
-            {
-                lineColor.r = particles[i].color->r + particles[j].color->r;
-                lineColor.g = particles[i].color->g + particles[j].color->g;
-                lineColor.b = particles[i].color->b + particles[j].color->b;
-                lineColor.a = (unsigned char)(255.0f * min(1.0f, (lineProximityDistance - max(distX, distY)) / (lineProximityDistance * 0.3f)));
-                CP_Settings_Stroke(lineColor);
-                CP_Graphics_DrawLine(particles[i].pos.x, particles[i].pos.y, particles[j].pos.x, particles[j].pos.y);
-            }
-        }
-    }
+    //for (int i = 0; i < numParticles; ++i)
+    //{
+    //    // draw white lines from the particles to the mouse position
+    //    float distXMouse = (float)fabsf(particles[i].pos.x - mouseX);
+    //    float distYMouse = (float)fabsf(particles[i].pos.y - mouseY);
+    //    if (distXMouse < mouseProximityDistance && distYMouse < mouseProximityDistance)
+    //    {
+    //        lineColor.r = 128;
+    //        lineColor.g = 128;
+    //        lineColor.b = 128;
+    //        lineColor.a = (unsigned char)(255.0f * min(1.0f, (mouseProximityDistance - max(distXMouse, distYMouse)) / (mouseProximityDistance * 0.3f)));
+    //        CP_Settings_Stroke(lineColor);
+    //        CP_Graphics_DrawLine(particles[i].pos.x, particles[i].pos.y, mouseX, mouseY);
+    //    }
 
-    if (CP_Input_KeyTriggered(KEY_SPACE))
-    {
-        drawColors = !drawColors;
-    }
+    //    // draw lines between particles based on the additive color of both particles
+    //    if (!drawColors)
+    //    {
+    //        continue;
+    //    }
+    //    for (int j = i + 1; j < numParticles; ++j)
+    //    {
+    //        float distX = (float)fabsf(particles[i].pos.x - particles[j].pos.x);
+    //        float distY = (float)fabsf(particles[i].pos.y - particles[j].pos.y);
+    //        if (distX < lineProximityDistance && distY < lineProximityDistance)
+    //        {
+    //            lineColor.r = particles[i].color->r + particles[j].color->r;
+    //            lineColor.g = particles[i].color->g + particles[j].color->g;
+    //            lineColor.b = particles[i].color->b + particles[j].color->b;
+    //            lineColor.a = (unsigned char)(255.0f * min(1.0f, (lineProximityDistance - max(distX, distY)) / (lineProximityDistance * 0.3f)));
+    //            CP_Settings_Stroke(lineColor);
+    //            CP_Graphics_DrawLine(particles[i].pos.x, particles[i].pos.y, particles[j].pos.x, particles[j].pos.y);
+    //        }
+    //    }
+    //}
+
+    //if (CP_Input_KeyTriggered(KEY_SPACE))
+    //{
+    //    drawColors = !drawColors;
+    //}
+    #pragma endregion
 
     // Profiling info and frameRate testing
     if (drawFPS)
@@ -263,6 +315,8 @@ void game_update(void)
         CP_Font_DrawText(buffer, 20, 20);
     }
 }
+
+
 
 
 void game_exit(void)
