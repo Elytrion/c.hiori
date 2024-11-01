@@ -8,6 +8,7 @@
 
 using namespace chiori;
 std::vector<cActor> actors;
+vec2 gravity = { 0, 0.981 };
 
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
@@ -65,6 +66,15 @@ cActor& CreateActor(int vertexCount, float radius, const vec2& centrePos) // TEM
 	cActor newActor(vertices, centrePos);
 	actors.push_back(newActor);
 	return actors[actors.size() - 1];
+}
+
+void IntergrateActor(cActor& inActor)
+{
+	vec2 force = gravity;
+	vec2 acceleration = force / inActor.mass;
+	inActor.velocity += acceleration;
+	inActor.position += inActor.velocity;
+    //std::cout << "Moving " << inActor.velocity << std::endl;
 }
 
 
@@ -213,6 +223,8 @@ void InitPhysics()
     CreateActor(10,50, middle);
 }
 
+
+
 void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
@@ -230,6 +242,7 @@ void UpdatePhysics()
 	for (cActor& actor : actors)
 	{
         DrawActor(actor);
+        IntergrateActor(actor);
 	}
 }
 

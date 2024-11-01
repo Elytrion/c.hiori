@@ -38,6 +38,27 @@ namespace chiori
 			}
 			return *this;
 		}
+		vec2& operator+=(const vec2& inRHS) {
+			x += inRHS.x;
+			y += inRHS.y;
+			return *this;
+		}
+		vec2& operator-=(const vec2& inRHS) {
+			x -= inRHS.x;
+			y -= inRHS.y;
+			return *this;
+		}
+		vec2& operator*=(float inScalar) {
+			x *= inScalar;
+			y *= inScalar;
+			return *this;
+		}
+		vec2& operator/=(float inScalar) {
+			x /= inScalar;
+			y /= inScalar;
+			return *this;
+		}
+		
 		// Vec2 comparisons
 		bool operator==(const vec2& inRHS) const {
 			bool xsame = (std::abs(x - inRHS.x) < commons::EPSILON);

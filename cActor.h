@@ -32,7 +32,7 @@ namespace chiori
 		vec2 position = vec2::zero;
 		vec2 scale = vec2::one;
 		float rotation = 0.0f;
-
+		float mass = 1.0f;
 		vec2 velocity = vec2::zero;
 		float angularVelocity = 0.0f;
 
