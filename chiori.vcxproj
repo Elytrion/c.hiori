@@ -224,6 +224,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="commons.h" />
     <ClInclude Include="flag.h" />
     <ClInclude Include="gjk.h" />
+    <ClInclude Include="integrators.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="physicsWorld.h" />
     <ClInclude Include="rigidbody.h" />

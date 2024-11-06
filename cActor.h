@@ -3,6 +3,7 @@
 #include "vector2.h"
 #include "rigidbody.h"
 #include "shape.h"
+#include "integrators.h"
 
 namespace chiori
 {
@@ -23,11 +24,8 @@ namespace chiori
 		};
 		cActor()
 		{
-			// We set a default integrator (Explicit Euler Integration)
-			integrator = [](vec2& pos, vec2& vel, const vec2& forceSum, float dt) {
-				vel += forceSum * dt;
-				pos += vel * dt;
-				};
+			// We set a default integrator (Verlet Integration)
+			integrator = Integrators::Verlet;
 		};
 		cActor(const std::vector<vec2>& inVertices, const vec2& inPosition = vec2::zero, const vec2& inScale = vec2::one, float inRotation = 0.0f) :
 			baseVertices(inVertices),
@@ -36,10 +34,7 @@ namespace chiori
 			rotation(inRotation)
 		{
 			// We set a default integrator (Explicit Euler Integration)
-			integrator = [](vec2& pos, vec2& vel, const vec2& forceSum, float dt) {
-				vel += forceSum * dt;
-				pos += vel * dt;
-				};
+			integrator = Integrators::Verlet;
 		}
 		
 		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it
@@ -50,12 +45,13 @@ namespace chiori
 		float mass = 1.0f;
 		vec2 velocity = vec2::zero;
 		float angularVelocity = 0.0f;
-		std::function<void(vec2&, vec2&, const vec2&, float)> integrator;
+		std::function<void(vec2&, vec2&, vec2&, const vec2&, float)> integrator; // users can replace with their own if needed
 
 		Flag_8 getFlags() const { return _flags; }
 		void setFlags(Flag_8 inFlags);
+		void setFlags(int inFlags);
 
-		void integrate(const vec2& forceSum, float dt) { integrator(position, velocity, forceSum, dt); }
+		void integrate(const vec2& forceSum, float dt) { integrator(position, prevPosition, velocity, forceSum, dt); }
 
 		bool operator==(const cActor& inRHS) const {
 			return this == &inRHS;

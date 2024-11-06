@@ -27,14 +27,15 @@ void DrawActor(const cActor& inActor)
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
         vec2 vert = inActor.position + baseVertices[i];
         vec2 nxtVert = inActor.position + baseVertices[(i + 1) % baseVertices.size()];
-        CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 10);
-        CP_Graphics_DrawCircle(vert.x, vert.y, 5);
+        CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 3);
+        CP_Graphics_DrawCircle(vert.x, vert.y, 2);
+        CP_Settings_StrokeWeight(1);
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
 }
 
-void CreateActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
+void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
 {
     bool validAngle = false;
 	std::vector<vec2> vertices;
@@ -65,7 +66,26 @@ void CreateActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
 
 	cActor& newActor = world.AddActor();
     newActor.baseVertices = vertices;
+    newActor.mass = 10;
     newActor.position = centrePos;
+    newActor.prevPosition = centrePos;
+}
+
+void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
+{
+    std::vector<vec2> vertices;
+	vertices.push_back({ -width / 2.0f, -height / 2.0f });
+	vertices.push_back({ width / 2.0f, -height / 2.0f });
+	vertices.push_back({ width / 2.0f, height / 2.0f });
+	vertices.push_back({ -width / 2.0f, height / 2.0f });
+
+	cActor& newActor = world.AddActor();
+	newActor.baseVertices = vertices;
+	newActor.mass = 10;
+	newActor.position = centrePos;
+	newActor.prevPosition = centrePos;
+	if (isStatic)
+		newActor.setFlags(cActor::IS_STATIC);
 }
 
 
@@ -79,7 +99,10 @@ bool drawFPS = true;
 void InitPhysics()
 {
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
-    CreateActor(10,50, middle);
+    CreateRandomizedActor(6, 50, middle);
+    CreateRandomizedActor(6, 50, vec2{ middle.x, middle.y + 150 });
+    // create floor
+	CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }
 
 
@@ -95,10 +118,15 @@ void game_init(void)
 void UpdatePhysics()
 {
     world.update(CP_System_GetDt());
-    const std::vector<cActor>& actors = world.getWorldActors();
-    for (const cActor& a : actors)
+    std::vector<cActor>& actors = world.getWorldActors();
+    for (cActor& a : actors)
     {
         DrawActor(a);
+        // keep within bounds
+        if (a.position.x >= recommendedWidth) a.position.x = recommendedWidth;
+        if (a.position.y >= recommendedHeight) a.position.y = recommendedHeight;
+        if (a.position.x < 0) a.position.x = 0;
+		if (a.position.y < 0) a.position.y = 0;
     }
 }
 

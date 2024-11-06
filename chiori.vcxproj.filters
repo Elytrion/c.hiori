@@ -71,5 +71,8 @@
     <ClInclude Include="physicsWorld.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="integrators.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

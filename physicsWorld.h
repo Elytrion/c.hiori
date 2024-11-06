@@ -12,7 +12,7 @@ namespace chiori
 		float accumulator = 0.0f;
 		std::vector<cActor> actors; //TODO: replace with aabb tree
 
-	public:
+	public:		
 		float physicsStepTime = 0.0167f;
 		vec2 gravity = { 0.0f, 9.81f };
 		void update(float inDT);	// converts update into fixed updates
@@ -20,6 +20,6 @@ namespace chiori
 
 		cActor& AddActor();
 		void RemoveActor(cActor& inActor);
-		const std::vector<cActor>& getWorldActors() { return actors; }
+		std::vector<cActor>& getWorldActors() { return actors; }
 	};
 }

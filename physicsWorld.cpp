@@ -18,6 +18,8 @@ namespace chiori
 	{
 		for (cActor& a : actors)
 		{
+			if (a.getFlags().isSet(cActor::IS_STATIC))
+				continue;
 			a.integrate(gravity, inDT);
 		}
 	}
