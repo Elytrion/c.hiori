@@ -17,6 +17,7 @@ namespace chiori
 			vec2 newPos = pos * 2 - prePos + forces * dt * dt;
 			prePos = pos;
 			pos = newPos;
+			vel = pos - prePos;
 		}
 
 		inline void ImplictEuler(vec2& pos, vec2& prePos, vec2& vel, const vec2& forces, float dt)

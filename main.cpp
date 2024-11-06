@@ -64,11 +64,9 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
         vertices.push_back({ xcoord, ycoord });
     }
 
-	cActor& newActor = world.AddActor();
-    newActor.baseVertices = vertices;
-    newActor.mass = 10;
-    newActor.position = centrePos;
-    newActor.prevPosition = centrePos;
+	cActor& newActor = world.AddActor(vertices);
+    newActor.setMass(10);
+    newActor.setPosition(centrePos);
 }
 
 void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
@@ -79,11 +77,9 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 	vertices.push_back({ width / 2.0f, height / 2.0f });
 	vertices.push_back({ -width / 2.0f, height / 2.0f });
 
-	cActor& newActor = world.AddActor();
-	newActor.baseVertices = vertices;
-	newActor.mass = 10;
-	newActor.position = centrePos;
-	newActor.prevPosition = centrePos;
+	cActor& newActor = world.AddActor(vertices);
+    newActor.setMass(10);
+    newActor.setPosition(centrePos);
 	if (isStatic)
 		newActor.setFlags(cActor::IS_STATIC);
 }

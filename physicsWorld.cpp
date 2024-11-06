@@ -24,9 +24,9 @@ namespace chiori
 		}
 	}
 
-	cActor& PhysicsWorld::AddActor()
+	cActor& PhysicsWorld::AddActor(const std::vector<vec2>& vertices)
 	{
-		actors.emplace_back();
+		actors.emplace_back(vertices);
 		return actors.back();
 	}
 

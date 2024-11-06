@@ -33,7 +33,7 @@ namespace chiori
 			scale(inScale),
 			rotation(inRotation)
 		{
-			// We set a default integrator (Explicit Euler Integration)
+			// We set a default integrator (Verlet Integration)
 			integrator = Integrators::Verlet;
 		}
 		
@@ -46,6 +46,23 @@ namespace chiori
 		vec2 velocity = vec2::zero;
 		float angularVelocity = 0.0f;
 		std::function<void(vec2&, vec2&, vec2&, const vec2&, float)> integrator; // users can replace with their own if needed
+
+		#pragma region Get/Setters
+		std::vector<vec2>& getBaseVertices() { return baseVertices; }
+		void setBaseVertices(const std::vector<vec2>& inVertices) { baseVertices = inVertices; }
+		vec2& getPosition() { return position; }
+		void setPosition(const vec2& inPosition) { position = inPosition; prevPosition = inPosition; }
+		vec2& getPrevPosition() { return prevPosition; }
+		void setPrevPosition(const vec2& inPrevPosition) { prevPosition = inPrevPosition; }
+		vec2& getScale() { return scale; }
+		void setScale(const vec2& inScale) { scale = inScale; }
+		float getRotation() { return rotation; }
+		void setRotation(float inRotation) { rotation = inRotation; }
+		float getMass() { return mass; }
+		void setMass(float inMass) { mass = inMass; }
+		vec2& getVelocity() { return velocity; }
+		void setVelocity(const vec2& inVelocity) { velocity = inVelocity; }
+		#pragma endregion
 
 		Flag_8 getFlags() const { return _flags; }
 		void setFlags(Flag_8 inFlags);
