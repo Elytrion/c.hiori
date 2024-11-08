@@ -24,9 +24,11 @@ namespace chiori
 		vec2 operator-(const vec2& inRHS) const { return vec2(x - inRHS.x, y - inRHS.y); }
 		vec2 operator-() const { return vec2(-x, -y); }
 		vec2 operator*(float inScalar) const { return vec2(x * inScalar, y * inScalar); }
+		friend vec2 operator*(float inScalar, const vec2& inVec) { return inVec * inScalar; }
 		float operator*(const vec2& inRHS) const { return dot(inRHS); }
 		float dot(const vec2& inRHS) const { return x * inRHS.x + y * inRHS.y; }
 		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }
+		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }
 		float sqrMagnitude() const { return x * x + y * y; }
 		float magnitude() const { return std::sqrt(sqrMagnitude()); }
 		vec2 normalized() const { float m = magnitude();  return (m > 0) ? (*this/m) : vec2(); }
@@ -57,6 +59,17 @@ namespace chiori
 			x /= inScalar;
 			y /= inScalar;
 			return *this;
+		}
+		// Vec2 index access
+		float& operator[](int index) {
+			if (index == 0) return x;
+			else if (index == 1) return y;
+			throw std::out_of_range("Index out of range for vec2");
+		}
+		const float& operator[](int index) const {
+			if (index == 0) return x;
+			else if (index == 1) return y;
+			throw std::out_of_range("Index out of range for vec2");
 		}
 		
 		// Vec2 comparisons
