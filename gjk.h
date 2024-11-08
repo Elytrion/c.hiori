@@ -4,22 +4,34 @@
 
 namespace chiori
 {
-	class GJKobject
+	class GJKobject // abstracts any point cloud into something that can be used by the algorithm
 	{
 	public:
 		std::vector<vec2> vertices;
 		vec2 position;
-		vec2 velocity;
+        vec2 velocity = vec2::zero; // optional
 
-        GJKobject(std::vector<vec2> vertices, vec2 position = vec2::zero, vec2 velocity = vec2::zero)
-			: vertices(vertices), position(position), velocity(velocity) {}
+        GJKobject(const std::vector<vec2>& vertices, const vec2& position)
+            : vertices{ vertices }, position{ position } {}
 
 		vec2 getSupportPoint(const vec2& inDir) const;
-
-		vec2 getSupportPoint(const GJKobject& inOther, const vec2& inDir) const;
 	};
+
+    struct GJKresult
+    {
+        float distance; // Zero if in contact or intersecting
+        vec2 zA; // closest point on primary object
+        vec2 zB; // closest point on target object
+        std::array<int, 2> cAIndices;; // the indices of the contributing points on primary object
+        std::array<int, 2> cBIndices;; // the indices of the contributing points on target object
+    };
+    
+    Mvert GetSupportVertex(const GJKobject& inA, const GJKobject& inB, const vec2& inDir)
+    {
+        return Mvert{ inA.getSupportPoint(inDir), inB.getSupportPoint(-inDir) };
+    }
 	
-	float GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
+    GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
 
 
 	/*
