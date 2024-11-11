@@ -27,7 +27,7 @@ namespace chiori
 		friend vec2 operator*(float inScalar, const vec2& inVec) { return inVec * inScalar; }
 		float operator*(const vec2& inRHS) const { return dot(inRHS); }
 		float dot(const vec2& inRHS) const { return x * inRHS.x + y * inRHS.y; }
-		float cross(const vec2& inRHS) const { (x * inRHS.y) - (y * inRHS.x); }
+		float cross(const vec2& inRHS) const { return (x * inRHS.y) - (y * inRHS.x); }
 		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }
 		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }
 		float sqrMagnitude() const { return x * x + y * y; }
