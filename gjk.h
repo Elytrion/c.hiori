@@ -22,11 +22,9 @@ namespace chiori
         float distance; // Zero if in contact or intersecting
         vec2 zA; // closest point on primary object
         vec2 zB; // closest point on target object
-        std::array<int, 2> cAIndices;; // the indices of the contributing points on primary object
-        std::array<int, 2> cBIndices;; // the indices of the contributing points on target object
     };
     
-    Mvert GetSupportVertex(const GJKobject& inA, const GJKobject& inB, const vec2& inDir)
+    inline Mvert GetSupportVertex(const GJKobject& inA, const GJKobject& inB, const vec2& inDir)
     {
         return Mvert{ inA.getSupportPoint(inDir), inB.getSupportPoint(-inDir) };
     }

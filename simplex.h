@@ -49,7 +49,7 @@ namespace chiori
 			s_size = min(s_size + 1, N);
 		}
 
-		void clear() { s_count = 0; }
+		void clear() { s_size = 0; }
 
 		bool isDupe(const Mvert& v)
 		{
@@ -57,7 +57,7 @@ namespace chiori
 				return false;
 			
 			for (unsigned i = 0; i < s_size; i++){
-				if (v.a == s_points[i].a && v.b == s_points[i].b)
+				if (v.a == s_points[i].a && v.b == s_points[i].b && v.w == s_points[i].w)
 					return true;
 			}
 			return false;

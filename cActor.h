@@ -39,7 +39,7 @@ namespace chiori
 		
 		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it
 		vec2 position = vec2::zero;
-		vec2 prevPosition = vec2::zero;
+		vec2 prevPosition = vec2::zero; 
 		vec2 scale = vec2::one;
 		float rotation = 0.0f;
 		float mass = 1.0f;
@@ -48,19 +48,31 @@ namespace chiori
 		std::function<void(vec2&, vec2&, vec2&, const vec2&, float)> integrator; // users can replace with their own if needed
 
 		#pragma region Get/Setters
-		std::vector<vec2>& getBaseVertices() { return baseVertices; }
+		const std::vector<vec2>& getBaseVertices() const { return baseVertices; }
 		void setBaseVertices(const std::vector<vec2>& inVertices) { baseVertices = inVertices; }
-		vec2& getPosition() { return position; }
+		std::vector<vec2> getVertices() const {
+			std::vector<vec2> vertices = baseVertices;
+			// Apply position, scale and rotation to base vertices
+			for (auto& vertex : vertices)
+			{
+				vertex.x = vertex.x * scale.x;
+				vertex.y = vertex.y * scale.y;
+				vertex = vertex.rotate(rotation);
+				vertex = vertex + position;
+			}
+			return vertices;
+		}
+		const vec2& getPosition() const { return position; }
 		void setPosition(const vec2& inPosition) { position = inPosition; prevPosition = inPosition; }
-		vec2& getPrevPosition() { return prevPosition; }
+		const vec2& getPrevPosition() const { return prevPosition; }
 		void setPrevPosition(const vec2& inPrevPosition) { prevPosition = inPrevPosition; }
-		vec2& getScale() { return scale; }
+		const vec2& getScale() const { return scale; }
 		void setScale(const vec2& inScale) { scale = inScale; }
-		float getRotation() { return rotation; }
+		const float getRotation() const { return rotation; }
 		void setRotation(float inRotation) { rotation = inRotation; }
-		float getMass() { return mass; }
+		const float getMass() const { return mass; }
 		void setMass(float inMass) { mass = inMass; }
-		vec2& getVelocity() { return velocity; }
+		const vec2& getVelocity() const { return velocity; }
 		void setVelocity(const vec2& inVelocity) { velocity = inVelocity; }
 		#pragma endregion
 

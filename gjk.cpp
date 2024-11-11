@@ -1,9 +1,12 @@
 
 #include "pch.h"
 #include "gjk.h"
+#include "cprocessing.h" //!!TO REMOVE!!
 
 namespace chiori
 {
+	bool floatEqual(float a, float b) { return std::abs(a - b) < commons::HEPSILON; }
+	
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
 		vec2 result = vertices[0];
@@ -27,7 +30,93 @@ namespace chiori
 	}
 	
 	#pragma region Distance Subalgorithm
-	std::vector<float> S1D(Simplex& outSimplex) // 1D Simplex case
+	std::vector<float> S1D(Simplex& outSimplex)
+	{
+		const vec2& s1 = outSimplex[0].w;
+		const vec2& s2 = outSimplex[1].w;
+		vec2 t = s1 - s2;
+		
+		// orthogonal projection of the origin onto the infinite line s1s2
+		vec2 p0 = s2 + (s2.dot(t) / t.dot(t)) * t;
+
+		// Calculate barycentric coordinates for s1 and s2 based on p0
+		// Reduce to the dimension with the largest absolute value
+		float mu_max = s1.x - s2.x;
+		int I = 0;
+		if (std::abs(s1.y - s2.y) > std::abs(mu_max)) {
+			mu_max = s1.y - s2.y;
+			I = 1; // Track which component is most influential
+		}
+
+		// Calculate barycentric coordinates relative to the coordinate with the largest difference
+		float C[2];
+		for (int j = 0; j < 2; ++j) {
+			// We calculate the coordinate-wise contribution for barycentric coordinates
+			C[j] = (j == 0 ? 1.0f : -1.0f) * (s1[I] - p0[I]);
+		}
+
+		// Determine whether to keep the full simplex or reduce it (compare signs algo)
+		bool allSignsMatch = std::all_of(std::begin(C), std::end(C), [mu_max](float cj) {
+			return (mu_max > 0 && cj > 0) || (mu_max < 0 && cj < 0);
+			});
+		
+		if (allSignsMatch)
+		{
+			return { C[0] / mu_max, C[1] / mu_max };
+		}
+		else
+			outSimplex = { outSimplex[0] };
+
+		return { 1.0f };
+	}
+
+	std::vector<float> S2D(Simplex& outSimplex)
+	{
+		const vec2& s1 = outSimplex[0].w;
+		const vec2& s2 = outSimplex[1].w;
+		const vec2& s3 = outSimplex[2].w;
+
+		// no need to calculate p0 (projection of origin onto plane), as the origin will lie in the same plane as these points
+		
+		// Find signed area
+		// Normally we reduce to the dimension with the largest absolute value, but since
+		// we are already in 2D, our vectors don't have a 3rd component to reduce,
+		// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
+		float mu_max = s2.x * s3.y + s1.x * s2.y + s3.x * s1.y - s2.x * s1.y
+						- s3.x * s2.y - s1.x * s3.y;
+		float mu_other = s2.y * s3.x + s1.y * s2.x + s3.y * s1.x - s2.y * s1.x
+						- s3.y * s2.x - s1.y * s3.x;
+		
+		if (std::abs(mu_other) > std::abs(mu_max)) mu_max = mu_other;
+
+		// Calculate barycentric coordinates for s1, s2, and s3
+		// In the paper it uses a determinant calculation, which we can simplify in 2D
+		// to a simple 2D cross product. Hell yeah.
+		float C[3];
+		for (int j = 0; j < 3; j++)
+		{
+			C[j] = (j == 0 ? 1.0f : -1.0f) * (outSimplex[j].w.cross(outSimplex[(j + 1) % 3].w));
+		}
+		
+		// Determine whether to keep the full simplex or reduce it (compare signs algo)
+		bool allSignsMatch = std::all_of(std::begin(C), std::end(C), [mu_max](float cj) {
+			return (mu_max > 0 && cj > 0) || (mu_max < 0 && cj < 0);
+			});	
+
+		if (allSignsMatch)
+		{
+			return {
+				C[0] / mu_max,
+				C[1] / mu_max,
+				C[2] / mu_max
+			};
+		}
+
+		
+		
+	}
+	
+	std::vector<float> S1D_T(Simplex& outSimplex) // 1D Simplex case
 	{
 		std::vector<float> result;
 		
@@ -68,12 +157,11 @@ namespace chiori
 
 		if (allSignsMatch) {
 			// update barycentric coordinates
-			result.push_back(C[0] / mu_max);
-			result.push_back(C[1] / mu_max);
+			result = { (C[0] / mu_max), (C[1] / mu_max) };
 			// we keep the simplex untouched
 		}
 		else {
-			result.push_back(1.0f); // since only s1 contributes, the barycentric coordinates is just 1
+			result = { 1.0f }; // since only s1 contributes, the barycentric coordinates is just 1
 			outSimplex = { outSimplex[0] }; // we keep only s1
 		}
 		return result;
@@ -88,7 +176,7 @@ namespace chiori
 		return weightedSum.magnitude(); // Return the magnitude of the weighted sum
 	}
 
-	std::vector<float> S2D(Simplex& outSimplex)
+	std::vector<float> S2D_T(Simplex& outSimplex)
 	{
 		// This is modified from the paper as it attempts to determine the closest
 		// point on the plane the origin is to, however, in 2D, the origin ALREADY
@@ -127,7 +215,7 @@ namespace chiori
 			const vec2& s_k = outSimplex[k - 1].w; // Convert from 1-based to 0-based indexing
 			const vec2& s_l = outSimplex[l - 1].w; // Same conversion for l
 			int sign = (j % 2 == 0) ? 1 : -1;
-			C[j] = sign * (s_k[0] * s_l[1] - s_l[0] * s_k[1]); // simplified when removing p0
+			C[j-1] = sign * (s_k[0] * s_l[1] - s_l[0] * s_k[1]); // simplified when removing p0
 			k = l; l = j;
 		}
 
@@ -142,9 +230,11 @@ namespace chiori
 
 		if (allSignsMatch) {
 			// update barycentric coordinates
-			result.push_back(C[0] / mu_max);
-			result.push_back(C[1] / mu_max);
-			result.push_back(C[2] / mu_max);
+			result = {
+				C[0] / mu_max,
+				C[1] / mu_max,
+				C[2] / mu_max
+			};
 			// we keep the simplex untouched
 		}
 		else
@@ -154,7 +244,7 @@ namespace chiori
 			// j = 3, exclude s3, exclude simplex[2]
 			for (int j = 2; j <= 3; ++j)
 			{
-				if (!compareSigns(mu_max, -C[j]))
+				if (!compareSigns(mu_max, -C[j - 1]))
 					continue;
 
 				Simplex simplexStar;
@@ -198,19 +288,39 @@ namespace chiori
 		for (int itr = 0; itr < commons::GJK_ITERATIONS; itr++)
 		{
 			float dirm = dir.sqrMagnitude();
-			Mvert w = GetSupportVertex(inPrimary, inTarget, dir);
-			if ((outSimplex.isDupe(w)) || 
-				(dirm - dir.dot(w.w) <= (dirm * commons::HEPISLON))) // Termination condition A
+			Mvert w = GetSupportVertex(inPrimary, inTarget, -dir);
+			if (outSimplex.isDupe(w)) // Termination condition A
+				break;
+			if ((dirm - dir.dot(w.w)) <= (dirm * commons::HEPSILON * commons::HEPSILON) ) // Termination condition A
 				break;
 			
 			outSimplex.push_front(w);
 			
 			std::vector<float> lambdas = SignedVolumeDistanceSubalgorithm(outSimplex);
 
-			//CALCULATE FRM LAMBDAS
+			//We determine the closest points on each shape via the barycentric coordinates
+			dir = vec2::zero;
+			for (int l = 0; l < lambdas.size(); l++) // the size of the simplex should always be the size of the lambdas
+			{
+				result.zA += lambdas[l] * outSimplex[l].a;
+				result.zB += lambdas[l] * outSimplex[l].b;
+				dir += lambdas[l] * outSimplex[l].w;
+			}
+				
+			if (outSimplex.size() >= 3) // Termination condition B
+				break;
+
+			float max_norm = 1.0f;
+			for (const auto& m : outSimplex)
+			{
+				float norm = m.w.sqrMagnitude();
+				max_norm = (max_norm > norm) ? max_norm : norm;
+			}
 			
+			if (dir.sqrMagnitude() < (commons::HEPSILON * max_norm)) // Termination condition B
+				break;
 		}
-		
+		result.distance = dir.magnitude();
 		return result;
 	}
 	

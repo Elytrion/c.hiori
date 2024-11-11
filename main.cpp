@@ -9,6 +9,7 @@
 
 using namespace chiori;
 PhysicsWorld world; // create an instance of the physics world
+bool isHolding = false;
 
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
@@ -18,21 +19,28 @@ CP_Color randomColors[] = {
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
 
+bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
+{
+    float distX = pos.x - center.x;
+    float distY = pos.y - center.y;
+    float distance = (distX * distX) + (distY * distY);
+    return distance < (radius * radius);
+}
 
 void DrawActor(const cActor& inActor)
 {
-	const std::vector<vec2>& baseVertices = inActor.baseVertices;
-    for (int i = 0; i < baseVertices.size(); i++)
+	const std::vector<vec2> vertices = inActor.getVertices();
+    for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
-        vec2 vert = inActor.position + baseVertices[i];
-        vec2 nxtVert = inActor.position + baseVertices[(i + 1) % baseVertices.size()];
-        CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 3);
+        vec2 vert = vertices[i];
+        vec2 nxtVert = vertices[(i + 1) % vertices.size()];
         CP_Graphics_DrawCircle(vert.x, vert.y, 2);
         CP_Settings_StrokeWeight(1);
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
+    CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 3);
 }
 
 void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
@@ -97,8 +105,8 @@ void InitPhysics()
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
     CreateRandomizedActor(6, 50, middle);
     CreateRandomizedActor(6, 50, vec2{ middle.x, middle.y + 150 });
-    // create floor
-	CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
+    // // create floor
+	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }
 
 
@@ -107,7 +115,7 @@ void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
-    //CP_System_ShowConsole();
+    CP_System_ShowConsole();
 	InitPhysics();
 }
 
@@ -126,12 +134,43 @@ void UpdatePhysics()
     }
 }
 
+cActor* selectedActor;
+void HandleInput(CP_Vector mousePos)
+{
+    std::vector<cActor>& actors = world.getWorldActors();
+    if (CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding)
+    {
+        for (cActor& a : actors)
+        {
+            if (IsPointInRadius(CP_Vector{ a.getPosition().x, a.getPosition().y }, 50, mousePos))
+            {
+                selectedActor = &a;
+                isHolding = true;
+                break;
+            }
+        }
+    }
+
+    if (isHolding && selectedActor)
+    {
+        selectedActor->setPosition(vec2{ mousePos.x, mousePos.y });
+    }
+    
+    if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
+    {
+        selectedActor = nullptr;
+        isHolding = false;
+    }
+}
+
 void game_update(void)
 {
     CP_Settings_BlendMode(CP_BLEND_ALPHA);
     CP_Graphics_ClearBackground(CP_Color_Create(51, 51, 51, 255));
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
-
+    
+    CP_Vector mousePos = CP_Vector{ (float)CP_Input_GetMouseWorldX(), (float)CP_Input_GetMouseWorldY() };
+    HandleInput(mousePos);
     UpdatePhysics();
 
     // Profiling info and frameRate testing
