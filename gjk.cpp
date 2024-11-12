@@ -30,14 +30,23 @@ namespace chiori
 	}
 	
 	#pragma region Distance Subalgorithm
-	std::vector<float> S1D(Simplex& outSimplex)
+	std::vector<float> S1D(Simplex& outSimplex, boolean debugSpit = false)
 	{
 		const vec2& s1 = outSimplex[0].w;
 		const vec2& s2 = outSimplex[1].w;
-		vec2 t = s1 - s2;
+		vec2 t = s2 - s1;
 		
 		// orthogonal projection of the origin onto the infinite line s1s2
-		vec2 p0 = s2 + (s2.dot(t) / t.dot(t)) * t;
+		vec2 p0 = (s2.dot(t) / t.dot(t)) * t + s2;
+
+		if (debugSpit)
+		{
+			std::cout << "\t\t S1D: " << std::endl;
+			std::cout << "\t\t s1: " << s1 << std::endl;
+			std::cout << "\t\t s2: " << s2 << std::endl;
+			std::cout << "\t\t t: " << t << std::endl;
+			std::cout << "\t\t p0" << p0 << std::endl;
+		}
 
 		// Calculate barycentric coordinates for s1 and s2 based on p0
 		// Reduce to the dimension with the largest absolute value
@@ -48,24 +57,49 @@ namespace chiori
 			I = 1; // Track which component is most influential
 		}
 
+		if (debugSpit)
+		{
+			std::cout << "\t\t mu_max: " << mu_max << std::endl;
+			std::cout << "\t\t I: " << I << std::endl;
+			if (I == 0)
+				std::cout << "\t\t x-axis deemed influential" << std::endl;
+			else
+				std::cout << "\t\t y-axis deemed influential" << std::endl;
+		}
+
 		// Calculate barycentric coordinates relative to the coordinate with the largest difference
 		float C[2];
-		for (int j = 0; j < 2; ++j) {
-			// We calculate the coordinate-wise contribution for barycentric coordinates
-			C[j] = (j == 0 ? 1.0f : -1.0f) * (s1[I] - p0[I]);
+		C[0] = -(s2[I] - p0[I]);
+		C[1] = s1[I] - p0[I];
+
+		if (debugSpit)
+		{
+			std::cout << "\t\t Calculated signed-area: " << std::endl;
+			std::cout << "\t\t C[0]: " << C[0] << std::endl;
+			std::cout << "\t\t C[1]: " << C[1] << std::endl;
 		}
 
 		// Determine whether to keep the full simplex or reduce it (compare signs algo)
-		bool allSignsMatch = std::all_of(std::begin(C), std::end(C), [mu_max](float cj) {
-			return (mu_max > 0 && cj > 0) || (mu_max < 0 && cj < 0);
-			});
-		
+		bool allSignsMatch = compareSigns(C[0], mu_max) && compareSigns(C[1], mu_max);
+
 		if (allSignsMatch)
 		{
+			if (debugSpit)
+			{
+				std::cout << "\t\t All signs matched, will not modify simplex" << std::endl;
+				std::cout << "\t\t Barycentric[0]: " << C[0] / mu_max << std::endl;
+				std::cout << "\t\t Barycentric[1]: " << C[1] / mu_max << std::endl;
+			}
 			return { C[0] / mu_max, C[1] / mu_max };
 		}
 		else
+		{
+			if (debugSpit)
+			{
+				std::cout << "\t\t Signs unmatched, reducing simplex!" << std::endl;
+			}
 			outSimplex = { outSimplex[0] };
+		}
 
 		return { 1.0f };
 	}
@@ -79,11 +113,19 @@ namespace chiori
 		return weightedSum.magnitude(); // Return the magnitude of the weighted sum
 	}
 
-	std::vector<float> S2D(Simplex& outSimplex)
+	std::vector<float> S2D(Simplex& outSimplex, boolean debugSpit = false)
 	{
 		const vec2& s1 = outSimplex[0].w;
 		const vec2& s2 = outSimplex[1].w;
 		const vec2& s3 = outSimplex[2].w;
+
+		if (debugSpit)
+		{
+			std::cout << "\t S2D: " << std::endl;
+			std::cout << "\t s1: " << s1 << std::endl;
+			std::cout << "\t s2: " << s2 << std::endl;
+			std::cout << "\t s3: " << s3 << std::endl;
+		}
 
 		// no need to calculate p0 (projection of origin onto plane), as the origin will lie in the same plane as these points
 		
@@ -102,38 +144,83 @@ namespace chiori
 		// Calculate barycentric coordinates for s1, s2, and s3
 		// In the paper it uses a determinant calculation, which we can simplify in 2D
 		// to a simple 2D cross product. Hell yeah.
-		float C[3];
-		for (int j = 0; j < 3; j++)
+		float C[2]; // we dont have to explicitly calculate the 3rd barycentric coordinate since sum of all them will = 1
+		C[0] = s2.cross(s3);
+		C[1] = s3.cross(s1);
+
+		if (debugSpit)
 		{
-			C[j] = (j == 0 ? 1.0f : -1.0f) * (outSimplex[j].w.cross(outSimplex[(j + 1) % 3].w));
+			std::cout << "\t mu_max: " << mu_max << std::endl;
+			std::cout << "\t Calculated signed-area: " << std::endl;
+			std::cout << "\t C[0]: " << C[0] << std::endl;
+			std::cout << "\t C[1]: " << C[1] << std::endl;
 		}
 		
 		// Determine whether to keep the full simplex or reduce it (compare signs algo)
-		bool allSignsMatch = std::all_of(std::begin(C), std::end(C), [mu_max](float cj) {
-			return (mu_max > 0 && cj > 0) || (mu_max < 0 && cj < 0);
-			});	
+		bool allSignsMatch = compareSigns(C[0], mu_max) && compareSigns(C[1], mu_max);
 
 		if (allSignsMatch)
 		{
+			float l2 = C[0] / mu_max;
+			float l3 = C[1] / mu_max;
+			if (debugSpit)
+			{
+				std::cout << "\t All signs matched, will not modify simplex" << std::endl;
+				std::cout << "\t Barycentric[0]: " << 1 - l2 - l3 << std::endl;
+				std::cout << "\t Barycentric[1]: " << l2 << std::endl;
+				std::cout << "\t Barycentric[2]: " << l3 << std::endl;
+			}
 			return {
-				C[0] / mu_max,
-				C[1] / mu_max,
-				C[2] / mu_max
+				1 - l2 - l3,
+				l2,
+				l3
 			};
 		}
 		
+		if (debugSpit)
+		{
+			std::cout << "\t Signs unmatched, reducing simplex!" << std::endl;
+		}
 		float d = FLT_MAX;
 		std::vector<float> l;
 		for (int k = 0; k < 2; k++)
 		{
-			if (compareSigns(mu_max, -C[k + 1]))
+			if (compareSigns(mu_max, -C[k]))
 			{
+				if (debugSpit)
+				{
+					std::cout << "\t Comparing mu_max and -C[" << k << "]: same sign!" << std::endl;
+				}
+				
 				Simplex reducedSimplex;
 				reducedSimplex = { outSimplex[0], outSimplex[2 - k] };
+				if (debugSpit)
+				{
+					std::cout << "\t Reduced simplex with points [0] & [" << 2 - k << "]" << std::endl;
+					std::cout << reducedSimplex << std::endl;
+				}
 				std::vector<float> ls = S1D(reducedSimplex);
 				float ds = computeDStar(reducedSimplex, l);
+				if (debugSpit)
+				{
+					std::cout << "\t Calcuated values from internal S1D: " << std::endl;
+					std::cout << "\t Lambdas: ";
+					for (float ll : ls)
+					{
+						std::cout << ll << " , ";
+					}
+					std::cout << std::endl;
+					std::cout << "\t D*: " << ds << std::endl;
+				}
 				if (ds < d)
 				{
+					if (debugSpit)
+					{
+						std::cout << "\t Found ds < d" << std::endl;
+						std::cout << "\t prev d " << d << std::endl;
+						std::cout << "\t new d " << ds << std::endl;
+					}
+
 					outSimplex = reducedSimplex;
 					l = ls;
 					d = ds;
@@ -143,180 +230,151 @@ namespace chiori
 
 		return l;
 	}
-	
-	//std::vector<float> S1D_T(Simplex& outSimplex) // 1D Simplex case
-	//{
-	//	std::vector<float> result;
-	//	
-	//	const vec2& s1 = outSimplex[0].w;
-	//	const vec2& s2 = outSimplex[1].w;
-	//	vec2 t = s1 - s2;
-	//	vec2 p0 = (s2.dot(t)) / (t.dot(t)) * t + s2; // orthogonal projection of the origin onto the infinite line s1s2
-	//	float mu_max = 0.0f; int I = -1;
-	//	// Step through coordinates of s1 and s2 to find the maximum |mu| (component wise difference)
-	//	for (int i = 0; i < 2; ++i) {
-	//		float mu = s1[i] - s2[i];
-	//		if (std::abs(mu) > std::abs(mu_max)) {
-	//			mu_max = mu;
-	//			I = i;
-	//		}
-	//	} // we do this to reduce the problem to just one dimension with the greatest difference (x or y)
-	//	
-	//	// calculate the barycentric coordinates of p0 relative to s1 and s2
-	//	int k = 2;
-	//	std::array<float, 2> C;
-	//	for (int j = 0; j < 2; ++j) {
-	//		C[j] = (j % 2 == 0 ? 1.0f : -1.0f) * (s1[I] - p0[I]);
-	//		k = j;
-	//	}
-	//	
-	//	// we check if the barycentric coordinates have the same sign as mu_max
-	//	// if it does, we know p0 lies between s1 and s2
-	//	// if it doesn't, it must lie outside, with the closest point to the origin being s1
-	//	// as the first vertex in the simplex is ALWAYS the latest updated
-	//	bool allSignsMatch = true;
-	//	for (int j = 0; j < 2; ++j) {
-	//		if (!compareSigns(mu_max, C[j])) {
-	//			allSignsMatch = false;
-	//			break;
-	//		}
-	//	}
-	//	if (allSignsMatch) {
-	//		// update barycentric coordinates
-	//		result = { (C[0] / mu_max), (C[1] / mu_max) };
-	//		// we keep the simplex untouched
-	//	}
-	//	else {
-	//		result = { 1.0f }; // since only s1 contributes, the barycentric coordinates is just 1
-	//		outSimplex = { outSimplex[0] }; // we keep only s1
-	//	}
-	//	return result;
-	//}
-	//std::vector<float> S2D_T(Simplex& outSimplex)
-	//{
-	//	// This is modified from the paper as it attempts to determine the closest
-	//	// point on the plane the origin is to, however, in 2D, the origin ALREADY
-	//	// lies on the same plane (hence the closest point would be itself).
-	//	// So, we can easily remove a segment of calulations and simplify by
-	//	// treating p0 as 0,0 in the pseudocode
-	//	std::vector<float> result;
-	//	const vec2& s1 = outSimplex[0].w;
-	//	const vec2& s2 = outSimplex[1].w;
-	//	const vec2& s3 = outSimplex[2].w;
-	//	// We skip the `p0` projection as it’s just the origin (0,0) in 2D
-	//	float mu_max = 0.0f;
-	//	int J = -1;
-	//	// Calculate mu for x and y components (we dont put this in a loop to avoid the headache)
-	//	float mu_x = s2.x * s3.y + s3.x * s1.y + s1.x * s2.y - s3.x * s2.y - s2.x * s1.y - s1.x * s3.y;
-	//	float mu_y = s2.y * s3.x + s3.y * s1.x + s1.y * s2.x - s3.y * s2.x - s2.y * s1.x - s1.y * s3.x;
-	//	// Find the maximum mu component
-	//	if (std::abs(mu_x) > std::abs(mu_max)) {
-	//		mu_max = mu_x;
-	//		J = 0;  // Indicates x component
-	//	}
-	//	if (std::abs(mu_y) > std::abs(mu_max)) {
-	//		mu_max = mu_y;
-	//		J = 1;  // Indicates y component
-	//	}
-	//	
-	//	int k = 2;
-	//	int l = 3;
-	//	std::array<float, 3> C;
-	//	for (int j = 2; j <= 3; ++j)
-	//	{
-	//		const vec2& s_k = outSimplex[k - 1].w; // Convert from 1-based to 0-based indexing
-	//		const vec2& s_l = outSimplex[l - 1].w; // Same conversion for l
-	//		int sign = (j % 2 == 0) ? 1 : -1;
-	//		C[j-1] = sign * (s_k[0] * s_l[1] - s_l[0] * s_k[1]); // simplified when removing p0
-	//		k = l; l = j;
-	//	}
-	//	// we check if the barycentric coordinates have the same sign as mu_max
-	//	bool allSignsMatch = true;
-	//	for (int j = 0; j < C.size(); ++j) {
-	//		if (!compareSigns(mu_max, C[j])) {
-	//			allSignsMatch = false;
-	//			break;
-	//		}
-	//	}
-	//	if (allSignsMatch) {
-	//		// update barycentric coordinates
-	//		result = {
-	//			C[0] / mu_max,
-	//			C[1] / mu_max,
-	//			C[2] / mu_max
-	//		};
-	//		// we keep the simplex untouched
-	//	}
-	//	else
-	//	{
-	//		float d = FLT_MAX;
-	//		// j = 2, exclude s2, exclude simplex[1]
-	//		// j = 3, exclude s3, exclude simplex[2]
-	//		for (int j = 2; j <= 3; ++j)
-	//		{
-	//			if (!compareSigns(mu_max, -C[j - 1]))
-	//				continue;
-	//			Simplex simplexStar;
-	//			simplexStar = { outSimplex[0], outSimplex[j - 1]};
-	//			std::vector<float> lambdaStar = S1D(simplexStar);
-	//			
-	//			float dstar = computeDStar(simplexStar, lambdaStar);
-	//			if (dstar < d)
-	//			{
-	//				outSimplex = simplexStar;
-	//				result = lambdaStar;
-	//				d = dstar;
-	//			}
-	//		}
-	//	}
-	//	
-	//	return result;
-	//}
 
-	std::vector<float> SignedVolumeDistanceSubalgorithm(Simplex& outSimplex)
+	std::vector<float> SignedVolumeDistanceSubalgorithm(Simplex& outSimplex, boolean debugSpit = false)
 	{
 		int dim = outSimplex.size() - 1;
-		switch (outSimplex.size())
+
+		if (debugSpit)
+		{
+			std::cout << "\t In Distance Subalgorithm:" << std::endl;
+			std::cout << "\t Dimensionality: " << dim << std::endl;
+		}
+		
+		switch (dim)
 		{
 		case 1:
-			return S1D(outSimplex);
+			if (debugSpit)
+			{
+				std::cout << "\t Entering S1D..." << std::endl;
+			}
+			return S1D(outSimplex, debugSpit);
 		case 2:
-			return S2D(outSimplex);
+			if (debugSpit)
+			{
+				std::cout << "\t Entering S2D..." << std::endl;
+			}
+			return S2D(outSimplex, debugSpit);
 		default:
+			if (debugSpit)
+			{
+				std::cout << "\t Defaulted..." << std::endl;
+			}
 			return { 1.0f }; // leave the simplex as is
 		}
 	}
 	#pragma endregion
 
-	GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex)
+	GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit)
 	{
+		if (debugSpit)
+		{
+			std::cout << "\n===========================================================" << std::endl;
+			std::cout << " -- GJK DEBUG INFO --" << std::endl;
+
+			std::cout << " INPUTS " << std::endl;
+			std::cout << " Primary Object: " << std::endl;
+			std::cout << inPrimary << std::endl;
+			std::cout << " Target Object: " << std::endl;
+			std::cout << inTarget << std::endl;
+			std::cout << "\n -- Main algorithm begins -- " << std::endl;
+		}
+
 		GJKresult result;
-		vec2 dir = (outSimplex.size()) ? outSimplex[0].w : (inPrimary.position - inTarget.position);
+		vec2 dir = inPrimary.position - inTarget.position;
+		if (outSimplex.size())
+			dir = outSimplex[0].w;
+
+		if (debugSpit)
+		{
+			std::cout << "Intial direction: " << dir;
+		}
 
 		for (int itr = 0; itr < commons::GJK_ITERATIONS; itr++)
 		{
+			if (debugSpit)
+			{
+				std::cout << std::endl;
+				std::cout << " -- ITERATION " << itr << " --" << std::endl;
+				std::cout << " Current Direction: " << dir << std::endl;
+			}
+
 			float dirm = dir.sqrMagnitude();
 			Mvert w = GetSupportVertex(inPrimary, inTarget, -dir);
-			if (outSimplex.isDupe(w)) // Termination condition A
+
+			if (debugSpit)
+			{
+				std::cout << "dir sqrMag: " << dirm << std::endl;
+				std::cout << "New support point found: " << w << std::endl;
+			}
+			
+			if (outSimplex.isDupe(w))
+			{
+				if (debugSpit)
+				{
+					std::cout << " ** FOUND DUPLICATE POINT IN SIMPLEX, TERMINATING GJK LOOP ** " << std::endl;
+				}
 				break;
-			if ((dirm - dir.dot(w.w)) <= (dirm * commons::HEPSILON * commons::HEPSILON) ) // Termination condition A
+			}
+			if ((dirm - dir.dot(w.w)) <= (dirm * commons::HEPSILON * commons::HEPSILON)) // Termination condition A
+			{
+				if (debugSpit)
+				{
+					std::cout << " ** TERMINATION CONDITION A MET, TERMINATING GJK LOOP ** " << std::endl;
+				}
 				break;
+			}
 			
 			outSimplex.push_front(w);
+			if (debugSpit)
+			{
+				std::cout << " Simplex updated to now be: ";
+				std::cout << outSimplex << std::endl;
+
+				std::cout << "\n------------ start of subalgorithm ------------ " << std::endl;
+			}
 			
-			std::vector<float> lambdas = SignedVolumeDistanceSubalgorithm(outSimplex);
+			std::vector<float> lambdas = SignedVolumeDistanceSubalgorithm(outSimplex, debugSpit);
+
+			if (debugSpit)
+			{
+				std::cout << "------------ end of subalgorithm ------------ " << std::endl;
+				std::cout << "Lambdas calculated: ";
+				for (float l : lambdas)
+				{
+					std::cout << l << " , ";
+				}
+				std::cout << std::endl;
+				std::cout << " Simplex updated after dist algo to be: ";
+				std::cout << outSimplex << std::endl;
+			}
 
 			//We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
+			result.zA = vec2::zero;
+			result.zB = vec2::zero;
 			for (int l = 0; l < lambdas.size(); l++) // the size of the simplex should always be the size of the lambdas
 			{
 				result.zA += lambdas[l] * outSimplex[l].a;
 				result.zB += lambdas[l] * outSimplex[l].b;
 				dir += lambdas[l] * outSimplex[l].w;
 			}
+
+			if (debugSpit)
+			{
+				std::cout << "New direction: " << dir << std::endl;
+				std::cout << "Closest point on A: " << result.zA << std::endl;
+				std::cout << "Closest point on B: " << result.zB << std::endl;
+			}
 				
 			if (outSimplex.size() >= 3) // Termination condition B
+			{
+				if (debugSpit)
+				{
+					std::cout << " ** SIMPLEX SIZE AT MAX 3, TERMINATING GJK LOOP ** " << std::endl;
+				}
 				break;
+			}
 
 			float max_norm = 1.0f;
 			for (const auto& m : outSimplex)
@@ -324,12 +382,32 @@ namespace chiori
 				float norm = m.w.sqrMagnitude();
 				max_norm = (max_norm > norm) ? max_norm : norm;
 			}
+
+			if (debugSpit)
+			{
+				std::cout << "max_norm: " << max_norm << std::endl;
+			}
 			
 			if (dir.sqrMagnitude() < (commons::HEPSILON * max_norm)) // Termination condition B
+			{
+				if (debugSpit)
+				{
+					std::cout << " ** TERMINATION CONDITION B MET, TERMINATING GJK LOOP ** " << std::endl;
+				}
 				break;
+			}
 		}
+		
+
 		result.distance = dir.magnitude();
+		if (debugSpit)
+		{
+			std::cout << "EXITED GJK ITERATIVE LOOP!" << std::endl;
+			std::cout << "FINAL CALCULATED DISTANCE = " << result.distance << std::endl;
+			std::cout << "===========================================================" << std::endl;
+		}
 		return result;
 	}
+
 	
 }

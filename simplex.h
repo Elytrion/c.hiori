@@ -12,6 +12,15 @@ namespace chiori
 		vec2 w{ 0,0 }; // support point on CSO aka minkowski difference between points a and b (a - b)
 		
 		Mvert(const vec2& inA = vec2::zero, const vec2& inB = vec2::zero) : a(inA), b(inB), w(inA - inB) {}
+		
+		friend std::ostream& operator<<(std::ostream& inOS, const Mvert& inVec) {
+			inOS << "mvert( \n";
+			inOS << " a: " << inVec.a << " | ";
+			inOS << " b: " << inVec.b << " | ";
+			inOS << " w: " << inVec.w << " | ";
+			inOS << ")";
+			return inOS;
+		}
 	};
 
 	template <unsigned N>
@@ -68,6 +77,17 @@ namespace chiori
 		unsigned size() const { return s_size; }
 		auto begin() const { return s_points.begin(); }
 		auto end() const { return s_points.end() - (N - s_size); }
+
+		friend std::ostream& operator<<(std::ostream& inOS, const NSimplex& inSimplex)
+		{
+			inOS << "simplex( \n";
+			for (unsigned i = 0; i < inSimplex.size(); i++)
+			{
+				inOS << " " << inSimplex[i] << std::endl;
+			}
+			inOS << ")";
+			return inOS;
+		}
 	};
 
 	using Simplex = NSimplex<3>; // we are working in 2D, so the simplex max size is dimension + 1 -> 2 + 1 -> 3

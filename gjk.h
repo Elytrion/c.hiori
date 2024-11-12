@@ -15,6 +15,15 @@ namespace chiori
             : vertices{ vertices }, position{ position } {}
 
 		vec2 getSupportPoint(const vec2& inDir) const;
+
+        friend std::ostream& operator<<(std::ostream& inOS, const GJKobject& inObj)
+        {
+			inOS << "ObjPosition: " << inObj.position << std::endl;
+			inOS << "Vertices: " << std::endl;
+			for (const vec2& v : inObj.vertices)
+				inOS << v << std::endl;        
+            return inOS;
+        }
 	};
 
     struct GJKresult
@@ -29,7 +38,7 @@ namespace chiori
         return Mvert{ inA.getSupportPoint(inDir), inB.getSupportPoint(-inDir) };
     }
 	
-    GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
+    GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit = false);
 
 
 	/*

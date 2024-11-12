@@ -103,8 +103,8 @@ bool drawFPS = true;
 void InitPhysics()
 {
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
-    CreateRandomizedActor(6, 50, middle);
-    CreateRandomizedActor(6, 50, vec2{ middle.x, middle.y + 150 });
+    CreateRandomizedActor(4, 50, middle);
+    CreateRandomizedActor(4, 50, vec2{ middle.x, middle.y + 150 });
     // // create floor
 	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }

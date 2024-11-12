@@ -39,8 +39,12 @@ namespace chiori
 				GJKobject gjkB{ b.getVertices(), b.getPosition() };
 
 				Simplex s;
-				GJKresult result = GJKExtended(gjkA, gjkB, s);
-				std::cout << "GJK " << i << ", " << j << " : " << result.distance << " / " + s.size() << std::endl;
+					
+				GJKresult result = GJKExtended(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
+
+				if (CP_Input_MouseDown(MOUSE_BUTTON_2))
+					std::cout << result.distance << std::endl;
+
 				//!!TO REMOVE!!
 				for (const auto& m : s)
 				{
