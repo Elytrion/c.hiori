@@ -37,7 +37,8 @@ namespace chiori
 		vec2 t = s2 - s1;
 		
 		// orthogonal projection of the origin onto the infinite line s1s2
-		vec2 p0 = (s2.dot(t) / t.dot(t)) * t + s2;
+		// (Paper was wrong with the formula here omfg)
+		vec2 p0 = s1 + (-s1.dot(t) / t.dot(t)) * t;
 
 		if (debugSpit)
 		{
@@ -67,7 +68,7 @@ namespace chiori
 				std::cout << "\t\t y-axis deemed influential" << std::endl;
 		}
 
-		// Calculate barycentric coordinates relative to the coordinate with the largest difference
+		// Calculate signed area relative to the coordinate with the largest difference
 		float C[2];
 		C[0] = -(s2[I] - p0[I]);
 		C[1] = s1[I] - p0[I];
@@ -100,8 +101,7 @@ namespace chiori
 			}
 			outSimplex = { outSimplex[0] };
 		}
-
-		return { 1.0f };
+		return { 1.0f };	
 	}
 	
 	float computeDStar(const Simplex& inWstar, const std::vector<float>& inLambdastar)
@@ -185,6 +185,11 @@ namespace chiori
 		std::vector<float> l;
 		for (int k = 0; k < 2; k++)
 		{
+			if (debugSpit)
+			{
+				std::cout << "\t Comparing mu_max (" << mu_max << ") and -C[" << k << "]: " << -C[k] << std::endl;
+			}
+
 			if (compareSigns(mu_max, -C[k]))
 			{
 				if (debugSpit)
@@ -199,8 +204,8 @@ namespace chiori
 					std::cout << "\t Reduced simplex with points [0] & [" << 2 - k << "]" << std::endl;
 					std::cout << reducedSimplex << std::endl;
 				}
-				std::vector<float> ls = S1D(reducedSimplex);
-				float ds = computeDStar(reducedSimplex, l);
+				std::vector<float> ls = S1D(reducedSimplex, debugSpit);
+				float ds = computeDStar(reducedSimplex, ls);
 				if (debugSpit)
 				{
 					std::cout << "\t Calcuated values from internal S1D: " << std::endl;
@@ -279,7 +284,7 @@ namespace chiori
 			std::cout << inTarget << std::endl;
 			std::cout << "\n -- Main algorithm begins -- " << std::endl;
 		}
-
+		std::vector<Mvert> previousPoints;
 		GJKresult result;
 		vec2 dir = inPrimary.position - inTarget.position;
 		if (outSimplex.size())
@@ -297,6 +302,7 @@ namespace chiori
 				std::cout << std::endl;
 				std::cout << " -- ITERATION " << itr << " --" << std::endl;
 				std::cout << " Current Direction: " << dir << std::endl;
+				std::cout << " Negated Direction: " << -dir << std::endl;
 			}
 
 			float dirm = dir.sqrMagnitude();
@@ -316,7 +322,14 @@ namespace chiori
 				}
 				break;
 			}
-			if ((dirm - dir.dot(w.w)) <= (dirm * commons::HEPSILON * commons::HEPSILON)) // Termination condition A
+			if (debugSpit)
+			{
+				printf("dir.sqrMag: %.10f\n", dirm);
+				printf("dir.dot(w.w): %.10f\n", dir.dot(w.w));
+				std::cout << "dirm * epsilon sqr = " << (dirm * commons::LEPSILON * commons::LEPSILON) << std::endl;
+				std::cout << "dirm - dir.dot(w.w) = " << (dirm - dir.dot(w.w)) << std::endl;
+			}
+			if ((dirm - dir.dot(w.w)) <= (dirm * commons::LEPSILON * commons::LEPSILON)) // Termination condition A
 			{
 				if (debugSpit)
 				{
@@ -324,7 +337,7 @@ namespace chiori
 				}
 				break;
 			}
-			
+			previousPoints.push_back(w);
 			outSimplex.push_front(w);
 			if (debugSpit)
 			{
@@ -358,6 +371,12 @@ namespace chiori
 				result.zA += lambdas[l] * outSimplex[l].a;
 				result.zB += lambdas[l] * outSimplex[l].b;
 				dir += lambdas[l] * outSimplex[l].w;
+				if (debugSpit)
+				{
+					printf("lambda[l]: %.4f\n", lambdas[l]);
+					printf("dir.x: %.4f\n", dir.x);
+					printf("dir.y: %.4f\n", dir.y);
+				}
 			}
 
 			if (debugSpit)
@@ -403,11 +422,90 @@ namespace chiori
 		if (debugSpit)
 		{
 			std::cout << "EXITED GJK ITERATIVE LOOP!" << std::endl;
-			std::cout << "FINAL CALCULATED DISTANCE = " << result.distance << std::endl;
+			std::cout << "FINAL CALCULATED DISTANCE = "; printf("%.10f\n", result.distance);
 			std::cout << "===========================================================" << std::endl;
 		}
 		return result;
 	}
 
+	/*
+	ugh
+	std::pair<vec2, vec2> solve2S(Simplex& outSimplex)
+	{
+		
+	}
+
+	std::pair<vec2, vec2> solve3S(Simplex& outSimplex)
+	{
+
+	}
+
+	std::pair<vec2, vec2> getWitnessPoints(Simplex& outSimplex, vec2& p)
+	{
+		switch (outSimplex.size())
+		{
+		case 1:
+			return { outSimplex[0].a, outSimplex[0].b };
+		}
+	}
+
+	
+	GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex)
+	{
+		GJKresult result{ false, 0, vec2::zero, vec2::zero };
+		vec2 dir = inPrimary.position - inTarget.position;		
+		Mvert w = GetSupportVertex(inPrimary, inTarget, dir);
+		outSimplex.push_front(w);
+		
+		
+		Simplex bestSimplex; vec2 p; vec2 bestP; float bestSupportDiff = 0.0f;
+
+		for (int itr = 0; itr < commons::GJK_ITERATIONS; itr++)
+		{
+			switch (outSimplex.size())
+			{
+			case 1:
+				p = outSimplex[0].w;
+				dir = -p;
+				break;
+			case 2:
+				auto [p, dir] = solve2S(outSimplex);
+				break;
+			case 3:
+				auto [p, dir] = solve3S(outSimplex);
+				break;
+			}
+
+			if (p.sqrMagnitude() < commons::HEPSILON)
+			{
+				result.intersecting = true;
+				return result;
+			}
+
+			Mvert w = GetSupportVertex(inPrimary, inTarget, dir);
+			
+			if (p.dot(dir) >= (w.w.dot(dir) - commons::HEPSILON))
+			{
+				auto [zA, zB] = getWitnessPoints(outSimplex, p);
+				result.zA = zA; result.zB = zB;
+				return result;
+			}
+			float supportDiff = (w.w.dot(dir) - p.dot(dir));
+			if (supportDiff > bestSupportDiff)
+			{
+				bestSupportDiff = supportDiff;
+				bestSimplex = outSimplex;
+				bestP = p;
+			}
+
+			outSimplex.push_front(w);
+		}
+
+		auto [zA, zB] = getWitnessPoints(bestSimplex, bestP);
+		result.zA = zA; result.zB = zB;
+		outSimplex = bestSimplex;
+		return result;
+	}*/
+	
 	
 }

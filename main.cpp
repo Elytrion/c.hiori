@@ -92,6 +92,34 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 		newActor.setFlags(cActor::IS_STATIC);
 }
 
+void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
+{
+    // Equilateral triangle
+	std::vector<vec2> vertices{
+		vec2 { 0, radius },
+		vec2 { -radius, -radius },
+		vec2 { radius, -radius }
+	};
+    cActor& newActor = world.AddActor(vertices);
+    newActor.setMass(10);
+    newActor.setPosition(centrePos);
+    if (isStatic)
+        newActor.setFlags(cActor::IS_STATIC);
+}
+
+void CreateLineActor(float radius, vec2& centrePos, bool isStatic = false)
+{
+    std::vector<vec2> vertices{
+        vec2 { 0, radius },
+        vec2 { 0, -radius }
+    };
+    cActor& newActor = world.AddActor(vertices);
+    newActor.setMass(10);
+    newActor.setPosition(centrePos);
+    if (isStatic)
+        newActor.setFlags(cActor::IS_STATIC);
+}
+
 
 
 const float EPSILON = 0.0000001f;
@@ -103,8 +131,14 @@ bool drawFPS = true;
 void InitPhysics()
 {
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
-    CreateRandomizedActor(4, 50, middle);
-    CreateRandomizedActor(4, 50, vec2{ middle.x, middle.y + 150 });
+  
+    CreateTriangleActor(50, middle);
+    CreateTriangleActor(50, vec2{ middle.x + 150, middle.y });
+    
+    //CreateRectActor(100, 100, middle);
+	//CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });
+    //CreateRandomizedActor(5, 50, middle);
+    //CreateRandomizedActor(5, 50, vec2{ middle.x, middle.y + 150 });
     // // create floor
 	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }

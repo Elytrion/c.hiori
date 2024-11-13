@@ -28,6 +28,7 @@ namespace chiori
 
     struct GJKresult
     {
+        bool intersecting; // if the two shapes are intersecting
         float distance; // Zero if in contact or intersecting
         vec2 zA; // closest point on primary object
         vec2 zB; // closest point on target object
