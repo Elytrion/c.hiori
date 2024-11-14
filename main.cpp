@@ -133,7 +133,7 @@ void InitPhysics()
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
   
     CreateTriangleActor(50, middle);
-    CreateTriangleActor(50, vec2{ middle.x + 150, middle.y });
+    CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/ 807, 511 });
     
     //CreateRectActor(100, 100, middle);
 	//CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });

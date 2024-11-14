@@ -133,20 +133,20 @@ namespace chiori
 		// Normally we reduce to the dimension with the largest absolute value, but since
 		// we are already in 2D, our vectors don't have a 3rd component to reduce,
 		// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
-		float mu_max = s2.x * s3.y + s1.x * s2.y + s3.x * s1.y - s2.x * s1.y
-						- s3.x * s2.y - s1.x * s3.y;
-		float mu_other = s2.y * s3.x + s1.y * s2.x + s3.y * s1.x - s2.y * s1.x
-						- s3.y * s2.x - s1.y * s3.x;
-		
-		if (std::abs(mu_other) > std::abs(mu_max))
-			mu_max = mu_other;
+		// the signed area of the triangle remains the same in 2D
+		float mu_max =	s2.x * s3.y +
+						s1.x * s2.y +
+						s3.x * s1.y -
+						s2.x * s1.y -
+						s3.x * s2.y -
+						s1.x * s3.y;
 
 		// Calculate barycentric coordinates for s1, s2, and s3
 		// In the paper it uses a determinant calculation, which we can simplify in 2D
 		// to a simple 2D cross product. Hell yeah.
 		float C[2]; // we dont have to explicitly calculate the 3rd barycentric coordinate since sum of all them will = 1
 		C[0] = s2.cross(s3);
-		C[1] = s3.cross(s1);
+		C[1] = -(s1.cross(s3));
 
 		if (debugSpit)
 		{
@@ -374,8 +374,9 @@ namespace chiori
 				if (debugSpit)
 				{
 					printf("lambda[l]: %.4f\n", lambdas[l]);
-					printf("dir.x: %.4f\n", dir.x);
-					printf("dir.y: %.4f\n", dir.y);
+					std::cout << "Working on vertex: " << outSimplex[l] << std::endl;
+					std::cout << " zA: " << result.zA << std::endl;
+					std::cout << " zB: " << result.zB << std::endl;
 				}
 			}
 
