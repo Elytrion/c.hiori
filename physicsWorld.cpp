@@ -37,26 +37,25 @@ namespace chiori
 				
 				GJKobject gjkA{ a.getVertices(), a.getPosition() };
 				GJKobject gjkB{ b.getVertices(), b.getPosition() };
-
 				Simplex s;
+				CollisionStatus cs;
+				cs.tolerance = commons::LEPSILON;
+				cs.max_iterations = 16;
+				cs.flags = 1;
 					
-				GJKresult result = GJKExtended(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
+				GJKresult result = GJK(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
+				//float dist = GJK(gjkA, gjkB, cs);
 
 				if (CP_Input_MouseDown(MOUSE_BUTTON_2))
-					std::cout << result.distance << std::endl;
-
-				//!!TO REMOVE!!
-				for (const auto& m : s)
 				{
-					CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
-					//CP_Graphics_DrawCircle(m.a.x, m.a.y, 8);
-					//CP_Graphics_DrawCircle(m.b.x, m.b.y, 8);
-					CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-					CP_Graphics_DrawCircle(result.zA.x, result.zA.y, 8);
-					CP_Graphics_DrawCircle(result.zB.x, result.zB.y, 8);
-					CP_Graphics_DrawLine(result.zA.x, result.zA.y, result.zB.x, result.zB.y);
-					CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
+					std::cout << result.distance << std::endl;
 				}
+
+				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
+				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
+				CP_Graphics_DrawCircle(result.z1.x, result.z1.y, 8);
+				CP_Graphics_DrawCircle(result.z2.x, result.z2.y, 8);
+				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 				
 			}
 		}

@@ -133,7 +133,7 @@ void InitPhysics()
     vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
   
     CreateTriangleActor(50, middle);
-    CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/ 807, 511 });
+    CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
     //CreateRectActor(100, 100, middle);
 	//CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });
@@ -230,8 +230,7 @@ void game_exit(void)
 
 }
 
-int main(void)
-{
+int main(void){
     CP_Engine_SetNextGameState(game_init, game_update, game_exit);
     CP_Engine_Run();
     return 0;

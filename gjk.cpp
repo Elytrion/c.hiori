@@ -30,10 +30,10 @@ namespace chiori
 	}
 	
 	#pragma region Distance Subalgorithm
-	std::vector<float> S1D(Simplex& outSimplex, boolean debugSpit = false)
+	std::vector<float> S1D(Simplex& simplex, boolean debugSpit = false)
 	{
-		const vec2& s1 = outSimplex[0].w;
-		const vec2& s2 = outSimplex[1].w;
+		const vec2& s1 = simplex[0].w;
+		const vec2& s2 = simplex[1].w;
 		vec2 t = s2 - s1;
 		
 		// orthogonal projection of the origin onto the infinite line s1s2
@@ -99,25 +99,25 @@ namespace chiori
 			{
 				std::cout << "\t\t Signs unmatched, reducing simplex!" << std::endl;
 			}
-			outSimplex = { outSimplex[0] };
+			simplex = { simplex[0] };
 		}
 		return { 1.0f };	
 	}
 	
-	float computeDStar(const Simplex& inWstar, const std::vector<float>& inLambdastar)
+	float computeDStar(const std::vector<float>& lambdas, const Simplex& simplex)
 	{
 		vec2 weightedSum = { 0.0f, 0.0f }; // Initialize the weighted sum as a 2D vector
-		for (size_t i = 0; i < inWstar.size(); ++i) {
-			weightedSum += inLambdastar[i] * inWstar[i].w; // Accumulate weighted points
+		for (size_t i = 0; i < simplex.size(); ++i) {
+			weightedSum += lambdas[i] * simplex[i].w; // Accumulate weighted points
 		}
 		return weightedSum.magnitude(); // Return the magnitude of the weighted sum
 	}
 
-	std::vector<float> S2D(Simplex& outSimplex, boolean debugSpit = false)
+	std::vector<float> S2D(Simplex& simplex, boolean debugSpit = false)
 	{
-		const vec2& s1 = outSimplex[0].w;
-		const vec2& s2 = outSimplex[1].w;
-		const vec2& s3 = outSimplex[2].w;
+		const vec2& s1 = simplex[0].w;
+		const vec2& s2 = simplex[1].w;
+		const vec2& s3 = simplex[2].w;
 
 		if (debugSpit)
 		{
@@ -134,109 +134,119 @@ namespace chiori
 		// we are already in 2D, our vectors don't have a 3rd component to reduce,
 		// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
 		// the signed area of the triangle remains the same in 2D
-		float mu_max =	s2.x * s3.y +
+		float mu_max =	/*s2.x * s3.y +
 						s1.x * s2.y +
 						s3.x * s1.y -
 						s2.x * s1.y -
 						s3.x * s2.y -
-						s1.x * s3.y;
+						s1.x * s3.y;*/
+						s1.x * (s2.y - s3.y) +
+						s2.x * (s3.y - s1.y) +	
+						s3.x * (s1.y - s2.y);
 
 		// Calculate barycentric coordinates for s1, s2, and s3
 		// In the paper it uses a determinant calculation, which we can simplify in 2D
-		// to a simple 2D cross product. Hell yeah.
-		float C[2]; // we dont have to explicitly calculate the 3rd barycentric coordinate since sum of all them will = 1
-		C[0] = s2.cross(s3);
-		C[1] = -(s1.cross(s3));
-
+		// to a simple 2D cross product.
+		// Corresponds to the signed area of 2-simplex: (p0, s2, s3)
+		float C1 = s2.cross(s3);
+		// Corresponds to the signed area of 2-simplex: (p0, s1, s3)
+		float C2 = s3.cross(s1);
+		// Corresponds to the signed area of 2-simplex: (p0, s1, s2)
+		float C3 = s1.cross(s2);
+		
 		if (debugSpit)
 		{
+			std::cout << "\t C1: " << C1 << std::endl;
+			std::cout << "\t C2: " << C2 << std::endl;
+			std::cout << "\t C3: " << C3 << std::endl;
 			std::cout << "\t mu_max: " << mu_max << std::endl;
-			std::cout << "\t Calculated signed-area: " << std::endl;
-			std::cout << "\t C[0]: " << C[0] << std::endl;
-			std::cout << "\t C[1]: " << C[1] << std::endl;
 		}
-		
-		// Determine whether to keep the full simplex or reduce it (compare signs algo)
-		bool allSignsMatch = compareSigns(C[0], mu_max) && compareSigns(C[1], mu_max);
 
-		if (allSignsMatch)
+		bool cmp1 = compareSigns(mu_max, C1),
+			cmp2 = compareSigns(mu_max, C2),
+			cmp3 = compareSigns(mu_max, C3);
+		
+		if (cmp1 && cmp2 && cmp3)
 		{
-			float l2 = C[0] / mu_max;
-			float l3 = C[1] / mu_max;
 			if (debugSpit)
 			{
-				std::cout << "\t All signs matched, will not modify simplex" << std::endl;
-				std::cout << "\t Barycentric[0]: " << 1 - l2 - l3 << std::endl;
-				std::cout << "\t Barycentric[1]: " << l2 << std::endl;
-				std::cout << "\t Barycentric[2]: " << l3 << std::endl;
+				std::cout << "\t Simplex encloses origin, returning barycentric; " << std::endl;
 			}
+
+			// encloses origin in 2D
 			return {
-				1 - l2 - l3,
-				l2,
-				l3
+				C1 / mu_max,
+				C2 / mu_max,
+				C3 / mu_max
 			};
 		}
-		
+
+		float d = FLT_MAX; // minimum distance to origin
+		std::vector<float> l; // default to s1
+		Simplex w;
 		if (debugSpit)
 		{
-			std::cout << "\t Signs unmatched, reducing simplex!" << std::endl;
+			std::cout << "\tSimplex does not enclose origin, determine closest edge" << std::endl;
 		}
-		float d = FLT_MAX;
-		std::vector<float> l;
-		for (int k = 0; k < 2; k++)
+		if (!cmp2)
 		{
+			// s2 appears to be non-contributing, so we check the reduced simplex { s1. s3 }
 			if (debugSpit)
 			{
-				std::cout << "\t Comparing mu_max (" << mu_max << ") and -C[" << k << "]: " << -C[k] << std::endl;
+				std::cout << "\t Reducing simplex to { " << simplex[0] << "," << simplex[2] << std::endl;
 			}
-
-			if (compareSigns(mu_max, -C[k]))
+			w = { simplex[0], simplex[2] };
+			auto ls = S1D(w, debugSpit);
+			float ds = computeDStar(ls, w);
+			if (ds < d)
 			{
-				if (debugSpit)
-				{
-					std::cout << "\t Comparing mu_max and -C[" << k << "]: same sign!" << std::endl;
-				}
-				
-				Simplex reducedSimplex;
-				reducedSimplex = { outSimplex[0], outSimplex[2 - k] };
-				if (debugSpit)
-				{
-					std::cout << "\t Reduced simplex with points [0] & [" << 2 - k << "]" << std::endl;
-					std::cout << reducedSimplex << std::endl;
-				}
-				std::vector<float> ls = S1D(reducedSimplex, debugSpit);
-				float ds = computeDStar(reducedSimplex, ls);
-				if (debugSpit)
-				{
-					std::cout << "\t Calcuated values from internal S1D: " << std::endl;
-					std::cout << "\t Lambdas: ";
-					for (float ll : ls)
-					{
-						std::cout << ll << " , ";
-					}
-					std::cout << std::endl;
-					std::cout << "\t D*: " << ds << std::endl;
-				}
-				if (ds < d)
-				{
-					if (debugSpit)
-					{
-						std::cout << "\t Found ds < d" << std::endl;
-						std::cout << "\t prev d " << d << std::endl;
-						std::cout << "\t new d " << ds << std::endl;
-					}
+				simplex = w;
+				l = ls;
+				d = ds;
+			}
+		}
 
-					outSimplex = reducedSimplex;
-					l = ls;
-					d = ds;
-				}
+		if (!cmp3)
+		{
+			// s3 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+			if (debugSpit)
+			{
+				std::cout << "\t Reducing simplex to { " << simplex[0] << "," << simplex[1] << std::endl;
+			}
+			w = { simplex[0], simplex[1] };
+			auto ls = S1D(w, debugSpit);
+			float ds = computeDStar(ls, w);
+			if (ds < d)
+			{
+				simplex = w;
+				l = ls;
+				d = ds;
+			}
+		}
+
+		if (!cmp1)
+		{
+			// s1 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+			// Unlikely to reach here, as s1 is meant to be the latest point towards the origin
+			if (debugSpit)
+			{
+				std::cout << "\t Reducing simplex to { " << simplex[1] << "," << simplex[2] << std::endl;
+			}
+			w = { simplex[1], simplex[2] };
+			auto ls = S1D(w, debugSpit);
+			float ds = computeDStar(ls, w);  
+			if (ds < d)
+			{
+				simplex = w;
+				l = ls;
+				d = ds;
 			}
 		}
 
 		return l;
 	}
 
-	std::vector<float> SignedVolumeDistanceSubalgorithm(Simplex& outSimplex, boolean debugSpit = false)
+	std::vector<float> signedVolumeDistanceSubalgorithm(Simplex& outSimplex, boolean debugSpit = false)
 	{
 		int dim = outSimplex.size() - 1;
 
@@ -270,7 +280,7 @@ namespace chiori
 	}
 	#pragma endregion
 
-	GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit)
+	GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit)
 	{
 		if (debugSpit)
 		{
@@ -347,7 +357,7 @@ namespace chiori
 				std::cout << "\n------------ start of subalgorithm ------------ " << std::endl;
 			}
 			
-			std::vector<float> lambdas = SignedVolumeDistanceSubalgorithm(outSimplex, debugSpit);
+			std::vector<float> lambdas = signedVolumeDistanceSubalgorithm(outSimplex, debugSpit);
 
 			if (debugSpit)
 			{
@@ -364,27 +374,27 @@ namespace chiori
 
 			//We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
-			result.zA = vec2::zero;
-			result.zB = vec2::zero;
+			result.z1 = vec2::zero;
+			result.z2 = vec2::zero;
 			for (int l = 0; l < lambdas.size(); l++) // the size of the simplex should always be the size of the lambdas
 			{
-				result.zA += lambdas[l] * outSimplex[l].a;
-				result.zB += lambdas[l] * outSimplex[l].b;
+				result.z1 += lambdas[l] * outSimplex[l].a;
+				result.z2 += lambdas[l] * outSimplex[l].b;
 				dir += lambdas[l] * outSimplex[l].w;
 				if (debugSpit)
 				{
 					printf("lambda[l]: %.4f\n", lambdas[l]);
 					std::cout << "Working on vertex: " << outSimplex[l] << std::endl;
-					std::cout << " zA: " << result.zA << std::endl;
-					std::cout << " zB: " << result.zB << std::endl;
+					std::cout << " zA: " << result.z1 << std::endl;
+					std::cout << " zB: " << result.z2 << std::endl;
 				}
 			}
 
 			if (debugSpit)
 			{
 				std::cout << "New direction: " << dir << std::endl;
-				std::cout << "Closest point on A: " << result.zA << std::endl;
-				std::cout << "Closest point on B: " << result.zB << std::endl;
+				std::cout << "Closest point on A: " << result.z1 << std::endl;
+				std::cout << "Closest point on B: " << result.z2 << std::endl;
 			}
 				
 			if (outSimplex.size() >= 3) // Termination condition B
@@ -429,84 +439,212 @@ namespace chiori
 		return result;
 	}
 
-	/*
-	ugh
-	std::pair<vec2, vec2> solve2S(Simplex& outSimplex)
+#pragma region gjk mu
+	//std::array<float, 3> SignedVolumeDSA(Simplex& simplex);
+	//std::array<float, 3> S1D(Simplex& simplex);
+	//std::array<float, 3> S2D(Simplex& simplex);
+
+	//float GJK(const GJKobject& inPrimary, const GJKobject& inTarget, CollisionStatus& status)
+	//{
+	//	Simplex simplex;
+	//	vec2 v = inPrimary.position - inTarget.position;
+	//	float eps = status.tolerance * status.tolerance;
+	//	int get_contacts = status.flags & 0x1;
+	//	int get_dist = status.flags & 0x2;
+	//	
+	//	int itr = 0, max_itr = status.max_iterations;
+	//	for (; itr < max_itr; itr++)
+	//	{
+	//		Mvert w = GetSupportVertex(inPrimary, inTarget, v);
+	//		
+	//		vec2 diff = w.w - v;
+	//		if (2 * v.dot(diff) < eps)
+	//			break;
+	//		
+	//		if (!get_dist && v.dot(w.w) > 0)
+	//			return FLT_MAX;
+	//		
+	//		simplex.push_front(w);
+	//		std::array<float, 3> lambdas = SignedVolumeDSA(simplex);
+	//		
+	//		vec2 v_s = vec2::zero;
+	//		status.z1 = vec2::zero;
+	//		status.z2 = vec2::zero;
+	//		for (int l = 0; l < lambdas.size(); l++)
+	//		{
+	//			status.z1 += lambdas[l] * simplex[l].a;
+	//			status.z2 += lambdas[l] * simplex[l].b;
+	//			v_s += lambdas[l] * simplex[l].w;
+	//		}
+
+	//		if ((v_s - v).sqrMagnitude() <= eps)
+	//			break;
+	//		
+	//		v = v_s;
+	//		
+	//		if (simplex.size() >= 3)
+	//			break;
+	//		
+	//	}
+	//	status.gjk_iterations = itr;
+	//	status.simplex = simplex;
+	//	return v.magnitude();
+	//}
+	//
+	//std::array<float, 3> SignedVolumeDSA(Simplex& simplex)
+	//{
+	//	int dim = simplex.size() - 1;
+	//	switch (dim)
+	//	{
+	//	case 2:
+	//		return S2D(simplex);
+	//	case 1:
+	//		return S1D(simplex);
+	//	case 0:
+	//	default:
+	//		return { 1.0f, 0.0f, 0.0f };
+	//	}
+	//}
+
+	//std::array<float, 3> S1D(Simplex& simplex)
+	//{
+	//	const vec2& s1 = simplex[0].w;
+	//	const vec2& s2 = simplex[1].w;
+	//	vec2 t = s2 - s1;
+
+	//	// orthogonal projection of the origin onto the infinite line s1s2
+	//	// (Paper was wrong with the formula here omfg)
+	//	vec2 p0 = s1 + (-s1.dot(t) / t.dot(t)) * t;
+	//	
+	//	// Calculate barycentric coordinates for s1 and s2 based on p0
+	//	// Reduce to the dimension with the largest absolute value
+	//	float mu_max = s1.x - s2.x;
+	//	int I = 0;
+	//	if (std::abs(s1.y - s2.y) >= std::abs(mu_max)) {
+	//		mu_max = s1.y - s2.y;
+	//		I = 1; // Track which component is most influential
+	//	}
+
+	//	float C1 = p0[I] - s2[I];
+	//	float C2 = s1[I] - p0[I];
+
+	//	if (compareSigns(mu_max, C1) && compareSigns(mu_max, C2))
+	//	{
+	//		return {
+	//			C1 / mu_max,
+	//			C2 / mu_max,
+	//			0.0f
+	//		};
+	//	}
+	//	else
+	//	{
+	//		simplex = { simplex[0] };
+	//		return {
+	//			1.0f,
+	//			0.0f,
+	//			0.0f
+	//		};
+	//	}
+	//}
+
+	//float weightedDistance(const std::array<float, 3>& coeff, const Simplex& simplex)
+	//{
+	//	vec2 weightedSum = vec2::zero; // Initialize the weighted sum as a 2D vector
+	//	for (size_t i = 0; i < simplex.size(); ++i) {
+	//		weightedSum += coeff[i] * simplex[i].w; // Accumulate weighted points
+	//	}
+	//	return weightedSum.magnitude(); // Return the magnitude of the weighted sum
+	//}
+
+	//std::array<float, 3> S2D(Simplex& simplex)
+	//{
+	//	const vec2& s1 = simplex[0].w;
+	//	const vec2& s2 = simplex[1].w;
+	//	const vec2& s3 = simplex[2].w;
+
+	//	// no need to calculate p0 (projection of origin onto plane), as the origin will lie in the same plane as these points
+
+	//	// Find signed area
+	//	// Normally we reduce to the dimension with the largest absolute value, but since
+	//	// we are already in 2D, our vectors don't have a 3rd component to reduce,
+	//	// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
+	//	// the signed area of the triangle remains the same in 2D
+	//	float mu_max = s2.x * s3.y +
+	//		s1.x * s2.y +
+	//		s3.x * s1.y -
+	//		s2.x * s1.y -
+	//		s3.x * s2.y -
+	//		s1.x * s3.y;
+
+	//	// Corresponds to the signed area of 2-simplex: (p0, s2, s3)
+	//	float C1 = s2.cross(s3);
+	//	// Corresponds to the signed area of 2-simplex: (p0, s1, s3)
+	//	float C2 = s1.cross(s3);
+	//	// Corresponds to the signed area of 2-simplex: (p0, s1, s2)
+	//	float C3 = s1.cross(s2);
+
+	//	bool cmp1 = compareSigns(mu_max, C1),
+	//		 cmp2 = compareSigns(mu_max, C2),
+	//		 cmp3 = compareSigns(mu_max, C3);
+
+	//	if (cmp1 && cmp2 && cmp3)
+	//	{
+	//		// encloses origin in 2D
+	//		return {
+	//			C1 / mu_max,
+	//			C2 / mu_max,
+	//			C3 / mu_max
+	//		};
+	//	}
+	//	
+	//	float d = FLT_MAX; // minimum distance to origin
+	//	std::array<float, 3> l = { 1.0f, 0.0f, 0.0f }; // default to s1
+	//	if (!cmp2)
+	//	{
+	//		// s2 appears to be non-contributing, so we check the reduced simplex { s1. s3 }
+	//		simplex = { simplex[0], simplex[2] };
+	//		auto ls = S1D(simplex);
+	//		float ds = weightedDistance(ls, simplex);
+	//		if (d < ds)
+	//		{
+	//			l = ls;
+	//			d = ds;
+	//		}
+	//	}
+	//	
+	//	if (!cmp3)
+	//	{
+	//		// s3 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+	//		simplex = { simplex[0], simplex[1] };
+	//		auto ls = S1D(simplex);
+	//		float ds = weightedDistance(ls, simplex);
+	//		if (d < ds)
+	//		{
+	//			l = ls;
+	//			d = ds;
+	//		}
+	//	}
+	//	
+	//	if (!cmp1)
+	//	{
+	//		// s1 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+	//		// Unlikely to reach here, as s1 is meant to be the latest point towards the origin
+	//		simplex = { simplex[1], simplex[2] };
+	//		auto ls = S1D(simplex);
+	//		float ds = weightedDistance(ls, simplex);
+	//		if (d < ds)
+	//		{
+	//			l = ls;
+	//			d = ds;
+	//		}
+	//	}
+
+	//	return l;
+	//}
+#pragma endregion
+
+	GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex)
 	{
-		
+
 	}
-
-	std::pair<vec2, vec2> solve3S(Simplex& outSimplex)
-	{
-
-	}
-
-	std::pair<vec2, vec2> getWitnessPoints(Simplex& outSimplex, vec2& p)
-	{
-		switch (outSimplex.size())
-		{
-		case 1:
-			return { outSimplex[0].a, outSimplex[0].b };
-		}
-	}
-
-	
-	GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex)
-	{
-		GJKresult result{ false, 0, vec2::zero, vec2::zero };
-		vec2 dir = inPrimary.position - inTarget.position;		
-		Mvert w = GetSupportVertex(inPrimary, inTarget, dir);
-		outSimplex.push_front(w);
-		
-		
-		Simplex bestSimplex; vec2 p; vec2 bestP; float bestSupportDiff = 0.0f;
-
-		for (int itr = 0; itr < commons::GJK_ITERATIONS; itr++)
-		{
-			switch (outSimplex.size())
-			{
-			case 1:
-				p = outSimplex[0].w;
-				dir = -p;
-				break;
-			case 2:
-				auto [p, dir] = solve2S(outSimplex);
-				break;
-			case 3:
-				auto [p, dir] = solve3S(outSimplex);
-				break;
-			}
-
-			if (p.sqrMagnitude() < commons::HEPSILON)
-			{
-				result.intersecting = true;
-				return result;
-			}
-
-			Mvert w = GetSupportVertex(inPrimary, inTarget, dir);
-			
-			if (p.dot(dir) >= (w.w.dot(dir) - commons::HEPSILON))
-			{
-				auto [zA, zB] = getWitnessPoints(outSimplex, p);
-				result.zA = zA; result.zB = zB;
-				return result;
-			}
-			float supportDiff = (w.w.dot(dir) - p.dot(dir));
-			if (supportDiff > bestSupportDiff)
-			{
-				bestSupportDiff = supportDiff;
-				bestSimplex = outSimplex;
-				bestP = p;
-			}
-
-			outSimplex.push_front(w);
-		}
-
-		auto [zA, zB] = getWitnessPoints(bestSimplex, bestP);
-		result.zA = zA; result.zB = zB;
-		outSimplex = bestSimplex;
-		return result;
-	}*/
-	
-	
 }

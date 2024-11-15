@@ -52,6 +52,11 @@ namespace chiori
 			return *this;
 		}
 
+		void resize(unsigned size)
+		{
+			s_size = min(size, N);
+		}
+
 		void push_front(Mvert point)
 		{
 			s_points = { point, s_points[0], s_points[1] };

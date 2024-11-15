@@ -28,20 +28,44 @@ namespace chiori
 
     struct GJKresult
     {
-        bool intersecting; // if the two shapes are intersecting
-        float distance; // Zero if in contact or intersecting
-        vec2 zA; // closest point on primary object
-        vec2 zB; // closest point on target object
+        float distance; // distance between objs (0 if intersecting)
+		vec2 z1; // closest point on primary object (witness point on obj 1)
+        vec2 z2; // closest point on target object (witness point on obj 2)
     };
-    
-    inline Mvert GetSupportVertex(const GJKobject& inA, const GJKobject& inB, const vec2& inDir)
+
+    struct CollisionConfig
+    {
+        int max_iterations;
+        int tolerance;
+        int flags; // 1st bit = get contacts, 2nd bit = get distance
+    };
+
+    struct CollisionStatus
+    {
+        vec2 z1;
+        vec2 z2;
+        
+        int max_iterations;
+        float tolerance;
+        int flags;  // 1st bit = get contacts, 2nd bit = get distance
+        
+        int gjk_iterations;
+		int epa_iterations;
+
+		Simplex simplex;
+    };
+
+    static inline Mvert GetSupportVertex(const GJKobject& inA, const GJKobject& inB, const vec2& inDir)
     {
         return Mvert{ inA.getSupportPoint(inDir), inB.getSupportPoint(-inDir) };
     }
 	
-    GJKresult GJKExtended(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit = false);
+    GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit = false);
 
+    GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
 
+    
+    
 	/*
 	
 	float epsilon = 0.0001f; // Precision threshold
