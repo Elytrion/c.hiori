@@ -37,18 +37,20 @@ namespace chiori
 				
 				GJKobject gjkA{ a.getVertices(), a.getPosition() };
 				GJKobject gjkB{ b.getVertices(), b.getPosition() };
-				Simplex s;
-				CollisionStatus cs;
-				cs.tolerance = commons::LEPSILON;
-				cs.max_iterations = 16;
-				cs.flags = 1;
-					
-				GJKresult result = GJK(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
-				//float dist = GJK(gjkA, gjkB, cs);
+				//Simplex s;
+				//CollisionStatus cs;
+				//cs.tolerance = commons::LEPSILON;
+				//cs.max_iterations = 16;
+				//cs.flags = 1;
+				//GJKresult result = GJK(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
+				////float dist = GJK(gjkA, gjkB, cs);
+
+				GJKresult result = CollisionDetection(gjkA, gjkB);
 
 				if (CP_Input_MouseDown(MOUSE_BUTTON_2))
 				{
-					std::cout << result.distance << std::endl;
+					float dist_to_use = (result.distance <= commons::EPSILON) ? result.intersection_distance : result.distance;
+					std::cout << dist_to_use << std::endl;
 				}
 
 				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));

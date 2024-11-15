@@ -96,4 +96,14 @@ namespace chiori
 	};
 
 	using Simplex = NSimplex<3>; // we are working in 2D, so the simplex max size is dimension + 1 -> 2 + 1 -> 3
+
+	struct Edge
+	{
+		// default constructor
+		Edge() : distance{ 0.0f }, normal{ vec2::zero }, index{ 0 } {}
+
+		float distance;     // The distance of the edge from the origin
+		vec2 normal;		// The normal of the edge
+		int index;          // The index of the edge (the index of the second vertex that makes up the edge in the polytope)
+	};
 }

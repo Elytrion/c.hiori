@@ -31,6 +31,10 @@ namespace chiori
         float distance; // distance between objs (0 if intersecting)
 		vec2 z1; // closest point on primary object (witness point on obj 1)
         vec2 z2; // closest point on target object (witness point on obj 2)
+        vec2 normal; // normal of the collision
+        float intersection_distance; // if distance <= 0, this will be the intersection distance
+        vec2 c1[2]; // the contributing points on the primary geometry
+		vec2 c2[2]; // the contributing points on the target geometry
     };
 
     struct CollisionConfig
@@ -60,11 +64,11 @@ namespace chiori
         return Mvert{ inA.getSupportPoint(inDir), inB.getSupportPoint(-inDir) };
     }
 	
-    GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, boolean debugSpit = false);
+    GJKresult GJK(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
 
-    GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex);
+    GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, GJKresult& inResult);
 
-    
+    GJKresult CollisionDetection(const GJKobject& inPrimary, const GJKobject& inTarget);
     
 	/*
 	
