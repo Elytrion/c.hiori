@@ -202,7 +202,7 @@ namespace chiori
 			previousPoints.push_back(w);
 			outSimplex.push_front(w);
 			
-			std::vector<float> lambdas = signedVolumeDistanceSubalgorithm(outSimplex, debugSpit);
+			std::vector<float> lambdas = signedVolumeDistanceSubalgorithm(outSimplex);
 
 			//We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
@@ -309,9 +309,7 @@ namespace chiori
 		}
 		result.normal = closestEdge.normal;
 		result.intersection_distance = -supportDist;
-		int cw[2];
 		ComputeWitnessPoints(polytope, closestEdge, result.z1, result.z2);
-
 		return result;
 	}
 
@@ -319,12 +317,10 @@ namespace chiori
 	{
 		Simplex s;
 		GJKresult result = GJK(inPrimary, inTarget, s);
-
 		if (result.distance <= commons::EPSILON && s.size() > 1)
 		{
 			result = EPA(inPrimary, inTarget, s, result);
 		}
-		
 		return result;
 	}
 }

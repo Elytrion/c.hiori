@@ -57,7 +57,15 @@ namespace chiori
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				CP_Graphics_DrawCircle(result.z1.x, result.z1.y, 8);
 				CP_Graphics_DrawCircle(result.z2.x, result.z2.y, 8);
+				CP_Settings_StrokeWeight(2);
+				CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
+				// get normal line
+				vec2 normal = result.normal;
+				vec2 nxtVert = result.z1 + normal * 100;
+				CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
+
+				
 				
 			}
 		}

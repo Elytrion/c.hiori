@@ -33,8 +33,6 @@ namespace chiori
         vec2 z2; // closest point on target object (witness point on obj 2)
         vec2 normal; // normal of the collision
         float intersection_distance; // if distance <= 0, this will be the intersection distance
-        vec2 c1[2]; // the contributing points on the primary geometry
-		vec2 c2[2]; // the contributing points on the target geometry
     };
 
     struct CollisionConfig
