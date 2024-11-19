@@ -6,24 +6,16 @@ namespace chiori
 {
 	class GJKobject // abstracts any point cloud into something that can be used by the algorithm
 	{
+    using SupportFunction = std::function<vec2(const vec2&)>;
 	public:
-		std::vector<vec2> vertices;
+        SupportFunction supportFunc;
 		vec2 position;
         vec2 velocity = vec2::zero; // optional
 
-        GJKobject(const std::vector<vec2>& vertices, const vec2& position)
-            : vertices{ vertices }, position{ position } {}
+        GJKobject(const vec2& pos, const SupportFunction& supFunc)
+            : position{ pos }, supportFunc{ supFunc } { supportFunc = supFunc; }
 
-		vec2 getSupportPoint(const vec2& inDir) const;
-
-        friend std::ostream& operator<<(std::ostream& inOS, const GJKobject& inObj)
-        {
-			inOS << "ObjPosition: " << inObj.position << std::endl;
-			inOS << "Vertices: " << std::endl;
-			for (const vec2& v : inObj.vertices)
-				inOS << v << std::endl;        
-            return inOS;
-        }
+        inline vec2 getSupportPoint(const vec2& inDir) const { return supportFunc(inDir); }
 	};
 
     struct GJKresult
@@ -33,6 +25,8 @@ namespace chiori
         vec2 z2; // closest point on target object (witness point on obj 2)
         vec2 normal; // normal of the collision
         float intersection_distance; // if distance <= 0, this will be the intersection distance
+        vec2 c1[2]; // contributing edge/vertex on primary shape
+		vec2 c2[2]; // contributing edge/vertex on target shape
     };
 
     struct CollisionConfig

@@ -85,5 +85,22 @@ namespace chiori
 		bool operator==(const cActor& inRHS) const {
 			return this == &inRHS;
 		}
+
+		inline vec2 getSupportPoint(const vec2& inDir)
+		{
+			vec2 result = baseVertices[0];
+			float maxDot = result.dot(inDir);
+			for (int i = 1; i < baseVertices.size(); i++)
+			{
+				vec2 vertex = baseVertices[i];
+				float dot = vertex.dot(inDir);
+				if (dot > maxDot)
+				{
+					maxDot = dot;
+					result = baseVertices[i];
+				}
+			}
+			return result + position;
+		}
 	};
 }

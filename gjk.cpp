@@ -6,24 +6,6 @@
 namespace chiori
 {
 	bool floatEqual(float a, float b) { return std::abs(a - b) < commons::HEPSILON; }
-	
-	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
-	{
-		vec2 result = vertices[0];
-		float maxDot = result.dot(inDir);
-
-		for (int i = 1; i < vertices.size(); i++)
-		{
-			float dot = vertices[i].dot(inDir);
-			if (dot > maxDot)
-			{
-				maxDot = dot;
-				result = vertices[i];
-			}
-		}
-		return result;
-	}
-
 	bool compareSigns(float a, float b)
 	{
 		return (a > 0 && b > 0) || (a < 0 && b < 0);
@@ -272,7 +254,7 @@ namespace chiori
 		return closest;
 	}
 	
-	void ComputeWitnessPoints(const std::vector<Mvert>& polytope, const Edge& closestEdge, vec2& witnessA, vec2& witnessB)
+	void ComputeWitnessPoints(const std::vector<Mvert>& polytope, const Edge& closestEdge, vec2& witnessA, vec2& witnessB, vec2(&c1)[2], vec2(&c2)[2])
 	{
 		int I = closestEdge.index;
 		const Mvert& v1 = polytope[(I - 1 + polytope.size()) % polytope.size()];
@@ -287,6 +269,14 @@ namespace chiori
 		// Interpolate witness points
 		witnessA = lambda1 * v1.a + lambda2 * v2.a;
 		witnessB = lambda1 * v1.b + lambda2 * v2.b;
+
+		if (lambda1 > commons::EPSILON && lambda2 > commons::EPSILON)
+			return;
+
+		c1[0] = v1.a;
+		c2[0] = v1.b;
+		c1[1] = v2.a;
+		c2[1] = v2.b;
 	}
 
 	GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, GJKresult& result)
@@ -309,9 +299,11 @@ namespace chiori
 		}
 		result.normal = closestEdge.normal;
 		result.intersection_distance = -supportDist;
-		ComputeWitnessPoints(polytope, closestEdge, result.z1, result.z2);
+		ComputeWitnessPoints(polytope, closestEdge, result.z1, result.z2, result.c1, result.c2);
 		return result;
 	}
+
+	
 
 	GJKresult CollisionDetection(const GJKobject& inPrimary, const GJKobject& inTarget)
 	{
