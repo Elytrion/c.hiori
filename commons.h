@@ -10,6 +10,6 @@ namespace chiori
 		constexpr float PI = 3.14159265f;
 		constexpr float DEG2RAD = PI / 180.0f;
 		constexpr float RAD2DEG = 180.0f / PI; 
-		inline int GJK_ITERATIONS = 12;
+		inline int GJK_ITERATIONS = 24;
 	}
 }

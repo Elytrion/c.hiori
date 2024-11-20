@@ -10,12 +10,14 @@ namespace chiori
 	public:
         SupportFunction supportFunc;
 		vec2 position;
+        float rotation;
         vec2 velocity = vec2::zero; // optional
+        float angularVelocity; // optional
 
-        GJKobject(const vec2& pos, const SupportFunction& supFunc)
-            : position{ pos }, supportFunc{ supFunc } { supportFunc = supFunc; }
+        GJKobject(const vec2& pos, float rot, const SupportFunction& supFunc)
+            : position{ pos }, rotation{ rot } { supportFunc = supFunc; }
 
-        inline vec2 getSupportPoint(const vec2& inDir) const { return supportFunc(inDir); }
+        vec2 getSupportPoint(const vec2& inDir) const;
 	};
 
     struct GJKresult

@@ -97,10 +97,10 @@ namespace chiori
 				if (dot > maxDot)
 				{
 					maxDot = dot;
-					result = baseVertices[i];
+					result = vertex;
 				}
 			}
-			return result + position;
+			return result;
 		}
 	};
 }

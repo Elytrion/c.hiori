@@ -74,8 +74,8 @@ namespace chiori
 				
 				cActor& a = actors[i];
 				cActor& b = actors[j];
-				GJKobject gjkA{ a.getPosition(), [&](const vec2& inDir) { return a.getSupportPoint(inDir); } };
-				GJKobject gjkB{ b.getPosition(), [&](const vec2& inDir) { return b.getSupportPoint(inDir); } };
+				GJKobject gjkA{ a.getPosition(), a.getRotation(), [&](const vec2& inDir) { return a.getSupportPoint(inDir); } };
+				GJKobject gjkB{ b.getPosition(), b.getRotation(), [&](const vec2& inDir) { return b.getSupportPoint(inDir); } };
 				//Simplex s;
 				//CollisionStatus cs;
 				//cs.tolerance = commons::LEPSILON;
@@ -85,12 +85,6 @@ namespace chiori
 				////float dist = GJK(gjkA, gjkB, cs);
 
 				GJKresult result = CollisionDetection(gjkA, gjkB);
-
-				if (CP_Input_MouseDown(MOUSE_BUTTON_2))
-				{
-					float dist_to_use = (result.distance <= commons::EPSILON) ? result.intersection_distance : result.distance;
-					std::cout << dist_to_use << std::endl;
-				}
 
 				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
@@ -103,7 +97,7 @@ namespace chiori
 				vec2 nxtVert = result.z1 + normal * 100;
 				CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));	
-				HandleDegenerateFace(result, a, b);
+				//HandleDegenerateFace(result, a, b);
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				for (vec2& c : result.c1)
 				{

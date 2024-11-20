@@ -99,8 +99,8 @@ namespace chiori
 
 	struct Edge
 	{
-		// default constructor
 		Edge() : distance{ 0.0f }, normal{ vec2::zero }, index{ 0 } {}
+		Edge(float d, const vec2& n, int i) : distance{ d }, normal{ n }, index{ i } {}
 
 		float distance;     // The distance of the edge from the origin
 		vec2 normal;		// The normal of the edge

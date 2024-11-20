@@ -137,7 +137,7 @@ void InitPhysics()
     
     CreateRectActor(100, 100, middle);
 	CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });
-    //CreateRandomizedActor(5, 50, middle);
+   // CreateRandomizedActor(5, 50, middle);
     //CreateRandomizedActor(5, 50, vec2{ middle.x, middle.y + 150 });
     // // create floor
 	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
@@ -188,6 +188,11 @@ void HandleInput(CP_Vector mousePos)
     if (isHolding && selectedActor)
     {
         selectedActor->setPosition(vec2{ mousePos.x, mousePos.y });
+    }
+
+    if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding)
+    {
+        selectedActor->setRotation(selectedActor->getRotation() + 15 * CP_System_GetDt());
     }
     
     if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
