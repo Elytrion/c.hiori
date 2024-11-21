@@ -99,15 +99,24 @@ namespace chiori
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));	
 				//HandleDegenerateFace(result, a, b);
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-				for (vec2& c : result.c1)
-				{
-					CP_Graphics_DrawCircle(c.x, c.y, 8);
-				}
 
-				for (vec2& c : result.c2)
+				for (const Mvert& w : result.s)
 				{
-					CP_Graphics_DrawCircle(c.x, c.y, 8);
+					vec2 a = w.a;
+					vec2 b = w.b;
+					CP_Graphics_DrawCircle(a.x, a.y, 8);
+					CP_Graphics_DrawCircle(b.x, b.y, 8);
 				}
+				
+				//for (vec2& c : result.c1)
+				//{
+				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
+				//}
+
+				//for (vec2& c : result.c2)
+				//{
+				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
+				//}
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 				
 			}

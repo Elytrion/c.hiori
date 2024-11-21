@@ -12,22 +12,23 @@ namespace chiori
 
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
-		float rad = rotation * commons::DEG2RAD;
-		float cos_t = cos(-rad);
-		float sin_t = sin(-rad);
-		vec2 localDir = {
-			inDir.x * cos_t - inDir.y * sin_t,
-			inDir.x * sin_t + inDir.y * cos_t
-		};
+		vec2 localDir = inDir.rotated(-rotation);
+		//float rad = rotation * commons::DEG2RAD;
+		//float cos_t = cos(-rad);
+		//float sin_t = sin(-rad);
+		//vec2 localDir = {
+		//	inDir.x * cos_t - inDir.y * sin_t,
+		//	inDir.x * sin_t + inDir.y * cos_t
+		//};
 
 		vec2 l_w = supportFunc(localDir);
-
-		cos_t = cos(rad);
-		sin_t = sin(rad);
-		vec2 w = {
-			l_w.x * cos_t - l_w.y * sin_t,
-			l_w.x * sin_t + l_w.y * cos_t
-		};
+		vec2 w = l_w.rotated(rotation);
+		//cos_t = cos(rad);
+		//sin_t = sin(rad);
+		//vec2 w = {
+		//	l_w.x * cos_t - l_w.y * sin_t,
+		//	l_w.x * sin_t + l_w.y * cos_t
+		//};
 		return w + position;
 	}
 	
@@ -218,7 +219,7 @@ namespace chiori
 			}
 
 				
-			if (outSimplex.size() >= 3) // Termination condition B
+			if (outSimplex.size() >= 3)
 				break;
 
 			float max_norm = 1.0f;
@@ -290,44 +291,10 @@ namespace chiori
 		witnessA = lambda1 * v1.a + lambda2 * v2.a;
 		witnessB = lambda1 * v1.b + lambda2 * v2.b;
 
-		//if (lambda1 > commons::EPSILON && lambda2 > commons::EPSILON)
-		//	return;
-
 		c1[0] = v1.a;
 		c1[1] = v2.a;
 		c2[0] = v1.b;
 		c2[1] = v2.b;
-		std::cout << "Lambda 1: " << lambda1 << std::endl;
-		std::cout << "Lambda 2: " << lambda2 << std::endl;
-		if (c1[0] == c1[1])
-		{
-			// shape A has a degenerate edge, this could either be
-			// 1. this is vertex to edge case (vertex A, edge B)
-			// 2. the faces are head on, leading to one of the lambdas becoming zero
-
-			if (lambda1 <= commons::EPSILON)
-			{
-				// face collision
-			}
-
-			if (lambda2 <= commons::EPSILON)
-			{
-
-			}
-		}
-
-		if (c2[0] == c2[1])
-		{
-			if (lambda1 <= commons::EPSILON)
-			{
-				// face collision
-			}
-
-			if (lambda2 <= commons::EPSILON)
-			{
-
-			}
-		}
 	}
 
 	GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, GJKresult& result)
@@ -354,12 +321,11 @@ namespace chiori
 		return result;
 	}
 
-	
-
 	GJKresult CollisionDetection(const GJKobject& inPrimary, const GJKobject& inTarget)
 	{
 		Simplex s;
 		GJKresult result = GJK(inPrimary, inTarget, s);
+		result.s = s;
 		if (result.distance <= commons::EPSILON && s.size() > 1)
 		{
 			result = EPA(inPrimary, inTarget, s, result);

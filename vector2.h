@@ -84,15 +84,15 @@ namespace chiori
 		vec2 rotated(float inDegrees) const
 		{
 			float rad = inDegrees * commons::DEG2RAD;
-			float cosTheta = std::cos(rad);
-			float sinTheta = std::sin(rad);
+			float cosTheta = cos(rad);
+			float sinTheta = sin(rad);
 			return vec2(x * cosTheta - y * sinTheta, x * sinTheta + y * cosTheta);
 		}
 		vec2& rotate(float inDegrees)
 		{
 			float rad = inDegrees * commons::DEG2RAD;
-			float cosTheta = std::cos(rad);
-			float sinTheta = std::sin(rad);
+			float cosTheta = cos(rad);
+			float sinTheta = sin(rad);
 			float nx = x * cosTheta - y * sinTheta; 
 			float ny = x * sinTheta + y * cosTheta;
 			x = nx; y = ny;
