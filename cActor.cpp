@@ -18,8 +18,8 @@ namespace chiori
 		
 		for (int i = 0; i < n; i++) // we calculate all the MOI for all the triangles in the convex shape
 		{
-			const vec2& a = baseVertices[i] * scale.x;
-			const vec2& b = baseVertices[(i + 1) % n] * scale.y;
+			const vec2& a = (baseVertices[i] * scale.x) - com;
+			const vec2& b = (baseVertices[(i + 1) % n] * scale.y) - com;
 			
 			// Compute step values
 			float area_step = a.cross(b) / 2.0f;
