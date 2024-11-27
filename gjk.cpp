@@ -12,7 +12,7 @@ namespace chiori
 
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
-		vec2 localDir = inDir.rotated(-rotation);
+		vec2 localDir = inDir.rotated(-rotation * commons::RAD2DEG);
 		//float rad = rotation * commons::DEG2RAD;
 		//float cos_t = cos(-rad);
 		//float sin_t = sin(-rad);
@@ -22,7 +22,7 @@ namespace chiori
 		//};
 
 		vec2 l_w = supportFunc(localDir);
-		vec2 w = l_w.rotated(rotation);
+		vec2 w = l_w.rotated(rotation * commons::RAD2DEG);
 		//cos_t = cos(rad);
 		//sin_t = sin(rad);
 		//vec2 w = {

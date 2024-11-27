@@ -58,12 +58,14 @@ namespace chiori
 
 	void PhysicsWorld::simulate(float inDT)
 	{
-		//for (cActor& a : actors)
-		//{
-		//	if (a.getFlags().isSet(cActor::IS_STATIC))
-		//		continue;
-		//	a.integrate(gravity, inDT);
-		//}
+		for (cActor& a : actors)
+		{
+			if (a.getFlags().isSet(cActor::USE_GRAVITY))
+			{
+				a.addForce(gravity);
+			}
+			a.integrate(inDT);
+		}
 
 		for (int i = 0; i < actors.size(); i++)
 		{
@@ -76,16 +78,9 @@ namespace chiori
 				cActor& b = actors[j];
 				GJKobject gjkA{ a.getPosition(), a.getRotation(), [&](const vec2& inDir) { return a.getSupportPoint(inDir); } };
 				GJKobject gjkB{ b.getPosition(), b.getRotation(), [&](const vec2& inDir) { return b.getSupportPoint(inDir); } };
-				//Simplex s;
-				//CollisionStatus cs;
-				//cs.tolerance = commons::LEPSILON;
-				//cs.max_iterations = 16;
-				//cs.flags = 1;
-				//GJKresult result = GJK(gjkA, gjkB, s, CP_Input_KeyTriggered(CP_KEY::KEY_Y));
-				////float dist = GJK(gjkA, gjkB, cs);
 
 				GJKresult result = CollisionDetection(gjkA, gjkB);
-
+				//HandleDegenerateFace(result, a, b);
 				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				CP_Graphics_DrawCircle(result.z1.x, result.z1.y, 8);
@@ -96,7 +91,7 @@ namespace chiori
 				vec2 normal = result.normal;
 				vec2 nxtVert = result.z1 + normal * 100;
 				CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
-				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));	
+				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 				//HandleDegenerateFace(result, a, b);
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 
@@ -107,7 +102,7 @@ namespace chiori
 					CP_Graphics_DrawCircle(a.x, a.y, 8);
 					CP_Graphics_DrawCircle(b.x, b.y, 8);
 				}
-				
+
 				//for (vec2& c : result.c1)
 				//{
 				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
@@ -118,7 +113,6 @@ namespace chiori
 				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
 				//}
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
-				
 			}
 		}
 	}

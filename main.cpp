@@ -88,6 +88,7 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 	cActor& newActor = world.AddActor(vertices);
     newActor.setMass(10);
     newActor.setPosition(centrePos);
+    newActor.toggleGravity();
 	if (isStatic)
 		newActor.setFlags(cActor::IS_STATIC);
 }
@@ -190,9 +191,14 @@ void HandleInput(CP_Vector mousePos)
         selectedActor->setPosition(vec2{ mousePos.x, mousePos.y });
     }
 
-    if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding)
+    if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding && selectedActor)
     {
-        selectedActor->setRotation(selectedActor->getRotation() + 15 * CP_System_GetDt());
+        selectedActor->setRotation(selectedActor->getRotation() + 35 * commons::DEG2RAD * CP_System_GetDt());
+    }
+
+    if (CP_Input_KeyTriggered(KEY_K) && isHolding && selectedActor)
+    {
+        selectedActor->addTorque(100.0f);
     }
     
     if (CP_Input_MouseReleased(MOUSE_BUTTON_1))

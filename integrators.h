@@ -5,26 +5,44 @@ namespace chiori
 {
 	namespace Integrators
 	{
-		inline void ExplicitEuler(vec2& pos, vec2& prePos, vec2& vel, const vec2& forces, float dt)
+		struct IntegratorInput
 		{
-			(void)prePos;
-			pos += vel * dt;
-			vel += forces * dt;
+			vec2* pos;
+			vec2* prePos;
+			vec2* vel;
+			vec2 forces;
+			float* rot;
+			float* prevRot;
+			float* rotVel;
+			float mass;
+			float dt;
+		};
+
+		inline void ExplicitEuler(IntegratorInput i)
+		{
+			// Update velocity using the force and mass (Newton's second law)
+			*i.vel += (i.forces / i.mass) * i.dt;
+			// Update position using the velocity
+			*i.pos += *i.vel * i.dt;
+			// Update rotation using angular velocity
+			*i.rot += (*i.rotVel) * i.dt;
 		}
 
-		inline void Verlet(vec2& pos, vec2& prePos, vec2& vel, const vec2& forces, float dt)
+		inline void Verlet(IntegratorInput i)
 		{
-			vec2 newPos = pos * 2 - prePos + forces * dt * dt;
-			prePos = pos;
-			pos = newPos;
-			vel = pos - prePos;
+
 		}
 
-		inline void ImplictEuler(vec2& pos, vec2& prePos, vec2& vel, const vec2& forces, float dt)
+		inline void ImplictEuler(IntegratorInput i)
 		{
-			(void)prePos;
-			vel += forces * dt;
-			pos += vel * dt;
+			// Update velocity using the force and mass (Newton's second law)
+			vec2 newVel = *i.vel + (i.forces / i.mass) * i.dt;
+			// Update position using the new velocity
+			*i.pos += newVel * i.dt;
+			// Update rotation using angular velocity
+			*i.rot += (*i.rotVel) * i.dt;
+			// Finally, assign the new velocity back to vel
+			*i.vel = newVel;
 		}
 	}
 }
