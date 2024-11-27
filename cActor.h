@@ -23,6 +23,13 @@ namespace chiori
 		Flag_8 _flags = SIMULATED | SCENE_QUERYABLE | USE_GRAVITY;
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
+		float invInertia{ 0.0f };
+		float invMass{ 0.0f };
+		vec2 comOffset{ vec2::zero }; // center of mass offset from position
+		float prevRotation{ 0.0f };		// stored in radians
+		vec2 prevPosition{ vec2::zero };
+		void init(); // intialization of one time values like inertia
+		void CalculateInverseInertia();
 
 	public:
 		cActor(){}
@@ -31,17 +38,18 @@ namespace chiori
 			position(inPosition),
 			scale(inScale),
 			rotation(inRotation)
-		{}
+		{
+			init();
+		}
 		
 		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it
 		vec2 position{ vec2::zero };
-		vec2 prevPosition{ vec2::zero };
 		vec2 scale { vec2::one };
 		float rotation{ 0.0f };			// stored in radians
-		float prevRotation{ 0.0f };		// stored in radians
 		float mass{ 1.0f };
 		vec2 velocity{ vec2::zero };
 		float angularVelocity{ 0.0f };
+
 
 		#pragma region Get/Setters
 		const std::vector<vec2>& getBaseVertices() const { return baseVertices; }
@@ -79,13 +87,17 @@ namespace chiori
 		const float getPrevRotation() const { return prevRotation; }
 		void setPrevRotation(float inPrevRotation) { prevRotation = inPrevRotation; }
 		const float getMass() const { return mass; }
-		void setMass(float inMass) { mass = inMass; }
+		void setMass(float inMass) { mass = inMass; invMass = 1.0f / inMass; }
 		const vec2& getVelocity() const { return velocity; }
 		void setVelocity(const vec2& inVelocity) { velocity = inVelocity; }
 		Flag_8 getFlags() const { return _flags; }
 		void setFlags(Flag_8 inFlags);
 		void setFlags(int inFlags);
+		const vec2& getCOMOffset() { return comOffset; }
+		void setCOMOffset(const vec2& inOffset) { comOffset = inOffset; CalculateInverseInertia(); }
+		float getInvInertia() const { return invInertia; }
 		#pragma endregion
+		
 		void toggleGravity() { _flags.toggle(USE_GRAVITY); }
 		void integrate(float dt);
 		void addForce(const vec2& inForce);

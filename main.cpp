@@ -198,7 +198,7 @@ void HandleInput(CP_Vector mousePos)
 
     if (CP_Input_KeyTriggered(KEY_K) && isHolding && selectedActor)
     {
-        selectedActor->addTorque(100.0f);
+        selectedActor->addTorque(5000.0f);
     }
     
     if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
