@@ -28,7 +28,6 @@ namespace chiori
 		vec2 comOffset{ vec2::zero }; // center of mass offset from position
 		float prevRotation{ 0.0f };		// stored in radians
 		vec2 prevPosition{ vec2::zero };
-		void init(); // intialization of one time values like inertia
 		void CalculateInverseInertia();
 
 	public:
@@ -39,17 +38,16 @@ namespace chiori
 			scale(inScale),
 			rotation(inRotation)
 		{
-			init();
+			CalculateInverseInertia();
 		}
 		
-		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it
+		std::vector<vec2> baseVertices; // does not have any pos, scale or rotation applied to it, use GetVertices() to get the transformed vertices
 		vec2 position{ vec2::zero };
 		vec2 scale { vec2::one };
 		float rotation{ 0.0f };			// stored in radians
 		float mass{ 1.0f };
 		vec2 velocity{ vec2::zero };
-		float angularVelocity{ 0.0f };
-
+		float angularVelocity{ 0.0f };  // measured in radians
 
 		#pragma region Get/Setters
 		const std::vector<vec2>& getBaseVertices() const { return baseVertices; }
@@ -98,7 +96,6 @@ namespace chiori
 		float getInvInertia() const { return invInertia; }
 		#pragma endregion
 		
-		void toggleGravity() { _flags.toggle(USE_GRAVITY); }
 		void integrate(float dt);
 		void addForce(const vec2& inForce);
 		void addTorque(float inTorque);

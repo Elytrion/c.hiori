@@ -6,6 +6,7 @@
 #include "cActor.h"
 #include "cprocessing.h"
 #include "physicsWorld.h"
+#include "aabbtree.h"
 
 using namespace chiori;
 PhysicsWorld world; // create an instance of the physics world
@@ -88,7 +89,9 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 	cActor& newActor = world.AddActor(vertices);
     newActor.setMass(10);
     newActor.setPosition(centrePos);
-    newActor.toggleGravity();
+    auto f = newActor.getFlags();
+    f.toggle(cActor::USE_GRAVITY);
+    newActor.setFlags(f);
 	if (isStatic)
 		newActor.setFlags(cActor::IS_STATIC);
 }
@@ -152,6 +155,8 @@ void game_init(void)
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
 	InitPhysics();
+    
+    DynamicTree t;
 }
 
 void UpdatePhysics()

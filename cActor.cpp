@@ -3,11 +3,6 @@
 
 namespace chiori
 {
-	void cActor::init()
-	{
-		CalculateInverseInertia();
-	}
-	
 	void cActor::CalculateInverseInertia() // https://stackoverflow.com/questions/31106438/calculate-moment-of-inertia-given-an-arbitrary-convex-2d-polygon
 	{
 		float area = 0.0f;

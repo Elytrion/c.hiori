@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+#include <cmath>
 
 namespace chiori
 {
@@ -117,5 +117,15 @@ namespace chiori
 		static const vec2 right;
 		static const vec2 up;
 		static const vec2 down;
+
+		static vec2 vmin(const vec2& a, const vec2& b)
+		{
+			return { min(a.x, b.x), min(a.y,b.y) };
+		}
+
+		static vec2 vmax(const vec2& a, const vec2& b)
+		{
+			return { max(a.x, b.x), max(a.y,b.y) };
+		}
 	};
 }

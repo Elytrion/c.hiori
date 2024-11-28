@@ -199,6 +199,8 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="aabbtree.cpp" />
+    <ClCompile Include="broadphase.cpp" />
     <ClCompile Include="cActor.cpp" />
     <ClCompile Include="gjk.cpp" />
     <ClCompile Include="main.cpp">
@@ -220,6 +222,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
   <ItemGroup>
     <ClInclude Include="aabb.h" />
     <ClInclude Include="aabbtree.h" />
+    <ClInclude Include="broadphase.h" />
     <ClInclude Include="cActor.h" />
     <ClInclude Include="commons.h" />
     <ClInclude Include="flag.h" />
