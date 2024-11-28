@@ -58,13 +58,13 @@ namespace chiori
 
 	void PhysicsWorld::simulate(float inDT)
 	{
-		for (cActor& a : actors)
+		for (cActor*& a : actors)
 		{
-			if (a.getFlags().isSet(cActor::USE_GRAVITY))
+			if (a->getFlags().isSet(cActor::USE_GRAVITY))
 			{
-				a.addForce(gravity);
+				a->addForce(gravity);
 			}
-			a.integrate(inDT);
+			a->integrate(inDT);
 		}
 
 		for (int i = 0; i < actors.size(); i++)
@@ -74,10 +74,10 @@ namespace chiori
 				if (i == j)
 					continue;
 				
-				cActor& a = actors[i];
-				cActor& b = actors[j];
-				GJKobject gjkA{ a.getPosition(), a.getRotation(), [&](const vec2& inDir) { return a.getSupportPoint(inDir); } };
-				GJKobject gjkB{ b.getPosition(), b.getRotation(), [&](const vec2& inDir) { return b.getSupportPoint(inDir); } };
+				cActor*& a = actors[i];
+				cActor*& b = actors[j];
+				GJKobject gjkA{ a->getPosition(), a->getRotation(), [&](const vec2& inDir) { return a->getSupportPoint(inDir); } };
+				GJKobject gjkB{ b->getPosition(), b->getRotation(), [&](const vec2& inDir) { return b->getSupportPoint(inDir); } };
 
 				GJKresult result = CollisionDetection(gjkA, gjkB);
 				//HandleDegenerateFace(result, a, b);
@@ -117,15 +117,23 @@ namespace chiori
 		}
 	}
 
-	cActor& PhysicsWorld::AddActor(const std::vector<vec2>& vertices)
+	cActor* PhysicsWorld::AddActor(const std::vector<vec2>& vertices)
 	{
-		actors.emplace_back(vertices);
-		return actors.back();
+		cActor* a = new cActor{ vertices };
+		actors.emplace_back(a);
+		return a;
 	}
 
-	void PhysicsWorld::RemoveActor(cActor& inActor)
+	void PhysicsWorld::RemoveActor(cActor* inActor)
 	{
 		actors.erase(std::remove(actors.begin(), actors.end(), inActor), actors.end());
 	}
 	
+	PhysicsWorld::~PhysicsWorld()
+	{
+		for (cActor*& a : actors)
+		{
+			delete a;
+		}
+	}
 }

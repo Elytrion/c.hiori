@@ -28,9 +28,9 @@ bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
     return distance < (radius * radius);
 }
 
-void DrawActor(const cActor& inActor)
+void DrawActor(cActor*& inActor)
 {
-	const std::vector<vec2> vertices = inActor.getVertices();
+	const std::vector<vec2> vertices = inActor->getVertices();
     for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
@@ -41,7 +41,7 @@ void DrawActor(const cActor& inActor)
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
-    CP_Graphics_DrawCircle(inActor.position.x, inActor.position.y, 3);
+    CP_Graphics_DrawCircle(inActor->position.x, inActor->position.y, 3);
 }
 
 void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
@@ -73,9 +73,9 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
         vertices.push_back({ xcoord, ycoord });
     }
 
-	cActor& newActor = world.AddActor(vertices);
-    newActor.setMass(10);
-    newActor.setPosition(centrePos);
+	cActor* newActor = world.AddActor(vertices);
+    newActor->setMass(10);
+    newActor->setPosition(centrePos);
 }
 
 void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
@@ -86,14 +86,14 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 	vertices.push_back({ width / 2.0f, height / 2.0f });
 	vertices.push_back({ -width / 2.0f, height / 2.0f });
 
-	cActor& newActor = world.AddActor(vertices);
-    newActor.setMass(10);
-    newActor.setPosition(centrePos);
-    auto f = newActor.getFlags();
+	cActor* newActor = world.AddActor(vertices);
+    newActor->setMass(10);
+    newActor->setPosition(centrePos);
+    auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
-    newActor.setFlags(f);
+    newActor->setFlags(f);
 	if (isStatic)
-		newActor.setFlags(cActor::IS_STATIC);
+		newActor->setFlags(cActor::IS_STATIC);
 }
 
 void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
@@ -104,25 +104,25 @@ void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
 		vec2 { -radius, -radius },
 		vec2 { radius, -radius }
 	};
-    cActor& newActor = world.AddActor(vertices);
-    newActor.setMass(10);
-    newActor.setPosition(centrePos);
+    cActor* newActor = world.AddActor(vertices);
+    newActor->setMass(10);
+    newActor->setPosition(centrePos);
     if (isStatic)
-        newActor.setFlags(cActor::IS_STATIC);
+        newActor->setFlags(cActor::IS_STATIC);
 }
 
-void CreateLineActor(float radius, vec2& centrePos, bool isStatic = false)
-{
-    std::vector<vec2> vertices{
-        vec2 { 0, radius },
-        vec2 { 0, -radius }
-    };
-    cActor& newActor = world.AddActor(vertices);
-    newActor.setMass(10);
-    newActor.setPosition(centrePos);
-    if (isStatic)
-        newActor.setFlags(cActor::IS_STATIC);
-}
+//void CreateLineActor(float radius, vec2& centrePos, bool isStatic = false)
+//{
+//    std::vector<vec2> vertices{
+//        vec2 { 0, radius },
+//        vec2 { 0, -radius }
+//    };
+//    cActor& newActor = world.AddActor(vertices);
+//    newActor.setMass(10);
+//    newActor.setPosition(centrePos);
+//    if (isStatic)
+//        newActor.setFlags(cActor::IS_STATIC);
+//}
 
 
 
@@ -162,29 +162,29 @@ void game_init(void)
 void UpdatePhysics()
 {
     world.update(CP_System_GetDt());
-    std::vector<cActor>& actors = world.getWorldActors();
-    for (cActor& a : actors)
+    std::vector<cActor*>& actors = world.getWorldActors();
+    for (cActor*& a : actors)
     {
         DrawActor(a);
         // keep within bounds
-        if (a.position.x >= recommendedWidth) a.position.x = recommendedWidth;
-        if (a.position.y >= recommendedHeight) a.position.y = recommendedHeight;
-        if (a.position.x < 0) a.position.x = 0;
-		if (a.position.y < 0) a.position.y = 0;
+        if (a->position.x >= recommendedWidth) a->position.x = recommendedWidth;
+        if (a->position.y >= recommendedHeight) a->position.y = recommendedHeight;
+        if (a->position.x < 0) a->position.x = 0;
+		if (a->position.y < 0) a->position.y = 0;
     }
 }
 
 cActor* selectedActor;
 void HandleInput(CP_Vector mousePos)
 {
-    std::vector<cActor>& actors = world.getWorldActors();
+    std::vector<cActor*>& actors = world.getWorldActors();
     if (CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding)
     {
-        for (cActor& a : actors)
+        for (cActor*& a : actors)
         {
-            if (IsPointInRadius(CP_Vector{ a.getPosition().x, a.getPosition().y }, 50, mousePos))
+            if (IsPointInRadius(CP_Vector{ a->getPosition().x, a->getPosition().y }, 50, mousePos))
             {
-                selectedActor = &a;
+                selectedActor = a;
                 isHolding = true;
                 break;
             }
