@@ -17,9 +17,10 @@ namespace chiori
 	// task to track and handle pairs as they require
 	class Broadphase
 	{
+	public:
 		Broadphase();
 		~Broadphase();
-
+		
 		int CreateProxy(const AABB& inAABB, void* inUserData);
 		
 		void DestroyProxy(int proxyID);
@@ -107,4 +108,5 @@ namespace chiori
 	{
 		return m_tree;
 	}
+	
 }

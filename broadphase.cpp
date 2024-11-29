@@ -109,6 +109,7 @@ namespace chiori
 		// Perform tree queries for all moving proxies.
 		for (int i = 0; i < m_moveCount; ++i)
 		{
+
 			m_queryProxyId = m_moveBuffer[i];
 			if (m_queryProxyId == null_proxy)
 			{

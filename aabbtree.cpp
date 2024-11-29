@@ -555,4 +555,31 @@ namespace chiori
 			m_nodes[i].aabb.max -= newOrigin;
 		}
 	}
+
+	void DynamicTree::DisplayTree(std::function<void(const AABB&)> drawFunc) const
+	{
+		if (m_root == null_node)
+		{
+			return;
+		}
+
+		std::stack<int> nodeStack;
+		nodeStack.push(m_root);
+
+		while (!nodeStack.empty())
+		{
+			int nodeId = nodeStack.top();
+			nodeStack.pop();
+
+			const TreeNode& node = m_nodes[nodeId];
+
+			drawFunc(node.aabb);
+
+			if (!node.IsLeaf())
+			{
+				nodeStack.push(node.child1);
+				nodeStack.push(node.child2);
+			}
+		}
+	}
 }

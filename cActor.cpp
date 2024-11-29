@@ -45,20 +45,32 @@ namespace chiori
 		_flags.set(inFlags);
 	}
 
+	const vec2 cActor::getVelocity(float dt) const
+	{
+		return (position - prevPosition) / dt;
+	}
+	void cActor::setVelocity(const vec2& inVelocity, float dt)
+	{
+		prevPosition = position - inVelocity * dt;
+	}
+	const float cActor::getAngularVelocity(float dt) const
+	{
+		return (rotation - prevRotation) / dt;
+	}
+	void cActor::setAngularVelocity(float inAngularVelocity, float dt)
+	{
+		prevRotation = rotation - inAngularVelocity * dt;
+	}
+
 	void cActor::integrate(float dt)
 	{
 		if (!_flags.isSet(SIMULATED))
 			return;
-		if (_flags.isSet(IS_STATIC))
+		if (_flags.isSet(IS_STATIC) ||
+			_flags.isSet(IS_KINEMATIC))
 		{
 			prevPosition = position;
 			prevRotation = prevRotation;
-			velocity = vec2::zero;
-			angularVelocity = 0.0f;
-			return;
-		}
-		if (_flags.isSet(IS_KINEMATIC))
-		{
 			forces = vec2::zero;
 			torques = 0.0f;
 			return;
@@ -81,6 +93,8 @@ namespace chiori
 
 		// Update previous rotation for the next frame
 		prevRotation = currentRotation;
+
+		_iflags.set(IS_DIRTY);
 
 		forces = vec2::zero;
 		torques = 0.0f;

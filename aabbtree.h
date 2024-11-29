@@ -48,6 +48,9 @@ namespace chiori
 		float GetAreaRatio() const;
 		// The shift formula is: position -= newOrigin
 		void ShiftOrigin(const vec2& newOrigin);
+
+		// for testing
+		void DisplayTree(std::function<void(const AABB&)> drawFunc) const;
 		
 	private:
 		int AllocateNode();
@@ -110,12 +113,13 @@ namespace chiori
 					if (!callback(nodeID))
 						return;
 				}
+				else
+				{
+					stack.push(node->child1);
+					stack.push(node->child2);
+				}
 			}
-			else
-			{
-				stack.push(node->child1);
-				stack.push(node->child2);
-			}
+
 		}
 	}
 

@@ -58,4 +58,19 @@ namespace chiori
 			return (xAxisColliding && yAxisColliding);
 		}
 	};
+
+	inline AABB CreateAABBHull(const vec2* inVertices, int inVertexCount)
+	{
+		AABB aabb;
+		aabb.min = inVertices[0];
+		aabb.max = inVertices[0];
+
+		for (int i = 1; i < inVertexCount; i++)
+		{
+			aabb.min = vec2::vmin(aabb.min, inVertices[i]);
+			aabb.max = vec2::vmax(aabb.max, inVertices[i]);
+		}
+
+		return aabb;
+	}
 }

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "vector2.h"
-#include "rigidbody.h"
-#include "shape.h"
+#include "flag.h"
 #include "integrators.h"
 
 namespace chiori
@@ -10,7 +9,7 @@ namespace chiori
 	class cActor
 	{
 	public:
-		enum
+		enum // Actor settings
 		{
 			SIMULATED = (1 << 0),
 			SCENE_QUERYABLE = (1 << 1),
@@ -19,7 +18,14 @@ namespace chiori
 			IS_STATIC = (1 << 4),
 			USE_GRAVITY = (1 << 5)
 		};
+		enum // Internal flags used by the system, should not be touched by the user
+		{
+			IS_DIRTY = (1 << 0)
+		};
+		Flag_8 _iflags = 0;
+		int broadphaseID = -1;
 	private:		
+
 		Flag_8 _flags = SIMULATED | SCENE_QUERYABLE | USE_GRAVITY;
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
@@ -46,8 +52,6 @@ namespace chiori
 		vec2 scale { vec2::one };
 		float rotation{ 0.0f };			// stored in radians
 		float mass{ 1.0f };
-		vec2 velocity{ vec2::zero };
-		float angularVelocity{ 0.0f };  // measured in radians
 
 		#pragma region Get/Setters
 		const std::vector<vec2>& getBaseVertices() const { return baseVertices; }
@@ -67,33 +71,41 @@ namespace chiori
 		const vec2& getPosition() const { return position; }
 		void setPosition(const vec2& inPosition)
 		{ 
+			if (position != inPosition)
+				_iflags.set(IS_DIRTY);
 			vec2 diff = position - prevPosition;
 			position = inPosition;
 			prevPosition = position - diff;
 		}
-		const vec2& getPrevPosition() const { return prevPosition; }
-		void setPrevPosition(const vec2& inPrevPosition) { prevPosition = inPrevPosition; }
 		const vec2& getScale() const { return scale; }
-		void setScale(const vec2& inScale) { scale = inScale; }
+		void setScale(const vec2& inScale)
+		{
+			if (scale != inScale)
+				_iflags.set(IS_DIRTY);
+			scale = inScale;
+		}
 		const float getRotation() const { return rotation; }
 		void setRotation(float inRotation)
 		{
+			if (rotation != inRotation)
+				_iflags.set(IS_DIRTY);
 			float diff = rotation - prevRotation;
 			rotation = inRotation;
 			prevRotation = rotation - diff;
 		}
-		const float getPrevRotation() const { return prevRotation; }
-		void setPrevRotation(float inPrevRotation) { prevRotation = inPrevRotation; }
 		const float getMass() const { return mass; }
 		void setMass(float inMass) { mass = inMass; invMass = 1.0f / inMass; }
-		const vec2& getVelocity() const { return velocity; }
-		void setVelocity(const vec2& inVelocity) { velocity = inVelocity; }
-		Flag_8 getFlags() const { return _flags; }
-		void setFlags(Flag_8 inFlags);
-		void setFlags(int inFlags);
 		const vec2& getCOMOffset() { return comOffset; }
 		void setCOMOffset(const vec2& inOffset) { comOffset = inOffset; CalculateInverseInertia(); }
 		float getInvInertia() const { return invInertia; }
+
+		const vec2 getVelocity(float dt) const;
+		void setVelocity(const vec2& inVelocity, float dt);
+		const float getAngularVelocity(float dt) const;
+		void setAngularVelocity(float inAngularVelocity, float dt);
+		Flag_8 getFlags() const { return _flags; }
+		void setFlags(Flag_8 inFlags);
+		void setFlags(int inFlags);
 		#pragma endregion
 		
 		void integrate(float dt);

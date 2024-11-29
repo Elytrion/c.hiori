@@ -8,9 +8,18 @@ namespace chiori
 	class PhysicsWorld
 	{
 	private:
+		struct aPair
+		{
+			aPair(cActor* ina, cActor* inb) : a{ ina }, b{ inb } {};
+			cActor* a;
+			cActor* b;
+		};
+		
 		float accumulator = 0.0f;
-		std::vector<cActor*> actors;
-
+		std::vector<cActor*> m_actors;
+		Broadphase m_broadphase;
+		std::vector<aPair> m_pairs; //TEMP
+		
 	public:		
 		~PhysicsWorld();
 		
@@ -21,6 +30,6 @@ namespace chiori
 
 		cActor* AddActor(const std::vector<vec2>& vertices);
 		void RemoveActor(cActor* inActor);
-		std::vector<cActor*>& getWorldActors() { return actors; }
+		std::vector<cActor*>& getWorldActors() { return m_actors; }
 	};
 }
