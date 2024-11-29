@@ -11,7 +11,7 @@ namespace chiori
 		accumulator += inDT;
 		
 		while (accumulator >= physicsStepTime) {
-			simulate(physicsStepTime); // Run your fixed-time physics updates
+			simulate(physicsStepTime); 
 			accumulator -= physicsStepTime;
 		}
 	}

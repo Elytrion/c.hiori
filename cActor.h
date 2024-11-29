@@ -6,6 +6,8 @@
 
 namespace chiori
 {
+	class PhysicsWorld;
+	
 	class cActor
 	{
 	public:
@@ -18,13 +20,15 @@ namespace chiori
 			IS_STATIC = (1 << 4),
 			USE_GRAVITY = (1 << 5)
 		};
+	private:	
+		friend class PhysicsWorld;
+		
 		enum // Internal flags used by the system, should not be touched by the user
 		{
 			IS_DIRTY = (1 << 0)
 		};
 		Flag_8 _iflags = 0;
 		int broadphaseID = -1;
-	private:		
 
 		Flag_8 _flags = SIMULATED | SCENE_QUERYABLE | USE_GRAVITY;
 		vec2 forces{ vec2::zero };

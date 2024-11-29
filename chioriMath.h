@@ -1,15 +1,16 @@
 #pragma once
 
 #include <cmath>
+#include <stdexcept>
 
 namespace chiori
 {
 	constexpr float EPSILON = 1e-5f;		// Epislon value for comparing floats
 	constexpr float LEPSILON = 1e-3f;		// Low precision epsilon value
 	constexpr float HEPSILON = 1e-7f;		// High precision epsilon value
-	constexpr float PI = 3.14159265f;
-	constexpr float DEG2RAD = PI / 180.0f;
-	constexpr float RAD2DEG = 180.0f / PI;
+	constexpr float PI = 3.14159265f;		// Pi
+	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
+	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
 	
 	class vec2
 	{
@@ -72,12 +73,12 @@ namespace chiori
 		float& operator[](int index) {
 			if (index == 0) return x;
 			else if (index == 1) return y;
-			throw "[vec2] index of out range!";
+			throw std::out_of_range("[vec2] Index of out range!");
 		}
 		const float& operator[](int index) const {
 			if (index == 0) return x;
 			else if (index == 1) return y;
-			throw "[vec2] index of out range!";
+			throw std::out_of_range("[vec2] Index of out range!");
 		}
 
 		// Vec2 comparisons
