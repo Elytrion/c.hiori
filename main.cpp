@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cstdbool>
 #include "pch.h"
-#include "vector2.h"
+#include "chioriMath.h"
 #include "cActor.h"
 #include "cprocessing.h"
 #include "physicsWorld.h"
@@ -52,7 +52,7 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
     while (angles.size() < vertexCount)
     {
         validAngle = false;
-        float newAngle = CP_Random_RangeFloat(0.0f, 2.0f * commons::PI);
+        float newAngle = CP_Random_RangeFloat(0.0f, 2.0f * PI);
         for (int i = 0; i < angles.size(); i++)
         {
             if ((newAngle <= angles[i] + 0.5f && newAngle >= angles[i] - 0.5f))
@@ -198,7 +198,7 @@ void HandleInput(CP_Vector mousePos)
 
     if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding && selectedActor)
     {
-        selectedActor->setRotation(selectedActor->getRotation() + 35 * commons::DEG2RAD * CP_System_GetDt());
+        selectedActor->setRotation(selectedActor->getRotation() + 35 * DEG2RAD * CP_System_GetDt());
     }
 
     if (CP_Input_KeyTriggered(KEY_K) && isHolding && selectedActor)

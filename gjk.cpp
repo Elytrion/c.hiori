@@ -4,7 +4,7 @@
 
 namespace chiori
 {
-	bool floatEqual(float a, float b) { return std::abs(a - b) < commons::HEPSILON; }
+	bool floatEqual(float a, float b) { return std::abs(a - b) < HEPSILON; }
 	bool compareSigns(float a, float b)
 	{
 		return (a > 0 && b > 0) || (a < 0 && b < 0);
@@ -12,7 +12,7 @@ namespace chiori
 
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
-		vec2 localDir = inDir.rotated(-rotation * commons::RAD2DEG);
+		vec2 localDir = inDir.rotated(-rotation * RAD2DEG);
 		//float rad = rotation * commons::DEG2RAD;
 		//float cos_t = cos(-rad);
 		//float sin_t = sin(-rad);
@@ -22,7 +22,7 @@ namespace chiori
 		//};
 
 		vec2 l_w = supportFunc(localDir);
-		vec2 w = l_w.rotated(rotation * commons::RAD2DEG);
+		vec2 w = l_w.rotated(rotation * RAD2DEG);
 		//cos_t = cos(rad);
 		//sin_t = sin(rad);
 		//vec2 w = {
@@ -199,7 +199,7 @@ namespace chiori
 			if (outSimplex.isDupe(w))
 				break;
 
-			if ((dirm - dir.dot(w.w)) <= (dirm * commons::LEPSILON * commons::LEPSILON)) // Termination condition A
+			if ((dirm - dir.dot(w.w)) <= (dirm * LEPSILON * LEPSILON)) // Termination condition A
 				break;
 
 			previousPoints.push_back(w);
@@ -229,7 +229,7 @@ namespace chiori
 				max_norm = (max_norm > norm) ? max_norm : norm;
 			}
 			
-			if (dir.sqrMagnitude() < (commons::HEPSILON * max_norm)) // Termination condition B
+			if (dir.sqrMagnitude() < (HEPSILON * max_norm)) // Termination condition B
 				break;
 		}
 		
@@ -310,7 +310,7 @@ namespace chiori
 
 			supportDist = support.w.dot(closestEdge.normal);
 
-			if (abs(supportDist - closestEdge.distance) < commons::EPSILON)
+			if (abs(supportDist - closestEdge.distance) < EPSILON)
 				break;
 
 			polytope.insert(polytope.begin() + closestEdge.index, support);
@@ -326,7 +326,7 @@ namespace chiori
 		Simplex s;
 		GJKresult result = GJK(inPrimary, inTarget, s);
 		result.s = s;
-		if (result.distance <= commons::EPSILON && s.size() > 1)
+		if (result.distance <= EPSILON && s.size() > 1)
 		{
 			result = EPA(inPrimary, inTarget, s, result);
 		}

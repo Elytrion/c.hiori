@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vector2.h"
+#include "chioriMath.h"
 #include "flag.h"
 #include "integrators.h"
 
@@ -63,7 +63,7 @@ namespace chiori
 			{
 				vertex.x = vertex.x * scale.x;
 				vertex.y = vertex.y * scale.y;
-				vertex = vertex.rotate(rotation * commons::RAD2DEG);
+				vertex = vertex.rotate(rotation * RAD2DEG);
 				vertex = vertex + position;
 			}
 			return vertices;

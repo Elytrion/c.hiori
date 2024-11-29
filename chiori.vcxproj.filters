@@ -10,15 +10,6 @@
     <ClCompile Include="gjk.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="rigidbody.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="shape.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="vector2.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="cActor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -31,6 +22,9 @@
     <ClCompile Include="broadphase.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="collision.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -41,9 +35,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="vector2.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="pch.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -56,13 +47,7 @@
     <ClInclude Include="commons.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="shape.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="simplex.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="rigidbody.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="gjk.h">
@@ -81,6 +66,12 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="broadphase.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="collision.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="chioriMath.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

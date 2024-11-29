@@ -1,5 +1,5 @@
 #pragma once
-#include "vector2.h" 
+#include "chioriMath.h" 
 
 namespace chiori
 {

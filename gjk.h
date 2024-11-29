@@ -52,7 +52,7 @@ namespace chiori
 
         inline void normalizeAngles()
         {
-            float d = (commons::PI * 2.0f) * floorf(r0);
+            float d = (PI * 2.0f) * floorf(r0);
             r0 -= d; r1 -= d;
         }
     };
