@@ -12,9 +12,8 @@ namespace chiori
 	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
 	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
 	
-	class vec2
+	struct vec2
 	{
-	public:
 		float x, y;
 
 		// Basic class functions
@@ -36,6 +35,7 @@ namespace chiori
 		float operator*(const vec2& inRHS) const { return dot(inRHS); }
 		float dot(const vec2& inRHS) const { return x * inRHS.x + y * inRHS.y; }
 		float cross(const vec2& inRHS) const { return (x * inRHS.y) - (y * inRHS.x); }
+		vec2 scross(float inScalar) const { return { inScalar * y, -inScalar * x }; }
 		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }
 		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }
 		float sqrMagnitude() const { return x * x + y * y; }
@@ -143,4 +143,55 @@ namespace chiori
 	inline constexpr vec2 vec2::left = vec2{ -1.0f, 0.0f };
 	inline constexpr vec2 vec2::right = vec2{ 1.0f, 0.0f };
 	inline constexpr vec2 vec2::up = vec2{ 0.0f, 1.0f };
+	
+	struct cRot
+	{
+		cRot() {}
+		// all angles in radians
+		explicit cRot(float angle)
+		{
+			s = sinf(angle);
+			c = cosf(angle);
+		}
+
+		void Set(float angle)
+		{
+			s = sinf(angle);
+			c = cosf(angle);
+		}
+
+		void SetIdentity()
+		{
+			s = 0.0f;
+			c = 1.0f;
+		}
+
+		// Get the angle in radians
+		float GetAngle() const { return std::atan2(s, c); }
+		
+		float s, c; //sin, cos
+	};
+	
+	struct cTransform 
+	{
+		cTransform() {}
+
+		cTransform(const vec2& position, const cRot& rotation) : p(position), r(rotation) {}
+
+		void SetIdentity()
+		{
+			p = vec2::zero;
+			r.SetIdentity();
+		}
+
+		// Set this based on the position and angle (radians).
+		void Set(const vec2& position, float angle)
+		{
+			p = position;
+			r.Set(angle);
+		}
+		
+		vec2 p;
+		cRot r;
+	};
 }

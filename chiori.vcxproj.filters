@@ -4,26 +4,26 @@
     <ClCompile Include="main.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="gjk.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="cActor.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="physicsWorld.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="aabbtree.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\Collision Detection</Filter>
     </ClCompile>
     <ClCompile Include="broadphase.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\Collision Detection</Filter>
     </ClCompile>
     <ClCompile Include="collision.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\Collision Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="gjk.cpp">
+      <Filter>Source\Collision Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source\Commons</Filter>
+    </ClCompile>
+    <ClCompile Include="cActor.cpp">
+      <Filter>Source\Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -33,30 +33,27 @@
     <Filter Include="Source">
       <UniqueIdentifier>{0edf3f6e-eafb-4e37-bdf9-8f51ba2e4139}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\Collision Detection">
+      <UniqueIdentifier>{de08fc49-f834-4641-a268-d6d642c72293}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Commons">
+      <UniqueIdentifier>{488c49a4-3a0d-4b1e-9586-cfb0a9b7ba1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Collision Detection">
+      <UniqueIdentifier>{5ecc582c-80b6-4a40-9e4f-3542a7f1e980}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Commons">
+      <UniqueIdentifier>{55b73fba-ac16-46d0-9228-41544e852d39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Components">
+      <UniqueIdentifier>{75df9e38-48c1-429c-8d36-e5182f1bfbfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Components">
+      <UniqueIdentifier>{56ce437f-058d-449b-8372-16f3ccad792d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="aabb.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="aabbtree.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="commons.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="simplex.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="gjk.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="flag.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="cActor.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="physicsWorld.h">
@@ -65,14 +62,41 @@
     <ClInclude Include="integrators.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="broadphase.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="collision.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="aabb.h">
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="aabbtree.h">
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="broadphase.h">
+      <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
     <ClInclude Include="chioriMath.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="commons.h">
+      <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="flag.h">
+      <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="gjk.h">
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="cActor.h">
+      <Filter>Headers\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="cShape.h">
+      <Filter>Headers\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="chioriPool.h">
+      <Filter>Headers\Commons</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

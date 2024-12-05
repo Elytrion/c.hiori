@@ -33,7 +33,6 @@ namespace chiori
 		mmoi *= density;
 		mmoi -= mass * center.dot(center); // Parallel axis theorem adjustment
 		invInertia = 1.0f / mmoi;
-		std::cout << "Inv Inertia: " << invInertia << std::endl;
 	}
 	
 	void cActor::setFlags(Flag_8 inFlags)

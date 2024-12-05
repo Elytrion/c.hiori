@@ -226,8 +226,10 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="broadphase.h" />
     <ClInclude Include="cActor.h" />
     <ClInclude Include="chioriMath.h" />
+    <ClInclude Include="chioriPool.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="commons.h" />
+    <ClInclude Include="cShape.h" />
     <ClInclude Include="flag.h" />
     <ClInclude Include="gjk.h" />
     <ClInclude Include="integrators.h" />

@@ -25,7 +25,8 @@ namespace chiori
 		
 		enum // Internal flags used by the system, should not be touched by the user
 		{
-			IS_DIRTY = (1 << 0)
+			IS_DIRTY = (1 << 0),
+			ASLEEP = (1 << 1)
 		};
 		Flag_8 _iflags = 0;
 		int broadphaseID = -1;
@@ -137,4 +138,5 @@ namespace chiori
 			return result;
 		}
 	};
+
 }
