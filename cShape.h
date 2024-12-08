@@ -36,7 +36,7 @@ namespace chiori
 		cShape(const std::vector<vec2>& inVertices);
 	};
 
-	cShape::cShape(const std::vector<vec2>& inVertices)
+	inline cShape::cShape(const std::vector<vec2>& inVertices)
 	{
 		cassert(inVertices.size() >= 3);
 		// copy over the data

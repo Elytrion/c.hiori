@@ -1,13 +1,20 @@
 #pragma once
 
 #include "cActor.h"
+#include "cShape.h"
 #include "broadphase.h"
+#include "chioriPool.h"
+#include "commons.h"
 
 namespace chiori
 {
 	class PhysicsWorld
 	{
 	private:
+		using Allocator = DEFAULT_ALLOCATOR;
+		cPool<cActor, Allocator> p_actors;
+		cPool<cShape, Allocator> p_shapes;
+		
 		struct aPair
 		{
 			aPair(cActor* ina, cActor* inb) : a{ ina }, b{ inb } {};
