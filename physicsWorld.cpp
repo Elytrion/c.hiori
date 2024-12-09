@@ -107,21 +107,29 @@ namespace chiori
 		{
 			cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
 			cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
-			GJKobject a{ pair.a->vertices, tfm_a.pos, tfm_a.rot };
-			GJKobject b{ pair.b->vertices, tfm_b.pos, tfm_b.rot };
+			GJKobject a{ pair.a->vertices, pair.a->normals, tfm_a };
+			GJKobject b{ pair.b->vertices, pair.b->normals, tfm_b };
 			GJKresult result = CollisionDetection(a, b);
 		}
 		
 		for (int itr = 0; itr < p_actors.size(); itr++)
 		{
 			cActor* a = p_actors[itr];
+
+			if (a->_iflags.isSet(cActor::IS_DIRTY_DENSITY))
+			{
+				cShape* s = p_shapes[a->shapeIndex];
+				a->setInertia(s->inertia(a->mass, a->tfm.scale, a->soffset));
+				a->_iflags.clear(cActor::IS_DIRTY_DENSITY);
+			}
+
 			if (a->getFlags().isSet(cActor::USE_GRAVITY))
 			{
 				a->addForce(gravity);
 			}
 			a->integrate(inDT);
 
-			if (!a->_iflags.isSet(cActor::IS_DIRTY))
+			if (!a->_iflags.isSet(cActor::IS_DIRTY_TFM))
 				continue;
 			
 			cShape* s = p_shapes[a->shapeIndex];
@@ -129,7 +137,7 @@ namespace chiori
 			AABB aabb = CreateAABBHull(verts.data(), verts.size());
 			m_broadphase.MoveProxy(s->broadphaseIndex, aabb, a->getVelocity(inDT) * inDT);
 			
-			a->_iflags.clear(cActor::IS_DIRTY);
+			a->_iflags.clear(cActor::IS_DIRTY_TFM);
 		}
 
 		auto drawFunc = [&](int height, const AABB& aabb)

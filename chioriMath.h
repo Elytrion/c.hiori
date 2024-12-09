@@ -11,7 +11,7 @@ namespace chiori
 	constexpr float PI = 3.14159265f;		// Pi
 	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
 	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
-	inline bool fltcmp(float a, float b) { return (std::abs(a - b) < FLT_EPSILON); }
+	inline bool fltcmp(float a, float b) { return (std::abs(a - b) < FLT_EPSILON); }	// float comparison
 	struct vec2
 	{
 		float x, y;
@@ -27,21 +27,22 @@ namespace chiori
 			return *this;
 		}
 		// Vec2 operations
-		vec2 operator+(const vec2& inRHS) const { return vec2(x + inRHS.x, y + inRHS.y); }
-		vec2 operator-(const vec2& inRHS) const { return vec2(x - inRHS.x, y - inRHS.y); }
-		vec2 operator-() const { return vec2(-x, -y); }
-		vec2 operator*(float inScalar) const { return vec2(x * inScalar, y * inScalar); }
-		friend vec2 operator*(float inScalar, const vec2& inVec) { return inVec * inScalar; }
-		float operator*(const vec2& inRHS) const { return dot(inRHS); }
-		float dot(const vec2& inRHS) const { return x * inRHS.x + y * inRHS.y; }
-		float cross(const vec2& inRHS) const { return (x * inRHS.y) - (y * inRHS.x); }
-		vec2 scross(float inScalar) const { return { inScalar * y, -inScalar * x }; }
-		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }
-		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }
-		float sqrMagnitude() const { return x * x + y * y; }
-		float magnitude() const { return std::sqrt(sqrMagnitude()); }
-		vec2 normalized() const { float m = magnitude();  return (m > 0) ? (*this / m) : vec2(); }
-		vec2& normalize() {
+		vec2 operator+(const vec2& inRHS) const { return vec2(x + inRHS.x, y + inRHS.y); }		// component wise addition
+		vec2 operator-(const vec2& inRHS) const { return vec2(x - inRHS.x, y - inRHS.y); }		// component wise subtraction
+		vec2 operator-() const { return vec2(-x, -y); }											// self-negation
+		vec2 operator*(float inScalar) const { return vec2(x * inScalar, y * inScalar); }		// component wise scalar multiplication
+		friend vec2 operator*(float inScalar, const vec2& inVec) { return inVec * inScalar; }	// component wise scalar multiplication
+		float operator*(const vec2& inRHS) const { return dot(inRHS); }							// dot product
+		float dot(const vec2& inRHS) const { return x * inRHS.x + y * inRHS.y; }				// dot product
+		float cross(const vec2& inRHS) const { return (x * inRHS.y) - (y * inRHS.x); }			// 2D cross product (returns a scalar)
+		vec2 scross(float inScalar) const { return { inScalar * y, -inScalar * x }; }			// 2D scalar cross product (returns a vector)
+		vec2 cmult(const vec2& inRHS) const { return {x * inRHS.x, y * inRHS.y}; }				// component wise multiplication with another vector (x*x, y*y)
+		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }		// component wise scalar division
+		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }	// component wise scalar division
+		float sqrMagnitude() const { return x * x + y * y; }									// square magnitude (self dot product)
+		float magnitude() const { return std::sqrt(sqrMagnitude()); }							// magnitude (square root of square magnitude, length of the vector)
+		vec2 normalized() const { float m = magnitude();  return (m > 0) ? (*this / m) : vec2(); }	// normalized version of this vector
+		vec2& normalize() {																		// normalize this vector in place
 			float m = magnitude();
 			if (m > 0) {
 				x /= m;
@@ -49,22 +50,22 @@ namespace chiori
 			}
 			return *this;
 		}
-		vec2& operator+=(const vec2& inRHS) {
+		vec2& operator+=(const vec2& inRHS) {			// component wise addition on self
 			x += inRHS.x;
 			y += inRHS.y;
 			return *this;
 		}
-		vec2& operator-=(const vec2& inRHS) {
+		vec2& operator-=(const vec2& inRHS) {			// component wise subtraction on self
 			x -= inRHS.x;
 			y -= inRHS.y;
 			return *this;
-		}
-		vec2& operator*=(float inScalar) {
+		}	
+		vec2& operator*=(float inScalar) {				// component wise multiplication on self
 			x *= inScalar;
 			y *= inScalar;
 			return *this;
 		}
-		vec2& operator/=(float inScalar) {
+		vec2& operator/=(float inScalar) {				// component wise division on self
 			x /= inScalar;
 			y /= inScalar;
 			return *this;
@@ -75,6 +76,7 @@ namespace chiori
 			else if (index == 1) return y;
 			throw std::out_of_range("[vec2] Index of out range!");
 		}
+		// Vec2 const index access
 		const float& operator[](int index) const {
 			if (index == 0) return x;
 			else if (index == 1) return y;
@@ -87,14 +89,14 @@ namespace chiori
 		}
 		bool operator!=(const vec2& inRHS) const { return !(*this == inRHS); }
 		// Vec2 unique operations
-		vec2 rotated(float inDegrees) const
+		vec2 rotated(float inDegrees) const			// rotated version of this vector
 		{
 			float rad = inDegrees * DEG2RAD;
 			float cosTheta = cos(rad);
 			float sinTheta = sin(rad);
 			return vec2(x * cosTheta - y * sinTheta, x * sinTheta + y * cosTheta);
 		}
-		vec2& rotate(float inDegrees)
+		vec2& rotate(float inDegrees)				// rotate this vector in place
 		{
 			float rad = inDegrees * DEG2RAD;
 			float cosTheta = cos(rad);
@@ -104,7 +106,7 @@ namespace chiori
 			x = nx; y = ny;
 			return *this;
 		}
-		vec2 tripleCrossProduct(const vec2& inRHS)
+		vec2 tripleCrossProduct(const vec2& inRHS)	// triple cross product (returns a vector)
 		{
 			//using triple product expansion
 			float adotc = sqrMagnitude();
@@ -117,19 +119,19 @@ namespace chiori
 			return inOS;
 		}
 		// Static Vec2 properties
-		static const vec2 zero;
-		static const vec2 one;
-		static const vec2 left;
-		static const vec2 right;
-		static const vec2 up;
-		static const vec2 down;
+		static const vec2 zero;		// x = 0, y = 0
+		static const vec2 one;		// x = 1, y = 1
+		static const vec2 left;		// x = -1, y = 0
+		static const vec2 right;	// x = 1, y = 0
+		static const vec2 up;		// x = 0, y = 1
+		static const vec2 down;		// x = 0, y = -1
 
-		static vec2 vmin(const vec2& a, const vec2& b)
+		static vec2 vmin(const vec2& a, const vec2& b)	// component wise minimum of two vectors 
 		{
 			return { min(a.x, b.x), min(a.y,b.y) };
 		}
 
-		static vec2 vmax(const vec2& a, const vec2& b)
+		static vec2 vmax(const vec2& a, const vec2& b)	// component wise maximum of two vectors 
 		{
 			return { max(a.x, b.x), max(a.y,b.y) };
 		}

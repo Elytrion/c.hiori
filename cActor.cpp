@@ -65,7 +65,7 @@ namespace chiori
 		// Update previous rotation for the next frame
 		prevRotation = currentRotation;
 
-		_iflags.set(IS_DIRTY);
+		_iflags.set(IS_DIRTY_TFM);
 
 		forces = vec2::zero;
 		torques = 0.0f;

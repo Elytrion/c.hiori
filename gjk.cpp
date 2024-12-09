@@ -12,12 +12,12 @@ namespace chiori
 
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
-		vec2 localDir = inDir.rotated(-rotation * RAD2DEG);
+		vec2 localDir = inDir.rotated(-tfm.rot * RAD2DEG);
 		vec2 result = baseVertices[0];
 		float maxDot = result.dot(localDir);
 		for (int i = 1; i < baseVertices.size(); i++)
 		{
-			vec2 vertex = baseVertices[i];
+			vec2 vertex = baseVertices[i].cmult(tfm.scale);
 			float dot = vertex.dot(localDir);
 			if (dot > maxDot)
 			{
@@ -25,8 +25,8 @@ namespace chiori
 				result = vertex;
 			}
 		}		
-		vec2 w = result.rotated(rotation * RAD2DEG);
-		return w + position;
+		vec2 w = result.rotated(tfm.rot * RAD2DEG);
+		return w + tfm.pos;
 	}
 	
 	#pragma region Distance Subalgorithm
@@ -184,7 +184,7 @@ namespace chiori
 	{
 		std::vector<Mvert> previousPoints;
 		GJKresult result;
-		vec2 dir = inPrimary.position - inTarget.position;
+		vec2 dir = inPrimary.tfm.pos - inTarget.tfm.pos;
 		if (outSimplex.size())
 			dir = outSimplex[0].w;
 

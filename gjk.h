@@ -8,16 +8,14 @@ namespace chiori
 	{
 	public:
         const std::vector<vec2>& baseVertices;
-		vec2 position, position0;
-        float rotation, rotation0;
+        const std::vector<vec2>& baseNormals;
+        cTransform tfm;
         vec2 velocity = vec2::zero; // optional
         float angularVelocity = 0.0f; // optional
         float t = -1; // used for TOI collision checking
 
-        GJKobject(const std::vector<vec2>& baseVerts, const vec2& pos, float rot)
-            : baseVertices{ baseVerts }, position { pos }, rotation{ rot } {
-           rotation0 = rot; position0 = pos;
-        }
+        GJKobject(const std::vector<vec2>& baseVerts, const std::vector<vec2>& baseNorms, const cTransform& inTfm)
+            : baseVertices{ baseVerts }, baseNormals{ baseNorms }, tfm{ inTfm } { }
 
         vec2 getSupportPoint(const vec2& inDir) const;
 	};

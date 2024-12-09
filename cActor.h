@@ -21,8 +21,9 @@ namespace chiori
 		friend class PhysicsWorld;
 		enum // Internal flags used by the system, should not be touched by the user
 		{
-			IS_DIRTY = (1 << 0),
-			ASLEEP = (1 << 1)
+			IS_DIRTY_TFM = (1 << 0),
+			IS_DIRTY_DENSITY = (1 << 1),
+			ASLEEP = (1 << 2)
 		};
 		Flag_8 _iflags = 0;
 		int shapeIndex = -1;
@@ -30,21 +31,21 @@ namespace chiori
 		Flag_8 _flags = SIMULATED | USE_GRAVITY;
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
-
+		float mass, invMass;
+		float inertia, invInertia;
+		vec2 soffset;				// shape offset from local transform, is the center of mass (COM)
 		cTransform ptfm;
 
 	public:
 		cActor() {};
 		cActor(const cTransform& inTfm) : tfm{ inTfm } { }
 		cTransform tfm;
-		float mass, invMass;
-		float inertia, invInertia;
 
 		#pragma region Get/Setters
 		void setTransform(const cTransform& inTfm)
 		{
 			if (tfm != inTfm)
-				_iflags.set(IS_DIRTY);
+				_iflags.set(IS_DIRTY_TFM);
 			vec2 pdiff = tfm.pos - ptfm.pos;
 			ptfm.pos = inTfm.pos - pdiff;
 			float rdiff = tfm.rot - ptfm.rot;
@@ -53,9 +54,21 @@ namespace chiori
 		}
 		const cTransform& getTransform() { return tfm; }
 		const float getMass() const { return mass; }
-		void setMass(float inMass) { mass = inMass; invMass = 1.0f / inMass; }
+		void setMass(float inMass)
+		{
+			if (mass != inMass )
+				_iflags.set(IS_DIRTY_DENSITY);
+			mass = inMass; invMass = 1.0f / inMass;
+		}
 		const float getInertia() const { return inertia; }
 		void setInertia(float inInertia) { inertia = inInertia; invInertia = 1.0f / inInertia; }
+		const vec2& getCOMoffset() const { return soffset; }
+		void setCOMoffset(const vec2& inOffset)
+		{
+			if (soffset != inOffset)
+				_iflags.set(IS_DIRTY_DENSITY);
+			soffset = inOffset;
+		}
 
 		const vec2 getVelocity(float dt) const;
 		void setVelocity(const vec2& inVelocity, float dt);
