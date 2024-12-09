@@ -50,7 +50,7 @@ namespace chiori
 		void ShiftOrigin(const vec2& newOrigin);
 
 		// for testing
-		void DisplayTree(std::function<void(const AABB&)> drawFunc) const;
+		void DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const;
 		
 	private:
 		int AllocateNode();

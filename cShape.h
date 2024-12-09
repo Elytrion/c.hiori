@@ -24,7 +24,6 @@ namespace chiori
 			IS_TRIGGER = (1 << 1),		// this shape is a trigger and will not participate in collision response
 			IS_STATIC = (1 << 2)		// this shape will not move during simulation time (set for broadphase optimization)
 		};
-		
 		float friction;
 		float restitution;
 		AABB aabb;						// untransformed close fit AABB
@@ -33,12 +32,23 @@ namespace chiori
 		void* userData; 			// to hold a pointer to any user specific data (user holds ownership of data)
 
 		cShape() {};
-		cShape(const std::vector<vec2>& inVertices);
+		cShape(const std::vector<vec2>& inVertices) { setVertices(inVertices); }
+		void setVertices(const std::vector<vec2>& inVertices);
+		std::vector<vec2> getVertices(cTransform inTfm);
+
+		float inertia(float mass, const vec2& scale, const vec2& comOffset = vec2::zero);
+
+		int GetActorIndex() { return actorIndex; }
+
+		bool operator==(const cShape& inRHS) const {
+			return this == &inRHS;
+		}
 	};
 
-	inline cShape::cShape(const std::vector<vec2>& inVertices)
+	inline void cShape::setVertices(const std::vector<vec2>& inVertices)
 	{
 		cassert(inVertices.size() >= 3);
+		std::cout << (*this).friction << std::endl;
 		// copy over the data
 		vertices = inVertices;
 		// build AABB
@@ -47,10 +57,56 @@ namespace chiori
 		for (int i = 0; i < vertices.size(); ++i)
 		{
 			int i1 = i;
-			int i2 = i + 1 % vertices.size();
+			int i2 = (i + 1) % vertices.size();
 			vec2 edge = vertices[i2] - vertices[i1];
 			cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
-			normals[i] = edge.scross(1.0f).normalize();
+			normals.push_back(edge.scross(1.0f).normalize());
 		}
+	}
+
+	inline std::vector<vec2> cShape::getVertices(cTransform inTfm)
+	{
+		std::vector<vec2> n_verts = vertices;
+		// Apply position, scale and rotation to base vertices
+		for (auto& vertex : n_verts)
+		{
+			vertex.x = vertex.x * inTfm.scale.x;
+			vertex.y = vertex.y * inTfm.scale.y;
+			vertex = vertex.rotate(inTfm.rot * RAD2DEG);
+			vertex = vertex + inTfm.pos;
+		}
+		return n_verts;
+	}
+
+	inline float cShape::inertia(float mass, const vec2& scale, const vec2& comOffset) // https://stackoverflow.com/questions/31106438/calculate-moment-of-inertia-given-an-arbitrary-convex-2d-polygon
+	{
+		cassert(mass > FLT_EPSILON);
+		float area = 0.0f;
+		vec2 center = vec2::zero;
+		float mmoi = 0.0f;
+		int n = vertices.size();
+
+		for (int i = 0; i < n; i++) // we calculate all the MOI for all the triangles in the convex shape
+		{
+			const vec2& a = (vertices[i] * scale.x);
+			const vec2& b = (vertices[(i + 1) % n] * scale.y);
+
+			// Compute step values
+			float area_step = a.cross(b) / 2.0f;
+			vec2 center_step = (a + b) / 3.0f;
+			float mmoi_step =
+				area_step * (a.dot(a) + b.dot(b) + a.dot(b)) / 6.0f;
+
+			// Accumulate values
+			center = (center * area + center_step * area_step) / (area + area_step);
+			area += area_step;
+			mmoi += mmoi_step;
+		}
+		// Density is calculated from mass and total area
+		float density = mass / area;
+		// Scale mmoi by density and adjust to the center of mass
+		mmoi *= density;
+		mmoi -= mass * center.dot(center); // Parallel axis theorem adjustment
+		return mmoi;
 	}
 }

@@ -12,20 +12,8 @@ namespace chiori
 	{
 	private:
 		using Allocator = DEFAULT_ALLOCATOR;
-		cPool<cActor, Allocator> p_actors;
-		cPool<cShape, Allocator> p_shapes;
-		
-		struct aPair
-		{
-			aPair(cActor* ina, cActor* inb) : a{ ina }, b{ inb } {};
-			cActor* a;
-			cActor* b;
-		};
-		
 		float accumulator = 0.0f;
-		std::vector<cActor*> m_actors;
 		Broadphase m_broadphase;
-		std::vector<aPair> m_pairs; //TEMP
 		
 	public:		
 		~PhysicsWorld();
@@ -35,8 +23,12 @@ namespace chiori
 		void update(float inDT);	// converts update into fixed updates
 		void simulate(float inDT);	// simulates one time step of physics, call directly if not using update
 
-		cActor* AddActor(const std::vector<vec2>& vertices);
+		cShape* CreateShape(const std::vector<vec2>& vertices);
+		cActor* CreateActor(cShape* shape);
+		void RemoveShape(cShape* shape);
 		void RemoveActor(cActor* inActor);
-		std::vector<cActor*>& getWorldActors() { return m_actors; }
+		
+		cPool<cActor, Allocator> p_actors;
+		cPool<cShape, Allocator> p_shapes;
 	};
 }

@@ -11,7 +11,7 @@ namespace chiori
 	constexpr float PI = 3.14159265f;		// Pi
 	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
 	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
-	
+	inline bool fltcmp(float a, float b) { return (std::abs(a - b) < FLT_EPSILON); }
 	struct vec2
 	{
 		float x, y;
@@ -83,9 +83,7 @@ namespace chiori
 
 		// Vec2 comparisons
 		bool operator==(const vec2& inRHS) const {
-			bool xsame = (std::abs(x - inRHS.x) < EPSILON);
-			bool ysame = (std::abs(y - inRHS.y) < EPSILON);
-			return xsame && ysame;
+			return fltcmp(x, inRHS.x) && fltcmp(y, inRHS.y);
 		}
 		bool operator!=(const vec2& inRHS) const { return !(*this == inRHS); }
 		// Vec2 unique operations
@@ -143,55 +141,37 @@ namespace chiori
 	inline constexpr vec2 vec2::left = vec2{ -1.0f, 0.0f };
 	inline constexpr vec2 vec2::right = vec2{ 1.0f, 0.0f };
 	inline constexpr vec2 vec2::up = vec2{ 0.0f, 1.0f };
-	
-	struct cRot
-	{
-		cRot() {}
-		// all angles in radians
-		explicit cRot(float angle)
-		{
-			s = sinf(angle);
-			c = cosf(angle);
-		}
 
-		void Set(float angle)
-		{
-			s = sinf(angle);
-			c = cosf(angle);
-		}
-
-		void SetIdentity()
-		{
-			s = 0.0f;
-			c = 1.0f;
-		}
-
-		// Get the angle in radians
-		float GetAngle() const { return std::atan2(s, c); }
-		
-		float s, c; //sin, cos
-	};
 	
 	struct cTransform 
 	{
 		cTransform() {}
 
-		cTransform(const vec2& position, const cRot& rotation) : p(position), r(rotation) {}
+		cTransform(const vec2& position, const float& rotation) : pos(position), rot(rotation) {}
 
 		void SetIdentity()
 		{
-			p = vec2::zero;
-			r.SetIdentity();
+			pos = vec2::zero;
+			rot = 0.0f;
+			scale = vec2::zero;
 		}
 
 		// Set this based on the position and angle (radians).
 		void Set(const vec2& position, float angle)
 		{
-			p = position;
-			r.Set(angle);
+			pos = position;
+			rot = angle;
+		}
+
+		bool operator==(const cTransform& inRHS) const {
+			return pos == inRHS.pos && scale == inRHS.scale && rot == inRHS.rot;
+		}
+		bool operator!=(const cTransform& inRHS) const {
+			return !(*this == inRHS);
 		}
 		
-		vec2 p;
-		cRot r;
+		vec2 pos{ vec2::zero };
+		vec2 scale{ vec2::one };
+		float rot{ 0.0f };
 	};
 }

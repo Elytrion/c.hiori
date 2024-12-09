@@ -556,7 +556,7 @@ namespace chiori
 		}
 	}
 
-	void DynamicTree::DisplayTree(std::function<void(const AABB&)> drawFunc) const
+	void DynamicTree::DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const
 	{
 		if (m_root == null_node)
 		{
@@ -573,7 +573,7 @@ namespace chiori
 
 			const TreeNode& node = m_nodes[nodeId];
 
-			drawFunc(node.aabb);
+			drawFunc(node.height, node.aabb);
 
 			if (!node.IsLeaf())
 			{

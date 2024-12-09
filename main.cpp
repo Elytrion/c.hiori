@@ -28,9 +28,9 @@ bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
     return distance < (radius * radius);
 }
 
-void DrawActor(cActor*& inActor)
+void DrawActor(cShape*& inShape, const cTransform& inTfm)
 {
-	const std::vector<vec2> vertices = inActor->getVertices();
+	const std::vector<vec2> vertices = inShape->getVertices(inTfm);
     for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
@@ -41,7 +41,7 @@ void DrawActor(cActor*& inActor)
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
-    CP_Graphics_DrawCircle(inActor->position.x, inActor->position.y, 3);
+    CP_Graphics_DrawCircle(inTfm.pos.x, inTfm.pos.y, 3);
 }
 
 void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
@@ -72,10 +72,12 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
         float ycoord = radius * sin(angles[i]);
         vertices.push_back({ xcoord, ycoord });
     }
-
-	cActor* newActor = world.AddActor(vertices);
+    cShape* newShape = world.CreateShape(vertices);
+	cActor* newActor = world.CreateActor(newShape);
     newActor->setMass(10);
-    newActor->setPosition(centrePos);
+    cTransform tfm = newActor->getTransform();
+    tfm.pos = centrePos;
+    newActor->setTransform(tfm);
 }
 
 void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
@@ -86,14 +88,15 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
 	vertices.push_back({ width / 2.0f, height / 2.0f });
 	vertices.push_back({ -width / 2.0f, height / 2.0f });
 
-	cActor* newActor = world.AddActor(vertices);
+    cShape* newShape = world.CreateShape(vertices);
+    cActor* newActor = world.CreateActor(newShape);
     newActor->setMass(10);
-    newActor->setPosition(centrePos);
+    cTransform tfm = newActor->getTransform();
+    tfm.pos = centrePos;
+    newActor->setTransform(tfm);
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
-	if (isStatic)
-		newActor->setFlags(cActor::IS_STATIC);
 }
 
 void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
@@ -104,25 +107,14 @@ void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
 		vec2 { -radius, -radius },
 		vec2 { radius, -radius }
 	};
-    cActor* newActor = world.AddActor(vertices);
+    cShape* newShape = world.CreateShape(vertices);
+    cActor* newActor = world.CreateActor(newShape);
     newActor->setMass(10);
-    newActor->setPosition(centrePos);
-    if (isStatic)
-        newActor->setFlags(cActor::IS_STATIC);
+    cTransform tfm = newActor->getTransform();
+    tfm.pos = centrePos;
+    newActor->setTransform(tfm);
 }
 
-//void CreateLineActor(float radius, vec2& centrePos, bool isStatic = false)
-//{
-//    std::vector<vec2> vertices{
-//        vec2 { 0, radius },
-//        vec2 { 0, -radius }
-//    };
-//    cActor& newActor = world.AddActor(vertices);
-//    newActor.setMass(10);
-//    newActor.setPosition(centrePos);
-//    if (isStatic)
-//        newActor.setFlags(cActor::IS_STATIC);
-//}
 
 
 
@@ -162,27 +154,32 @@ void game_init(void)
 void UpdatePhysics()
 {
     world.update(CP_System_GetDt());
-    std::vector<cActor*>& actors = world.getWorldActors();
-    for (cActor*& a : actors)
+
+    for (int itr = 0; itr < world.p_actors.size(); itr++)
     {
-        DrawActor(a);
-        // keep within bounds
-        if (a->position.x >= recommendedWidth) a->position.x = recommendedWidth;
-        if (a->position.y >= recommendedHeight) a->position.y = recommendedHeight;
-        if (a->position.x < 0) a->position.x = 0;
-		if (a->position.y < 0) a->position.y = 0;
+        cActor* a = world.p_actors[itr];
+        cShape* s = world.p_shapes[a->GetShapeIndex()];
+        DrawActor(s, a->getTransform());
+        cTransform tfm = a->getTransform();
+        vec2& pos = tfm.pos;
+        if (pos.x >= recommendedWidth) pos.x = recommendedWidth;
+        if (pos.y >= recommendedHeight) pos.y = recommendedHeight;
+        if (pos.x < 0) pos.x = 0;
+        if (pos.y < 0) pos.y = 0;
+        a->setTransform(tfm);
     }
 }
 
 cActor* selectedActor;
 void HandleInput(CP_Vector mousePos)
 {
-    std::vector<cActor*>& actors = world.getWorldActors();
     if (CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding)
     {
-        for (cActor*& a : actors)
+        for (int itr = 0; itr < world.p_actors.size(); itr++)
         {
-            if (IsPointInRadius(CP_Vector{ a->getPosition().x, a->getPosition().y }, 50, mousePos))
+            cActor* a = world.p_actors[itr];
+            cTransform tfm = a->getTransform();
+            if (IsPointInRadius(CP_Vector{ tfm.pos.x, tfm.pos.y }, 50, mousePos))
             {
                 selectedActor = a;
                 isHolding = true;
@@ -193,12 +190,16 @@ void HandleInput(CP_Vector mousePos)
 
     if (isHolding && selectedActor)
     {
-        selectedActor->setPosition(vec2{ mousePos.x, mousePos.y });
+        cTransform tfm = selectedActor->getTransform();
+        tfm.pos = vec2{ mousePos.x, mousePos.y };
+        selectedActor->setTransform(tfm);
     }
 
     if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding && selectedActor)
     {
-        selectedActor->setRotation(selectedActor->getRotation() + 35 * DEG2RAD * CP_System_GetDt());
+        cTransform tfm = selectedActor->getTransform();
+        tfm.rot += (35 * DEG2RAD) * CP_System_GetDt();
+        selectedActor->setTransform(tfm);
     }
 
     if (CP_Input_KeyTriggered(KEY_K) && isHolding && selectedActor)

@@ -13,22 +13,19 @@ namespace chiori
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
 		vec2 localDir = inDir.rotated(-rotation * RAD2DEG);
-		//float rad = rotation * commons::DEG2RAD;
-		//float cos_t = cos(-rad);
-		//float sin_t = sin(-rad);
-		//vec2 localDir = {
-		//	inDir.x * cos_t - inDir.y * sin_t,
-		//	inDir.x * sin_t + inDir.y * cos_t
-		//};
-
-		vec2 l_w = supportFunc(localDir);
-		vec2 w = l_w.rotated(rotation * RAD2DEG);
-		//cos_t = cos(rad);
-		//sin_t = sin(rad);
-		//vec2 w = {
-		//	l_w.x * cos_t - l_w.y * sin_t,
-		//	l_w.x * sin_t + l_w.y * cos_t
-		//};
+		vec2 result = baseVertices[0];
+		float maxDot = result.dot(localDir);
+		for (int i = 1; i < baseVertices.size(); i++)
+		{
+			vec2 vertex = baseVertices[i];
+			float dot = vertex.dot(localDir);
+			if (dot > maxDot)
+			{
+				maxDot = dot;
+				result = vertex;
+			}
+		}		
+		vec2 w = result.rotated(rotation * RAD2DEG);
 		return w + position;
 	}
 	

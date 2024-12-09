@@ -67,12 +67,12 @@ namespace chiori
 	};
 
 	inline bool cPairLessThan(const cPair& pair1, const cPair& pair2)
-	{
-		if (pair1.a < pair2.b)
+	{ 
+		if (pair1.a < pair2.a)
 		{
 			return true;
 		}
-		if (pair1.a == pair2.b)
+		if (pair1.a == pair2.a)
 		{
 			return pair1.b < pair2.b;
 		}

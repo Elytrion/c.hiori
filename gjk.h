@@ -6,18 +6,17 @@ namespace chiori
 {
 	class GJKobject // abstracts any geometry with a valid support function into something that can be used by the algorithm
 	{
-    using SupportFunction = std::function<vec2(const vec2&)>;
 	public:
-        SupportFunction supportFunc;
+        const std::vector<vec2>& baseVertices;
 		vec2 position, position0;
         float rotation, rotation0;
         vec2 velocity = vec2::zero; // optional
         float angularVelocity = 0.0f; // optional
         float t = -1; // used for TOI collision checking
 
-        GJKobject(const vec2& pos, float rot, const SupportFunction& supFunc)
-            : position{ pos }, rotation{ rot } {
-            supportFunc = supFunc; rotation0 = rot; position0 = pos;
+        GJKobject(const std::vector<vec2>& baseVerts, const vec2& pos, float rot)
+            : baseVertices{ baseVerts }, position { pos }, rotation{ rot } {
+           rotation0 = rot; position0 = pos;
         }
 
         vec2 getSupportPoint(const vec2& inDir) const;

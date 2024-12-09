@@ -3,38 +3,6 @@
 
 namespace chiori
 {
-	void cActor::CalculateInverseInertia() // https://stackoverflow.com/questions/31106438/calculate-moment-of-inertia-given-an-arbitrary-convex-2d-polygon
-	{
-		float area = 0.0f;
-		vec2 center = vec2::zero;
-		float mmoi = 0.0f;
-		int n = baseVertices.size();
-		vec2 com = position + comOffset;
-		
-		for (int i = 0; i < n; i++) // we calculate all the MOI for all the triangles in the convex shape
-		{
-			const vec2& a = (baseVertices[i] * scale.x) - com;
-			const vec2& b = (baseVertices[(i + 1) % n] * scale.y) - com;
-			
-			// Compute step values
-			float area_step = a.cross(b) / 2.0f;
-			vec2 center_step = (a + b) / 3.0f;
-			float mmoi_step =
-				area_step * (a.dot(a) + b.dot(b) + a.dot(b)) / 6.0f;
-			
-			// Accumulate values
-			center = (center * area + center_step * area_step) / (area + area_step);
-			area += area_step;
-			mmoi += mmoi_step;
-		}
-		// Density is calculated from mass and total area
-		float density = mass / area;
-		// Scale mmoi by density and adjust to the center of mass
-		mmoi *= density;
-		mmoi -= mass * center.dot(center); // Parallel axis theorem adjustment
-		invInertia = 1.0f / mmoi;
-	}
-	
 	void cActor::setFlags(Flag_8 inFlags)
 	{
 		_flags = inFlags;
@@ -46,34 +14,38 @@ namespace chiori
 
 	const vec2 cActor::getVelocity(float dt) const
 	{
-		return (position - prevPosition) / dt;
+		return (tfm.pos - ptfm.pos) / dt;
 	}
 	void cActor::setVelocity(const vec2& inVelocity, float dt)
 	{
-		prevPosition = position - inVelocity * dt;
+		ptfm.pos = tfm.pos - inVelocity * dt;
 	}
 	const float cActor::getAngularVelocity(float dt) const
 	{
-		return (rotation - prevRotation) / dt;
+		return (tfm.rot - ptfm.rot) / dt;
 	}
 	void cActor::setAngularVelocity(float inAngularVelocity, float dt)
 	{
-		prevRotation = rotation - inAngularVelocity * dt;
+		ptfm.rot = tfm.rot - inAngularVelocity * dt;
 	}
 
 	void cActor::integrate(float dt)
 	{
 		if (!_flags.isSet(SIMULATED))
 			return;
-		if (_flags.isSet(IS_STATIC) ||
-			_flags.isSet(IS_KINEMATIC))
+		if (_flags.isSet(IS_KINEMATIC))
 		{
-			prevPosition = position;
-			prevRotation = prevRotation;
+			ptfm.pos = tfm.pos;
+			ptfm.rot = tfm.rot;
 			forces = vec2::zero;
 			torques = 0.0f;
 			return;
 		}
+
+		vec2& position = tfm.pos;
+		vec2& prevPosition = ptfm.pos;
+		float& rotation = tfm.rot;
+		float& prevRotation = ptfm.rot;
 
 		// Save the current position to use as the "previous position" for the next step
 		vec2 currentPosition = position;
