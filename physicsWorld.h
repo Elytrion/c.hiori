@@ -14,6 +14,13 @@ namespace chiori
 		using Allocator = DEFAULT_ALLOCATOR;
 		float accumulator = 0.0f;
 		Broadphase m_broadphase;
+		struct ppair // TEMP
+		{
+			ppair(cShape* ia, cShape* ib) : a{ ia }, b{ ib } {}
+			cShape* a;
+			cShape* b;
+		};
+		std::vector<ppair> p_pairs; // TEMP
 		
 	public:		
 		~PhysicsWorld();

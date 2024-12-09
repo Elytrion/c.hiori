@@ -93,12 +93,24 @@ namespace chiori
 
 	void PhysicsWorld::simulate(float inDT)
 	{
+		p_pairs.clear();
 		m_broadphase.UpdatePairs(
 			[this](void* userDataA, void* userDataB)
 			{
-				
+				cShape* dataA = static_cast<cShape*>(userDataA);
+				cShape* dataB = static_cast<cShape*>(userDataB);
+				p_pairs.emplace_back(dataA, dataB);
 			}
 		);
+
+		for (ppair& pair : p_pairs)
+		{
+			cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
+			cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
+			GJKobject a{ pair.a->vertices, tfm_a.pos, tfm_a.rot };
+			GJKobject b{ pair.b->vertices, tfm_b.pos, tfm_b.rot };
+			GJKresult result = CollisionDetection(a, b);
+		}
 		
 		for (int itr = 0; itr < p_actors.size(); itr++)
 		{
