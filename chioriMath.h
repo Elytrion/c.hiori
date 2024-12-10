@@ -176,4 +176,12 @@ namespace chiori
 		vec2 scale{ vec2::one };
 		float rot{ 0.0f };
 	};
+
+	static inline vec2 cTransformVec(const cTransform& xf, const vec2& v)
+	{
+		vec2 nv = v.rotated(xf.rot);
+		nv += xf.pos;
+		nv = nv.cmult(xf.scale);
+		return nv;
+	}
 }

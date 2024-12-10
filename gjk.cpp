@@ -204,7 +204,7 @@ namespace chiori
 			
 			std::vector<float> lambdas = signedVolumeDistanceSubalgorithm(outSimplex);
 
-			//We determine the closest points on each shape via the barycentric coordinates
+			// We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
 			result.z1 = vec2::zero;
 			result.z2 = vec2::zero;
@@ -214,20 +214,19 @@ namespace chiori
 				result.z2 += lambdas[l] * outSimplex[l].b;
 				dir += lambdas[l] * outSimplex[l].w;
 			}
-
 				
 			if (outSimplex.size() >= 3)
 				break;
 
-			float max_norm = 1.0f;
-			for (const auto& m : outSimplex)
-			{
-				float norm = m.w.sqrMagnitude();
-				max_norm = (max_norm > norm) ? max_norm : norm;
-			}
-			
-			if (dir.sqrMagnitude() < (HEPSILON * max_norm)) // Termination condition B
-				break;
+			//float max_norm = 1.0f;
+			//for (const auto& m : outSimplex)
+			//{
+			//	float norm = m.w.sqrMagnitude();
+			//	max_norm = (max_norm > norm) ? max_norm : norm;
+			//}
+			//
+			//if (dir.sqrMagnitude() < (HEPSILON * max_norm)) // Termination condition B
+			//	break;
 		}
 		
 		result.distance = dir.magnitude();
@@ -274,24 +273,26 @@ namespace chiori
 	
 	void ComputeWitnessPoints(const std::vector<Mvert>& polytope, const Edge& closestEdge, vec2& witnessA, vec2& witnessB, vec2(&c1)[2], vec2(&c2)[2])
 	{
+		const vec2& col_normal = closestEdge.normal;
 		int I = closestEdge.index;
-		const Mvert& v1 = polytope[(I - 1 + polytope.size()) % polytope.size()];
-		const Mvert& v2 = polytope[I];
-		vec2 edge = v2.w - v1.w;
+		const Mvert& m1 = polytope[(I - 1 + polytope.size()) % polytope.size()];
+		const Mvert& m2 = polytope[I];
+		vec2 edge = m2.w - m1.w;
 		float lengthSqr = edge.sqrMagnitude();
 
 		// Barycentric coordinates
-		float lambda1 = (v2.w.dot(edge)) / lengthSqr;
+		float lambda1 = (m2.w.dot(edge)) / lengthSqr;
 		float lambda2 = 1.0f - lambda1;
 
 		// Interpolate witness points
-		witnessA = lambda1 * v1.a + lambda2 * v2.a;
-		witnessB = lambda1 * v1.b + lambda2 * v2.b;
+		witnessA = lambda1 * m1.a + lambda2 * m2.a;
+		witnessB = lambda1 * m1.b + lambda2 * m2.b;
 
-		c1[0] = v1.a;
-		c1[1] = v2.a;
-		c2[0] = v1.b;
-		c2[1] = v2.b;
+		c1[0] = m1.a;
+		c1[1] = m2.a;
+		c2[0] = m1.b;
+		c2[1] = m2.b;
+		
 	}
 
 	GJKresult EPA(const GJKobject& inPrimary, const GJKobject& inTarget, Simplex& outSimplex, GJKresult& result)
@@ -318,6 +319,23 @@ namespace chiori
 		return result;
 	}
 
+	void HandleFaceSymmetry(const GJKobject& inPrimary, const GJKobject& inTarget, GJKresult& result)
+	{
+		// we use the witness points in the result to determine the likely faces on the primary and target
+		if (result.normal == vec2::zero)
+		{
+			result.normal = result.z1 - result.z2;
+		}
+		// we check the normals on each and see which is the closest to the result, if none, we know its not a face to face
+		int index_a = 0;
+		int index_b = 0;
+		for (const vec2& ln : inPrimary.baseNormals)
+		{
+			vec2 tn = cTransformVec(inPrimary.tfm, ln);
+			
+		}
+	}
+	
 	GJKresult CollisionDetection(const GJKobject& inPrimary, const GJKobject& inTarget)
 	{
 		Simplex s;
@@ -327,6 +345,8 @@ namespace chiori
 		{
 			result = EPA(inPrimary, inTarget, s, result);
 		}
+		HandleFaceSymmetry(inPrimary, inTarget, result);
 		return result;
 	}
+
 }

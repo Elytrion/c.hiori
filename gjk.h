@@ -54,6 +54,13 @@ namespace chiori
         }
     };
 
+    enum GJKRESULTTYPE
+    {
+        VERT_VERT = 1,
+        VERT_EDGE = 2,
+        EDGE_EDGE = 3
+    };
+
     struct GJKresult
     {
         float distance; // distance between objs (0 if intersecting)
@@ -64,6 +71,7 @@ namespace chiori
         float intersection_distance; // if distance <= 0, this will be the intersection distance
         vec2 c1[2]; // contributing edge/vertex on primary shape
 		vec2 c2[2]; // contributing edge/vertex on target shape
+        GJKRESULTTYPE type;
     };
 
     struct CollisionConfig

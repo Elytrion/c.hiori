@@ -53,9 +53,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="simplex.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="physicsWorld.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -97,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="chioriPool.h">
       <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="simplex.h">
+      <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

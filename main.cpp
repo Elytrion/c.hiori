@@ -7,10 +7,14 @@
 #include "cprocessing.h"
 #include "physicsWorld.h"
 #include "aabbtree.h"
+#include "gjk.h"
 
 using namespace chiori;
 PhysicsWorld world; // create an instance of the physics world
 bool isHolding = false;
+
+std::vector<cActor*> actors;
+std::vector<cShape*> shapes;
 
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
@@ -78,6 +82,8 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
     cTransform tfm = newActor->getTransform();
     tfm.pos = centrePos;
     newActor->setTransform(tfm);
+    shapes.push_back(newShape);
+    actors.push_back(newActor);
 }
 
 void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
@@ -97,6 +103,13 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
+    std::cout << "NEW SHAPE!" << std::endl;
+    for (vec2& v : vertices)
+    {
+        std::cout << v + centrePos << std::endl;
+    }
+    shapes.push_back(newShape);
+    actors.push_back(newActor);
 }
 
 void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
@@ -113,16 +126,39 @@ void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
     cTransform tfm = newActor->getTransform();
     tfm.pos = centrePos;
     newActor->setTransform(tfm);
+    auto f = newActor->getFlags();
+    f.toggle(cActor::USE_GRAVITY);
+    newActor->setFlags(f);
+    shapes.push_back(newShape);
+    actors.push_back(newActor);
 }
 
 
-
-
-const float EPSILON = 0.0000001f;
 int recommendedWidth = 1600;
 int recommendedHeight = 900;
 bool drawColors = true;
 bool drawFPS = true;
+
+//void calculateCSO()
+//{
+//    std::cout << "CALCULATE CSO!" << std::endl;;
+//    cTransform a = actors[0]->getTransform();
+//    cTransform b = actors[1]->getTransform();
+//    cShape* sa = shapes[0];
+//    cShape* sb = shapes[1];
+//
+//    std::vector<vec2> a_verts = sa->getVertices(a);
+//    std::vector<vec2> b_verts = sb->getVertices(b);
+//    for (const vec2& va : a_verts)
+//    {
+//        for (const vec2& vb : b_verts)
+//        {
+//            Mvert w{ va, vb };
+//            std::cout << w << std::endl;
+//        }
+//    }
+//}
+
 
 void InitPhysics()
 {
@@ -132,7 +168,11 @@ void InitPhysics()
     //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
     CreateRectActor(100, 100, middle);
-	CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });
+	CreateRectActor(100, 100, vec2{ middle.x + 90, middle.y });
+    //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
+
+    //calculateCSO();
+    //CreateTriangleActor(50, vec2{ middle.x - 150, middle.y });
    // CreateRandomizedActor(5, 50, middle);
     //CreateRandomizedActor(5, 50, vec2{ middle.x, middle.y + 150 });
     // // create floor

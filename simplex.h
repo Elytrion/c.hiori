@@ -10,7 +10,7 @@ namespace chiori
 		vec2 a{ 0,0 }; // support point on obj A
 		vec2 b{ 0,0 }; // support point on obj B
 		vec2 w{ 0,0 }; // support point on CSO aka minkowski difference between points a and b (a - b)
-		
+		float l{ -1.0f }; // barycentric
 		Mvert(const vec2& inA = vec2::zero, const vec2& inB = vec2::zero) : a(inA), b(inB), w(inA - inB) {}
 		
 		friend std::ostream& operator<<(std::ostream& inOS, const Mvert& inVec) {
@@ -28,8 +28,9 @@ namespace chiori
 	{
 	private:
 		std::array<Mvert, N> s_points;
-		unsigned s_size;
+
 	public:
+		unsigned s_size;
 		NSimplex() : s_points{}, s_size{0} {};
 
 		NSimplex& operator=(std::initializer_list<Mvert> list)
