@@ -11,7 +11,8 @@
 
 using namespace chiori;
 PhysicsWorld world; // create an instance of the physics world
-bool isHolding = false;
+bool isHolding_mouse = false;
+bool isHolding_keys = false;
 
 std::vector<cActor*> actors;
 std::vector<cShape*> shapes;
@@ -168,7 +169,7 @@ void InitPhysics()
     //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
     CreateRectActor(100, 100, middle);
-	CreateRectActor(100, 100, vec2{ middle.x + 90, middle.y });
+	CreateRectActor(100, 100, vec2{ middle.x + 100.056f, middle.y });
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();
@@ -213,7 +214,7 @@ void UpdatePhysics()
 cActor* selectedActor;
 void HandleInput(CP_Vector mousePos)
 {
-    if (CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding)
+    if ((CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding_mouse))
     {
         for (int itr = 0; itr < world.p_actors.size(); itr++)
         {
@@ -222,35 +223,81 @@ void HandleInput(CP_Vector mousePos)
             if (IsPointInRadius(CP_Vector{ tfm.pos.x, tfm.pos.y }, 50, mousePos))
             {
                 selectedActor = a;
-                isHolding = true;
+                isHolding_mouse = true;
                 break;
             }
         }
     }
+    else if (CP_Input_KeyTriggered(KEY_P))
+    {
+        if (!isHolding_keys)
+        {
+            for (int itr = 0; itr < world.p_actors.size(); itr++)
+            {
+                cActor* a = world.p_actors[itr];
+                cTransform tfm = a->getTransform();
+                if (IsPointInRadius(CP_Vector{ tfm.pos.x, tfm.pos.y }, 50, mousePos))
+                {
+                    selectedActor = a;
+                    isHolding_keys = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            isHolding_keys = false;
+            selectedActor = nullptr;
+        }
+    }
 
-    if (isHolding && selectedActor)
+    if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
+    {
+        selectedActor = nullptr;
+        isHolding_mouse = false;
+    }
+
+    if (isHolding_mouse && selectedActor)
     {
         cTransform tfm = selectedActor->getTransform();
         tfm.pos = vec2{ mousePos.x, mousePos.y };
         selectedActor->setTransform(tfm);
-    }
 
-    if (CP_Input_MouseDown(MOUSE_BUTTON_2) && isHolding && selectedActor)
-    {
-        cTransform tfm = selectedActor->getTransform();
-        tfm.rot += (35 * DEG2RAD) * CP_System_GetDt();
-        selectedActor->setTransform(tfm);
-    }
+        if (CP_Input_MouseDown(MOUSE_BUTTON_2))
+        {
+            cTransform tfm = selectedActor->getTransform();
+            tfm.rot += (35 * DEG2RAD) * CP_System_GetDt();
+            selectedActor->setTransform(tfm);
+        }
 
-    if (CP_Input_KeyTriggered(KEY_K) && isHolding && selectedActor)
-    {
-        selectedActor->addTorque(5000.0f);
+        if (CP_Input_KeyTriggered(KEY_K))
+        {
+            selectedActor->addTorque(5000.0f);
+        }
     }
     
-    if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
+    if (isHolding_keys && selectedActor)
     {
-        selectedActor = nullptr;
-        isHolding = false;
+        cTransform tfm = selectedActor->getTransform();
+        vec2& pos = tfm.pos;
+
+        if (CP_Input_KeyDown(KEY_RIGHT))
+        {
+            tfm.pos += vec2::right * 0.01f;
+        }
+        else if (CP_Input_KeyDown(KEY_LEFT))
+        {
+            tfm.pos += vec2::left * 0.01f;
+        }
+        else if (CP_Input_KeyDown(KEY_UP))
+        {
+            tfm.pos += vec2::up * 0.01f;
+        }
+        else if (CP_Input_KeyDown(KEY_DOWN))
+        {
+            tfm.pos += vec2::down * 0.01f;
+        }
+        selectedActor->setTransform(tfm);
     }
 }
 

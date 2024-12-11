@@ -40,7 +40,7 @@ namespace chiori
 		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }		// component wise scalar division
 		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }	// component wise scalar division
 		float sqrMagnitude() const { return x * x + y * y; }									// square magnitude (self dot product)
-		float magnitude() const { return std::sqrt(sqrMagnitude()); }							// magnitude (square root of square magnitude, length of the vector)
+		float magnitude() const { return sqrtf(sqrMagnitude()); }							// magnitude (square root of square magnitude, length of the vector)
 		vec2 normalized() const { float m = magnitude();  return (m > 0) ? (*this / m) : vec2(); }	// normalized version of this vector
 		vec2& normalize() {																		// normalize this vector in place
 			float m = magnitude();
@@ -183,5 +183,32 @@ namespace chiori
 		nv += xf.pos;
 		nv = nv.cmult(xf.scale);
 		return nv;
+	}
+
+
+	static inline float cross(const vec2& inLHS, const vec2& inRHS)
+	{
+		return (inLHS.x * inRHS.y) - (inLHS.y * inRHS.x);
+	}
+	
+	static inline vec2 cross(float inScalar, const vec2& inVec)
+	{
+		return { -inScalar * inVec.y, inScalar * inVec.x };
+	}
+
+	static inline vec2 cross(const vec2& inVec, float inScalar)
+	{
+		return { inScalar * inVec.y, -inScalar * inVec.x };
+	}
+	
+	static inline float dot(const vec2& inLHS, const vec2& inRHS)
+	{
+		return inLHS.dot(inRHS);
+	}
+
+	static inline float distance(const vec2& inLHS, const vec2& inRHS)
+	{
+		vec2 v = inLHS - inRHS;
+		return v.magnitude();
 	}
 }

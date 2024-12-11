@@ -54,13 +54,6 @@ namespace chiori
         }
     };
 
-    enum GJKRESULTTYPE
-    {
-        VERT_VERT = 1,
-        VERT_EDGE = 2,
-        EDGE_EDGE = 3
-    };
-
     struct GJKresult
     {
         float distance; // distance between objs (0 if intersecting)
@@ -71,7 +64,6 @@ namespace chiori
         float intersection_distance; // if distance <= 0, this will be the intersection distance
         vec2 c1[2]; // contributing edge/vertex on primary shape
 		vec2 c2[2]; // contributing edge/vertex on target shape
-        GJKRESULTTYPE type;
     };
 
     struct CollisionConfig
@@ -140,4 +132,83 @@ namespace chiori
 
     return toi;  // Return the estimated Time of Impact
 	*/
+
+
+
+    
+    struct cGJKProxy
+    {
+        cGJKProxy() : m_vertices(nullptr), m_count(0), m_radius(0.0f) {}
+
+        int getSupport(const vec2& d) const;
+        
+        const vec2& getSupportVert(const vec2& d) const;
+
+        const vec2& GetVertex(int index) const;
+        
+        const vec2* m_vertices;
+        int m_count;
+        float m_radius;
+    };
+    
+    struct cGJKInput
+    {
+        cGJKProxy proxyA;
+        cGJKProxy proxyB;
+        cTransform transformA;
+        cTransform transformB;
+    };
+
+    struct cGJKOutput
+    {
+        vec2 pointA;		// closest point on shapeA
+        vec2 pointB;		// closest point on shapeB
+        float distance;
+        int iterations;
+    };
+
+    cGJKOutput cGJK(const cGJKInput& input);
+
+    inline const vec2& cGJKProxy::GetVertex(int index) const
+    {
+        cassert(0 <= index && index < m_count);
+        return m_vertices[index];
+    }
+
+    inline int cGJKProxy::getSupport(const vec2& d) const
+    {
+        int bestIndex = 0;
+        float bestValue = dot(m_vertices[0], d);
+        for (int i = 1; i < m_count; ++i)
+        {
+            float value = dot(m_vertices[i], d);
+            if (value > bestValue)
+            {
+                bestIndex = i;
+                bestValue = value;
+            }
+        }
+
+        return bestIndex;
+    }
+
+    inline const vec2& cGJKProxy::getSupportVert(const vec2& d) const
+    {
+        int bestIndex = 0;
+        float bestValue = dot(m_vertices[0], d);
+        for (int i = 1; i < m_count; ++i)
+        {
+            float value = dot(m_vertices[i], d);
+            if (value > bestValue)
+            {
+                bestIndex = i;
+                bestValue = value;
+            }
+        }
+
+        return m_vertices[bestIndex];
+    }
+
+    cGJKOutput cDistance(const cGJKProxy& inPrimary, cTransform inPrimaryTransform,
+                         const cGJKProxy& inTarget, cTransform inTargetTransform);
 }

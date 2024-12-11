@@ -149,21 +149,27 @@ namespace chiori
 				cTransform tfm_b = b->getTransform();
 				cShape* shp_a = p_shapes[a->shapeIndex];
 				cShape* shp_b = p_shapes[b->shapeIndex];
-				GJKobject gjka{ shp_a->vertices, shp_a->normals, tfm_a };
-				GJKobject gjkb{ shp_b->vertices, shp_b->normals, tfm_b };
-				GJKresult result = CollisionDetection(gjka, gjkb);
-
+				//GJKobject gjka{ shp_a->vertices, shp_a->normals, tfm_a };
+				//GJKobject gjkb{ shp_b->vertices, shp_b->normals, tfm_b };
+				//GJKresult result = CollisionDetection(gjka, gjkb);
+				cGJKProxy proxyA, proxyB;
+				proxyA.m_vertices = shp_a->vertices.data();
+				proxyA.m_count = shp_a->vertices.size();
+				proxyB.m_vertices = shp_b->vertices.data();
+				proxyB.m_count = shp_b->vertices.size();
+				cGJKOutput result = cDistance(proxyA, tfm_a, proxyB, tfm_b);
+				std::cout << result.distance << std::endl;
 				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-				CP_Graphics_DrawCircle(result.z1.x, result.z1.y, 8);
-				CP_Graphics_DrawCircle(result.z2.x, result.z2.y, 8);
-				CP_Settings_StrokeWeight(2);
-				CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
-				// get normal line
-				vec2 normal = result.normal;
-				vec2 nxtVert = result.z1 + normal * std::fabs(result.distance);
-				CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
-				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
+				CP_Graphics_DrawCircle(result.pointA.x, result.pointA.y, 8);
+				CP_Graphics_DrawCircle(result.pointB.x, result.pointB.y, 8);
+				//CP_Settings_StrokeWeight(2);
+				//CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
+				//// get normal line
+				//vec2 normal = result.normal;
+				//vec2 nxtVert = result.z1 + normal * 50;
+				//CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
+				//CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 				//HandleDegenerateFace(result, shp_a->getVertices(tfm_a), shp_b->getVertices(tfm_b));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 
