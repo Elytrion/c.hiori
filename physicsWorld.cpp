@@ -104,11 +104,11 @@ namespace chiori
 
 		for (ppair& pair : p_pairs)
 		{
-			cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
-			cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
-			GJKobject a{ pair.a->vertices, pair.a->normals, tfm_a };
-			GJKobject b{ pair.b->vertices, pair.b->normals, tfm_b };
-			GJKresult result = CollisionDetection(a, b);
+			//cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
+			//cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
+			//GJKobject a{ pair.a->vertices, pair.a->normals, tfm_a };
+			//GJKobject b{ pair.b->vertices, pair.b->normals, tfm_b };
+			//GJKresult result = CollisionDetection(a, b);
 		}
 		
 		for (int itr = 0; itr < p_actors.size(); itr++)
@@ -149,16 +149,15 @@ namespace chiori
 				cTransform tfm_b = b->getTransform();
 				cShape* shp_a = p_shapes[a->shapeIndex];
 				cShape* shp_b = p_shapes[b->shapeIndex];
-				//GJKobject gjka{ shp_a->vertices, shp_a->normals, tfm_a };
-				//GJKobject gjkb{ shp_b->vertices, shp_b->normals, tfm_b };
-				//GJKresult result = CollisionDetection(gjka, gjkb);
-				cGJKProxy proxyA, proxyB;
-				proxyA.m_vertices = shp_a->vertices.data();
-				proxyA.m_count = shp_a->vertices.size();
-				proxyB.m_vertices = shp_b->vertices.data();
-				proxyB.m_count = shp_b->vertices.size();
-				cGJKOutput result = cDistance(proxyA, tfm_a, proxyB, tfm_b);
-				std::cout << result.distance << std::endl;
+
+				cGJKCache cache;
+				cache.count = 0;
+				cGJKProxy gjka{ shp_a->vertices.data(), static_cast<int>(shp_a->vertices.size()) };
+				cGJKProxy gjkb{ shp_b->vertices.data(), static_cast<int>(shp_b->vertices.size()) };
+				cGJKOutput result;
+				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
+				cGJK(result, input, &cache);
+				
 				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				CP_Graphics_DrawCircle(result.pointA.x, result.pointA.y, 8);

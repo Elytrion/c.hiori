@@ -4,7 +4,6 @@
 
 namespace chiori
 {
-	bool floatEqual(float a, float b) { return std::abs(a - b) < HEPSILON; }
 	bool compareSigns(float a, float b)
 	{
 		return (a > 0 && b > 0) || (a < 0 && b < 0);
@@ -12,7 +11,7 @@ namespace chiori
 
 	vec2 GJKobject::getSupportPoint(const vec2& inDir) const
 	{
-		vec2 localDir = inDir.rotated(-tfm.rot * RAD2DEG);
+		vec2 localDir = inDir.rotated(-tfm.rot);
 		vec2 result = baseVertices[0];
 		float maxDot = result.dot(localDir);
 		for (int i = 1; i < baseVertices.size(); i++)
@@ -25,8 +24,13 @@ namespace chiori
 				result = vertex;
 			}
 		}		
-		vec2 w = result.rotated(tfm.rot * RAD2DEG);
+		vec2 w = result.rotated(tfm.rot);
 		return w + tfm.pos;
+	}
+
+	vec2 getLocalDir(cTransform xf, const vec2& inDir)
+	{
+		return inDir.rotated(-xf.rot);
 	}
 	
 	#pragma region Distance Subalgorithm
@@ -212,7 +216,6 @@ namespace chiori
 			{
 				result.z1 += lambdas[l] * outSimplex[l].a;
 				result.z2 += lambdas[l] * outSimplex[l].b;
-				std::cout << "l" << l << ": " << lambdas[l] << std::endl;
 				dir += lambdas[l] * outSimplex[l].w;
 			}
 				
@@ -331,329 +334,310 @@ namespace chiori
 		}
 		return result;
 	}
+	
+
 
 
 
 
 
 	
+
 	struct cSimplexVertex
 	{
 		vec2 wA;		// support point in proxyA
 		vec2 wB;		// support point in proxyB
-		vec2 w;		// wB - wA
-		float a;		// barycentric coordinate for closest point
-		int indexA;	// wA index
-		int indexB;	// wB index
+		vec2 w;			// wB - wA
+		float l;		// barycentric lambda for closest point
+		int indexA;		// wA index
+		int indexB;		// wB index
 	};
 
 	struct cSimplex
 	{
-		cSimplex(const cGJKProxy* proxyA, const cTransform& transformA, const cGJKProxy* proxyB, const cTransform& transformB)
+		float GetMetric() const
 		{
-			cSimplexVertex* vertices = &m_v1;
-			cSimplexVertex* v = vertices + 0;
-			v->indexA = 0;
-			v->indexB = 0;
-			vec2 wALocal = proxyA->GetVertex(0);
-			vec2 wBLocal = proxyB->GetVertex(0);
-			v->wA = cTransformVec(transformA, wALocal);
-			v->wB = cTransformVec(transformB, wBLocal);
-			v->w = v->wB - v->wA;
-			v->a = 1.0f;
-			m_count = 1;
+			switch (m_count)
+			{
+			case 0:
+				cassert(false);
+				return 0.0;
+
+			case 1:
+				return 0.0f;
+
+			case 2:
+				return distance(m1.w, m2.w);
+
+			case 3:
+				return cross(m2.w - m1.w, m3.w - m1.w);
+
+			default:
+				cassert(false);
+				return 0.0f;
+			}
 		}
 		
-		vec2 GetSearchDirection() const
+		void ReadCache(const cGJKCache* cache,
+			const cGJKProxy& proxyA, const cTransform& transformA,
+			const cGJKProxy& proxyB, const cTransform& transformB)
 		{
-			switch (m_count)
-			{
-			case 1:
-				return -m_v1.w;
+			cassert(cache->count <= 3);
 
-			case 2:
+			// Copy data from cache.
+			m_count = cache->count;
+			cSimplexVertex* vertices = &m1;
+			for (int i = 0; i < m_count; ++i)
 			{
-				vec2 e12 = m_v2.w - m_v1.w;
-				float sgn = cross(e12, -m_v1.w);
-				if (sgn > 0.0f)
+				cSimplexVertex* v = vertices + i;
+				v->indexA = cache->indexA[i];
+				v->indexB = cache->indexB[i];
+				vec2 wALocal = proxyA.GetVertex(v->indexA);
+				vec2 wBLocal = proxyB.GetVertex(v->indexB);
+				v->wA = cTransformVec(transformA, wALocal);
+				v->wB = cTransformVec(transformB, wBLocal);
+				v->w = v->wB - v->wA;
+				v->l = 0.0f;
+			}
+
+			// Compute the new simplex metric, if it is substantially different than
+			// old metric then flush the simplex.
+			if (m_count > 1)
+			{
+				float metric1 = cache->metric;
+				float metric2 = GetMetric();
+				if (metric2 < 0.5f * metric1 || 2.0f * metric1 < metric2 || metric2 < EPSILON)
 				{
-					// Origin is left of e12.
-					return cross(1.0f, e12);
-				}
-				else
-				{
-					// Origin is right of e12.
-					return cross(e12, 1.0f);
+					// Reset the simplex.
+					m_count = 0;
 				}
 			}
 
-			default:
-				cassert(false);
-				return vec2::zero;
-			}
-		}
-
-		vec2 GetClosestPoint() const
-		{
-			switch (m_count)
+			// If the cache is empty or invalid ...
+			if (m_count == 0)
 			{
-			case 0:
-				cassert(false);
-				return vec2::zero;
-
-			case 1:
-				return m_v1.w;
-
-			case 2:
-				return m_v1.a * m_v1.w + m_v2.a * m_v2.w;
-
-			case 3:
-				return vec2::zero;
-
-			default:
-				cassert(false);
-				return vec2::zero;
+				cSimplexVertex* v = vertices;
+				v->indexA = 0;
+				v->indexB = 0;
+				vec2 wALocal = proxyA.GetVertex(0);
+				vec2 wBLocal = proxyB.GetVertex(0);
+				v->wA = cTransformVec(transformA, wALocal);
+				v->wB = cTransformVec(transformB, wBLocal);
+				v->w = v->wB - v->wA;
+				m_count = 1;
 			}
 		}
 
-		void GetWitnessPoints(vec2* pA, vec2* pB) const
+		void WriteCache(cGJKCache* cache) const
 		{
-			switch (m_count)
+			cache->metric = GetMetric();
+			cache->count = static_cast<unsigned>(m_count);
+			const cSimplexVertex* vertices = &m1;
+			for (int i = 0; i < m_count; ++i)
 			{
-			case 0:
-				cassert(false);
-				break;
-
-			case 1:
-				*pA = m_v1.wA;
-				*pB = m_v1.wB;
-				break;
-
-			case 2:
-				*pA = m_v1.a * m_v1.wA + m_v2.a * m_v2.wA;
-				*pB = m_v1.a * m_v1.wB + m_v2.a * m_v2.wB;
-				break;
-
-			case 3:
-				*pA = m_v1.a * m_v1.wA + m_v2.a * m_v2.wA + m_v3.a * m_v3.wA;
-				*pB = *pA;
-				break;
-
-			default:
-				cassert(false);
-				break;
+				cache->indexA[i] = static_cast<unsigned>(vertices[i].indexA);
+				cache->indexB[i] = static_cast<unsigned>(vertices[i].indexB);
 			}
 		}
 
-		void S1D();
-		void S2D();
-
-		cSimplexVertex m_v1, m_v2, m_v3;
+		cSimplexVertex m1, m2, m3;
 		int m_count;
 	};
 
-
-	// Solve a line segment using barycentric coordinates.
-	//
-	// p = a1 * w1 + a2 * w2
-	// a1 + a2 = 1
-	//
-	// The vector from the origin to the closest point on the line is
-	// perpendicular to the line.
-	// e12 = w2 - w1
-	// dot(p, e) = 0
-	// a1 * dot(w1, e) + a2 * dot(w2, e) = 0
-	//
-	// 2-by-2 linear system
-	// [1      1     ][a1] = [1]
-	// [w1.e12 w2.e12][a2] = [0]
-	//
-	// Define
-	// d12_1 =  dot(w2, e12)
-	// d12_2 = -dot(w1, e12)
-	// d12 = d12_1 + d12_2
-	//
-	// Solution
-	// a1 = d12_1 / d12
-	// a2 = d12_2 / d12
-	void cSimplex::S1D()
+	#pragma region Distance Subalgorithm
+	void S1D(cSimplex& simplex)
 	{
-		vec2 w1 = m_v1.w;
-		vec2 w2 = m_v2.w;
-		vec2 e12 = w2 - w1;
+		const vec2& s1 = simplex.m1.w;
+		const vec2& s2 = simplex.m2.w;
+		vec2 t = s2 - s1;
 
-		// w1 region
-		float d12_2 = -dot(w1, e12);
-		if (d12_2 <= 0.0f)
-		{
-			// a2 <= 0, so we clamp it to 0
-			m_v1.a = 1.0f;
-			m_count = 1;
-			return;
+		// orthogonal projection of the origin onto the infinite line s1s2
+		vec2 p0 = s1 + (-s1.dot(t) / t.dot(t)) * t;
+
+		// Calculate barycentric coordinates for s1 and s2 based on p0
+		// Reduce to the dimension with the largest absolute value
+		float mu_max = s1.x - s2.x;
+		int I = 0;
+		if (std::abs(s1.y - s2.y) > std::abs(mu_max)) {
+			mu_max = s1.y - s2.y;
+			I = 1; // Track which component is most influential
 		}
 
-		// w2 region
-		float d12_1 = dot(w2, e12);
-		if (d12_1 <= 0.0f)
-		{
-			// a1 <= 0, so we clamp it to 0
-			m_v2.a = 1.0f;
-			m_count = 1;
-			m_v1 = m_v2;
-			return;
-		}
+		// Calculate signed area relative to the coordinate with the largest difference
+		float C[2];
+		C[0] = -(s2[I] - p0[I]);
+		C[1] = s1[I] - p0[I];
 
-		// Must be in e12 region.
-		float inv_d12 = 1.0f / (d12_1 + d12_2);
-		m_v1.a = d12_1 * inv_d12;
-		m_v2.a = d12_2 * inv_d12;
-		m_count = 2;
+		// Determine whether to keep the full simplex or reduce it (compare signs algo)
+		bool allSignsMatch = compareSigns(C[0], mu_max) && compareSigns(C[1], mu_max);
+
+		if (allSignsMatch)
+		{
+			simplex.m1.l = C[0] / mu_max;
+			simplex.m2.l = C[1] / mu_max;
+		}
+		else
+		{
+			simplex.m1.l = 1.0f;
+			simplex.m_count = 1;
+		}
 	}
 
-	// Possible regions:
-	// - points[2]
-	// - edge points[0]-points[2]
-	// - edge points[1]-points[2]
-	// - inside the triangle
-	void cSimplex::S2D()
+	float computeDStar(const cSimplex& simplex)
 	{
-		vec2 w1 = m_v1.w;
-		vec2 w2 = m_v2.w;
-		vec2 w3 = m_v3.w;
-
-		// Edge12
-		// [1      1     ][a1] = [1]
-		// [w1.e12 w2.e12][a2] = [0]
-		// a3 = 0
-		vec2 e12 = w2 - w1;
-		float w1e12 = dot(w1, e12);
-		float w2e12 = dot(w2, e12);
-		float d12_1 = w2e12;
-		float d12_2 = -w1e12;
-
-		// Edge13
-		// [1      1     ][a1] = [1]
-		// [w1.e13 w3.e13][a3] = [0]
-		// a2 = 0
-		vec2 e13 = w3 - w1;
-		float w1e13 = dot(w1, e13);
-		float w3e13 = dot(w3, e13);
-		float d13_1 = w3e13;
-		float d13_2 = -w1e13;
-
-		// Edge23
-		// [1      1     ][a2] = [1]
-		// [w2.e23 w3.e23][a3] = [0]
-		// a1 = 0
-		vec2 e23 = w3 - w2;
-		float w2e23 = dot(w2, e23);
-		float w3e23 = dot(w3, e23);
-		float d23_1 = w3e23;
-		float d23_2 = -w2e23;
-
-		// Triangle123
-		float n123 = cross(e12, e13);
-
-		float d123_1 = n123 * cross(w2, w3);
-		float d123_2 = n123 * cross(w3, w1);
-		float d123_3 = n123 * cross(w1, w2);
-
-		// w1 region
-		if (d12_2 <= 0.0f && d13_2 <= 0.0f)
-		{
-			m_v1.a = 1.0f;
-			m_count = 1;
-			return;
+		vec2 weightedSum = { 0.0f, 0.0f }; // Initialize the weighted sum as a 2D vector
+		const cSimplexVertex* v = &simplex.m1;
+		for (size_t i = 0; i < simplex.m_count; ++i) {
+			weightedSum += v->w * v->l; // Accumulate weighted points
 		}
-
-		// e12
-		if (d12_1 > 0.0f && d12_2 > 0.0f && d123_3 <= 0.0f)
-		{
-			float inv_d12 = 1.0f / (d12_1 + d12_2);
-			m_v1.a = d12_1 * inv_d12;
-			m_v2.a = d12_2 * inv_d12;
-			m_count = 2;
-			return;
-		}
-
-		// e13
-		if (d13_1 > 0.0f && d13_2 > 0.0f && d123_2 <= 0.0f)
-		{
-			float inv_d13 = 1.0f / (d13_1 + d13_2);
-			m_v1.a = d13_1 * inv_d13;
-			m_v3.a = d13_2 * inv_d13;
-			m_count = 2;
-			m_v2 = m_v3;
-			return;
-		}
-
-		// w2 region
-		if (d12_1 <= 0.0f && d23_2 <= 0.0f)
-		{
-			m_v2.a = 1.0f;
-			m_count = 1;
-			m_v1 = m_v2;
-			return;
-		}
-
-		// w3 region
-		if (d13_1 <= 0.0f && d23_1 <= 0.0f)
-		{
-			m_v3.a = 1.0f;
-			m_count = 1;
-			m_v1 = m_v3;
-			return;
-		}
-
-		// e23
-		if (d23_1 > 0.0f && d23_2 > 0.0f && d123_1 <= 0.0f)
-		{
-			float inv_d23 = 1.0f / (d23_1 + d23_2);
-			m_v2.a = d23_1 * inv_d23;
-			m_v3.a = d23_2 * inv_d23;
-			m_count = 2;
-			m_v1 = m_v3;
-			return;
-		}
-
-		// Must be in triangle123
-		float inv_d123 = 1.0f / (d123_1 + d123_2 + d123_3);
-		m_v1.a = d123_1 * inv_d123;
-		m_v2.a = d123_2 * inv_d123;
-		m_v3.a = d123_3 * inv_d123;
-		m_count = 3;
+		return weightedSum.magnitude(); // Return the magnitude of the weighted sum
 	}
 
-
-	cGJKOutput cGJK(const cGJKInput& input)
+	void S2D(cSimplex& simplex)
 	{
-		cGJKOutput output;
-		const cGJKProxy* proxyA = &input.proxyA;
-		const cGJKProxy* proxyB = &input.proxyB;
+		const vec2& s1 = simplex.m1.w;
+		const vec2& s2 = simplex.m2.w;
+		const vec2& s3 = simplex.m3.w;
 
+		// no need to calculate p0 (projection of origin onto plane), as the origin will lie in the same plane as these points
+
+		// Find signed area
+		// Normally we reduce to the dimension with the largest absolute value, but since
+		// we are already in 2D, our vectors don't have a 3rd component to reduce,
+		// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
+		// the signed area of the triangle remains the same in 2D
+		float mu_max = s1.x * (s2.y - s3.y) +
+			s2.x * (s3.y - s1.y) +
+			s3.x * (s1.y - s2.y);
+
+		// Calculate barycentric coordinates for s1, s2, and s3
+		// In the paper it uses a determinant calculation, which we can simplify in 2D
+		// to a simple 2D cross product.
+		// Corresponds to the signed area of 2-simplex: (p0, s2, s3)
+		float C1 = s2.cross(s3);
+		// Corresponds to the signed area of 2-simplex: (p0, s1, s3)
+		float C2 = s3.cross(s1);
+		// Corresponds to the signed area of 2-simplex: (p0, s1, s2)
+		float C3 = s1.cross(s2);
+
+		bool cmp1 = compareSigns(mu_max, C1),
+			cmp2 = compareSigns(mu_max, C2),
+			cmp3 = compareSigns(mu_max, C3);
+
+		if (cmp1 && cmp2 && cmp3)
+		{
+			// encloses origin in 2D
+			simplex.m1.l = C1 / mu_max;
+			simplex.m2.l = C2 / mu_max;
+			simplex.m3.l = C3 / mu_max;
+			return;
+		}
+
+		float d = FLT_MAX; // minimum distance to origin
+		std::vector<float> l; // default to s1
+		cSimplex w;
+		if (!cmp2)
+		{
+			// s2 appears to be non-contributing, so we check the reduced simplex { s1. s3 }
+			w.m_count = 2;
+			w.m1 = simplex.m1;
+			w.m2 = simplex.m3;
+			S1D(w); // modify simplex using S1D to obtain barycentric lambdas
+			float ds = computeDStar(w);
+			if (ds < d)
+			{
+				simplex = w;
+				d = ds;
+			}
+		}
+
+		if (!cmp3)
+		{
+			// s3 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+			w.m_count = 2;
+			w.m1 = simplex.m1;
+			w.m2 = simplex.m2;
+			S1D(w); // modify simplex using S1D to obtain barycentric lambdas
+			float ds = computeDStar(w);
+			if (ds < d)
+			{
+				simplex = w;
+				d = ds;
+			}
+		}
+
+		if (!cmp1)
+		{
+			// s1 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
+			// Unlikely to reach here, as s1 is meant to be the latest point towards the origin
+			// however, included for robustness
+			w.m_count = 2;
+			w.m1 = simplex.m2;
+			w.m2 = simplex.m3;
+			S1D(w);	// modify simplex using S1D to obtain barycentric lambdas
+			float ds = computeDStar(w);
+			if (ds < d)
+			{
+				simplex = w;
+				d = ds;
+			}
+		}
+	}
+
+	void signedVolumeDistanceSubalgorithm(cSimplex& outSimplex)
+	{
+		int dim = outSimplex.m_count - 1;
+		switch (dim)
+		{
+		case 1:
+			 S1D(outSimplex);
+			 break;
+		case 2:
+			S2D(outSimplex);
+			break;
+		default:
+			break;
+		}
+	}
+	#pragma endregion
+	
+
+	void SetSupportVertex(cSimplex& s, const vec2& dir,
+		const cGJKProxy& proxyA, const cGJKProxy& proxyB,
+		const cTransform& transformA, const cTransform& transformB)
+	{
+		cSimplexVertex* vertex = &s.m1 + s.m_count;
+		vec2 localDirA = (-dir).rotated(transformA.rot);
+		vertex->indexA = proxyA.getSupport(-localDirA);
+		vertex->wA = proxyA.getSupportVert(dir, transformA);
+		vec2 localDirB = dir.rotated(transformB.rot);
+		vertex->indexB = proxyB.getSupport(localDirB);
+		vertex->wB = proxyB.getSupportVert(dir, transformB);
+		vertex->w = vertex->wB - vertex->wA;
+	}
+
+	void cGJK(cGJKOutput& output, const cGJKInput& input, cGJKCache* cache)
+	{
+		const cGJKProxy& proxyA = input.proxyA;
+		const cGJKProxy& proxyB = input.proxyB;
+		vec2& closestPtA = output.pointA;
+		vec2& closestPtB = output.pointB;
 		cTransform transformA = input.transformA;
 		cTransform transformB = input.transformB;
+		float tolerance = input.tolerance;
 
-		// Initialize the simplex.
-		cSimplex simplex( proxyA, transformA, proxyB, transformB );
-
-		// Get simplex vertices as an array.
-		cSimplexVertex* vertices = &simplex.m_v1;
-		const int k_maxIters = commons::GJK_ITERATIONS;
-
+		cSimplex simplex;
+		simplex.ReadCache(cache, proxyA, transformA, proxyB, transformB); // inits the first point in the simplex
+		const int _maxItr = input.maxIterations;
+		cSimplexVertex* vertices = &simplex.m1;
+		vec2 dir = vec2::zero;
 		// These store the vertices of the last simplex so that we
 		// can check for duplicates and prevent cycling.
 		int saveA[3], saveB[3];
 		int saveCount = 0;
-
-		float distanceSqr1 = FLT_MAX;
-		float distanceSqr2 = distanceSqr1;
-
-		// Main iteration loop.
-		int iter = 0;
-		while (iter < k_maxIters)
+		int itr = 0;
+		while (itr < _maxItr)
 		{
-			// Copy simplex so we can identify duplicates.
 			saveCount = simplex.m_count;
 			for (int i = 0; i < saveCount; ++i)
 			{
@@ -661,69 +645,32 @@ namespace chiori
 				saveB[i] = vertices[i].indexB;
 			}
 
-			switch (simplex.m_count)
+			signedVolumeDistanceSubalgorithm(simplex);
+
+			if (simplex.m_count >= 3) // termination condition A1
+				break;
+
+			dir = vec2::zero;
+			for (int i = 0; i < simplex.m_count; i++)
 			{
-			case 1:
-				break;
-
-			case 2:
-				simplex.S1D();
-				break;
-
-			case 3:
-				simplex.S2D();
-				break;
-
-			default:
-				cassert(false);
+				dir += vertices[i].l * vertices[i].w;
 			}
 
-			// If we have 3 points, then the origin is in the corresponding triangle.
-			if (simplex.m_count == 3)
-			{
-				break;
-			}
+			float dirm = dir.sqrMagnitude();
 
-			// Compute closest point.
-			vec2 p = simplex.GetClosestPoint();
-			distanceSqr2 = p.sqrMagnitude();
-
-			// Ensure progress
-			if (distanceSqr2 >= distanceSqr1)
-			{
-				//break;
-			}
-			distanceSqr1 = distanceSqr2;
-
-			// Get search direction.
-			vec2 d = simplex.GetSearchDirection();
-
-			// Ensure the search direction is numerically fit.
-			if (d.sqrMagnitude() < EPSILON * EPSILON)
-			{
-				// The origin is probably contained by a line segment
-				// or triangle. Thus the shapes are overlapped.
-
-				// We can't return zero here even though there may be overlap.
-				// In case the simplex is a point, segment, or triangle it is difficult
-				// to determine if the origin is contained in the CSO or very close to it.
-				break;
-			}
-
-			// Compute a tentative new simplex vertex using support points.
+			// Get new support vertex (at here, we know m_count < 3)
+			SetSupportVertex(simplex, proxyA, proxyB, )
 			cSimplexVertex* vertex = vertices + simplex.m_count;
-			vertex->indexA = proxyA->getSupport((-d).rotate(transformA.rot));
-			vertex->wA = cTransformVec(transformA, proxyA->GetVertex(vertex->indexA));
-			vec2 wBLocal;
-			vertex->indexB = proxyB->getSupport((d).rotate(transformB.rot));
-			vertex->wB = cTransformVec(transformB, proxyB->GetVertex(vertex->indexB));
+			vertex->indexA = proxyA.getSupport((-dir).rotated(transformA.rot));
+			vertex->wA = cTransformVec(transformA, proxyA.GetVertex(vertex->indexA));
+			vertex->indexB = proxyB.getSupport((dir).rotated(transformB.rot));
+			vertex->wB = cTransformVec(transformB, proxyB.GetVertex(vertex->indexB));
 			vertex->w = vertex->wB - vertex->wA;
 
-			// Iteration count is equated to the number of support point calls.
-			++iter;
+			++itr;
 
-			// Check for duplicate support points. This is the main termination criteria.
 			bool duplicate = false;
+			// Termination condition B, duplicate support points. This is the main termination criteria.
 			for (int i = 0; i < saveCount; ++i)
 			{
 				if (vertex->indexA == saveA[i] && vertex->indexB == saveB[i])
@@ -732,35 +679,54 @@ namespace chiori
 					break;
 				}
 			}
-
 			// If we found a duplicate support point we must exit to avoid cycling.
 			if (duplicate)
-			{
 				break;
-			}
+			
+			if ((dirm - dir.dot(vertex->w)) <= (dirm * tolerance * tolerance)) // Termination condition C, similar to A2
+				break;
 
-			// New vertex is ok and needed.
-			++simplex.m_count;
+			// Add the new vertex
+			simplex.m_count++;
 		}
+		closestPtA = closestPtB = vec2::zero;
+		for (int i = 0; i < simplex.m_count; i++) 
+		{
+			closestPtA += vertices[i].l * vertices[i].wA;
+			closestPtB += vertices[i].l * vertices[i].wB;
+		}
+		
+		output.distance = dir.magnitude();
+		output.iterations = itr;
+		
+		simplex.WriteCache(cache);
+		
+		if (input.useRadii)
+		{
+			float rA = proxyA.m_radius;
+			float rB = proxyB.m_radius;
 
-		// Prepare output.
-		simplex.GetWitnessPoints(&output.pointA, &output.pointB);
-		output.distance = distance(output.pointA, output.pointB);
-		output.iterations = iter;
-
-		return output;
+			if (output.distance > rA + rB && output.distance > tolerance)
+			{
+				// Shapes are still no overlapped.
+				// Move the witness points to the outer surface.
+				output.distance -= rA + rB;
+				vec2 normal = output.pointB - output.pointA;
+				normal.normalize();
+				output.pointA += rA * normal;
+				output.pointB -= rB * normal;
+			}
+			else
+			{
+				// Shapes are overlapped when radii are considered.
+				// Move the witness points to the middle.
+				vec2 p = 0.5f * (output.pointA + output.pointB);
+				output.pointA = p;
+				output.pointB = p;
+				output.distance = 0.0f;
+			}
+		}
+		
 	}
-
-
-	cGJKOutput cDistance(const cGJKProxy& inPrimary, cTransform inPrimaryTransform,
-		const cGJKProxy& inTarget, cTransform inTargetTransform)
-	{
-		cGJKInput input;
-		input.proxyA = inPrimary;
-		input.proxyB = inTarget;
-		input.transformA = inPrimaryTransform;
-		input.transformB = inTargetTransform;
-
-		return cGJK(input);	
-	}
+	
 }

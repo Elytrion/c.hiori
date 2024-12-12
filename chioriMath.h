@@ -5,9 +5,9 @@
 
 namespace chiori
 {
-	constexpr float EPSILON = 1e-5f;		// Epislon value for comparing floats
-	constexpr float LEPSILON = 1e-3f;		// Low precision epsilon value
-	constexpr float HEPSILON = 1e-7f;		// High precision epsilon value
+	constexpr float EPSILON = 1e-6f;		// Epislon value for comparing floats
+	constexpr float LEPSILON = 1e-4f;		// Low precision epsilon value
+	constexpr float HEPSILON = 1e-8f;		// High precision epsilon value
 	constexpr float PI = 3.14159265f;		// Pi
 	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
 	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
@@ -89,16 +89,16 @@ namespace chiori
 		}
 		bool operator!=(const vec2& inRHS) const { return !(*this == inRHS); }
 		// Vec2 unique operations
-		vec2 rotated(float inDegrees) const			// rotated version of this vector
+		vec2 rotated(float inRadians) const			// rotated version of this vector
 		{
-			float rad = inDegrees * DEG2RAD;
+			float rad = inRadians;
 			float cosTheta = cos(rad);
 			float sinTheta = sin(rad);
 			return vec2(x * cosTheta - y * sinTheta, x * sinTheta + y * cosTheta);
 		}
-		vec2& rotate(float inDegrees)				// rotate this vector in place
+		vec2& rotate(float inRadians)				// rotate this vector in place
 		{
-			float rad = inDegrees * DEG2RAD;
+			float rad = inRadians;
 			float cosTheta = cos(rad);
 			float sinTheta = sin(rad);
 			float nx = x * cosTheta - y * sinTheta;

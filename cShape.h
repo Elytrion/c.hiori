@@ -71,7 +71,7 @@ namespace chiori
 		{
 			vertex.x = vertex.x * inTfm.scale.x;
 			vertex.y = vertex.y * inTfm.scale.y;
-			vertex = vertex.rotate(inTfm.rot * RAD2DEG);
+			vertex = vertex.rotate(inTfm.rot);
 			vertex = vertex + inTfm.pos;
 		}
 		return n_verts;

@@ -169,7 +169,7 @@ void InitPhysics()
     //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
     CreateRectActor(100, 100, middle);
-	CreateRectActor(100, 100, vec2{ middle.x + 100.056f, middle.y });
+	CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y });
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();
