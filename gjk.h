@@ -114,5 +114,5 @@ namespace chiori
         return bestIndex;
     }
 
-    void GJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache = nullptr);
+    void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache = nullptr);
 }

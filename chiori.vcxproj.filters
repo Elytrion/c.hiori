@@ -25,6 +25,9 @@
     <ClCompile Include="cActor.cpp">
       <Filter>Source\Components</Filter>
     </ClCompile>
+    <ClCompile Include="manifold.cpp">
+      <Filter>Source\Collision Detection</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -96,6 +99,9 @@
       <Filter>Headers\Commons</Filter>
     </ClInclude>
     <ClInclude Include="simplex.h">
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="manifold.h">
       <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
   </ItemGroup>

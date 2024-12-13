@@ -148,11 +148,11 @@ namespace chiori
 
 				cGJKCache cache;
 				cache.count = 0;
-				cGJKProxy gjka{ shp_a->vertices.data(), static_cast<int>(shp_a->vertices.size()) };
-				cGJKProxy gjkb{ shp_b->vertices.data(), static_cast<int>(shp_b->vertices.size()) };
+				cGJKProxy gjka{ shp_a->vertices.data(), shp_a->count };
+				cGJKProxy gjkb{ shp_b->vertices.data(), shp_b->count };
 				cGJKOutput result;
 				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
-				GJK(input, result, &cache);
+				cGJK(input, result, &cache);
 				
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				CP_Graphics_DrawCircle(result.pointA.x, result.pointA.y, 8);

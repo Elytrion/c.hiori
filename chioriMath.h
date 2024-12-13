@@ -37,7 +37,8 @@ namespace chiori
 		float cross(const vec2& inRHS) const { return (x * inRHS.y) - (y * inRHS.x); }			// 2D cross product (returns a scalar)
 		vec2 scross(float inScalar) const { return { inScalar * y, -inScalar * x }; }			// 2D scalar cross product (returns a vector)
 		vec2 cmult(const vec2& inRHS) const { return {x * inRHS.x, y * inRHS.y}; }				// component wise multiplication with another vector (x*x, y*y)
-		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }		// component wise scalar division
+		vec2 operator/(float inScalar) const { return vec2(x / inScalar, y / inScalar); }	
+		vec2 cdiv(const vec2& inRHS) const { return { x / inRHS.x, y / inRHS.y }; }	// component wise scalar division
 		friend vec2 operator/(float inScalar, const vec2& inVec) { return inVec / inScalar; }	// component wise scalar division
 		float sqrMagnitude() const { return x * x + y * y; }									// square magnitude (self dot product)
 		float magnitude() const { return sqrtf(sqrMagnitude()); }							// magnitude (square root of square magnitude, length of the vector)
@@ -176,7 +177,6 @@ namespace chiori
 		vec2 scale{ vec2::one };
 		float rot{ 0.0f };
 	};
-
 	static inline vec2 cTransformVec(const cTransform& xf, const vec2& v)
 	{
 		vec2 nv = v.rotated(xf.rot);
@@ -184,7 +184,13 @@ namespace chiori
 		nv = nv.cmult(xf.scale);
 		return nv;
 	}
-
+	static inline vec2 cInvTransformVec(const cTransform& xf, const vec2& v)
+	{
+		vec2 nv = v - xf.pos;
+		nv = nv.cdiv(xf.scale); 
+		nv = nv.rotated(-xf.rot);
+		return nv;
+	}
 
 	static inline float cross(const vec2& inLHS, const vec2& inRHS)
 	{
@@ -210,5 +216,40 @@ namespace chiori
 	{
 		vec2 v = inLHS - inRHS;
 		return v.magnitude();
+	}
+
+	// vector linear interpolation
+	static inline vec2 vlerp(vec2 a, vec2 b, float t)
+	{
+		return { a.x + t * (b.x - a.x), a.y + t * (b.y - a.y) };
+	}
+
+
+
+	cTransform InvMulTransforms(const cTransform& A, const cTransform& B)
+	{
+		cTransform C;
+
+		// Compute relative rotation
+		C.rot = B.rot - A.rot;
+
+		// Compute relative position
+		vec2 delta = B.pos - A.pos;
+		C.pos = delta.rotated(-A.rot);
+
+		return C;
+	}
+
+	cTransform MulTransforms(const cTransform& A, const cTransform& B)
+	{
+		cTransform C;
+
+		// Combine rotations
+		C.rot = A.rot + B.rot;
+
+		// Rotate B's position by A's rotation and add A's position
+		C.pos = A.pos + B.pos.rotated(A.rot);
+
+		return C;
 	}
 }

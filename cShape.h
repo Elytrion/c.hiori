@@ -12,12 +12,13 @@ namespace chiori
 	{
 	private:
 		friend class PhysicsWorld;	// the physics world will be able to access all internal values as required, while users cannot and should not touch them
-		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
-		std::vector<vec2> normals;  // the normals of all the faces of the shape
 		int actorIndex = -1;		// the index of the actor that holds this shape
 		int broadphaseIndex = -1;	// the index of this shape in the broadphase structure
 		
 	public:
+		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
+		std::vector<vec2> normals;  // the normals of all the faces of the shape
+		int count;					// the number of vertices/normals
 		enum // Shape flags
 		{
 			SCENE_QUERYABLE = (1 << 0), // this shape can be queried (either by raycasts or triggers)
@@ -47,20 +48,22 @@ namespace chiori
 	inline void cShape::setVertices(const std::vector<vec2>& inVertices)
 	{
 		cassert(inVertices.size() >= 3);
-		std::cout << (*this).friction << std::endl;
 		// copy over the data
 		vertices = inVertices;
 		// build AABB
 		aabb = CreateAABBHull(vertices.data(), vertices.size()); 
+		count = static_cast<int>(inVertices.size());
 		// calculate normals
-		for (int i = 0; i < vertices.size(); ++i)
+		for (int i = 0; i < count; ++i)
 		{
 			int i1 = i;
-			int i2 = (i + 1) % vertices.size();
+			int i2 = (i + 1) % count;
 			vec2 edge = vertices[i2] - vertices[i1];
 			cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
 			normals.push_back(edge.scross(1.0f).normalize());
 		}
+
+
 	}
 
 	inline std::vector<vec2> cShape::getVertices(cTransform inTfm)
@@ -109,7 +112,7 @@ namespace chiori
 		//mmoi -= mass * center.dot(center); // Parallel axis theorem adjustment
 		//return mmoi;
 
-		// sqr inertia tensor for now
+		// sqr inertia tensor for simplicity until i can get ^ to behave
 		cassert(mass > FLT_EPSILON);
 		float mmoi = mass / 2.0f;
 		vec2 sqrextents = aabb.getExtents().cmult(aabb.getExtents());

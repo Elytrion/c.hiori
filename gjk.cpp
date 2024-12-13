@@ -277,7 +277,7 @@ namespace chiori
 	}
 	#pragma endregion
 
-	void GJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
+	void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
 	{
 		const cGJKProxy& proxyA = input.proxyA;
 		const cGJKProxy& proxyB = input.proxyA;
