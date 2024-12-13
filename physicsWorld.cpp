@@ -51,44 +51,40 @@ namespace chiori
 		}
 	}
 
-	void HandleDegenerateFace(GJKresult& result, const std::vector<vec2>& inP, const std::vector<vec2>& inT)
-	{
-		if (result.c1[0] == vec2::zero && result.c1[1] == vec2::zero &&
-			result.c2[0] == vec2::zero && result.c2[1] == vec2::zero)
-			return;
-
-		auto findClosestFace = [&](const std::vector<vec2>& a, const vec2& n, vec2(&c)[2])
-			{
-				float maxDot = -FLT_MAX;
-				size_t size = a.size();
-				for (size_t i = 0; i < size; i++) {
-					const vec2& p1 = a[i];
-					const vec2& p2 = a[(i + 1) % size];
-
-					// Compute the edge vector and its normal
-					vec2 edge = p2 - p1;
-					vec2 edgeNormal = { edge.y, -edge.x };
-					edgeNormal = edgeNormal.normalized();
-
-					float dot = edgeNormal.dot(n);
-					if (dot > maxDot) {
-						maxDot = dot;
-						c[0] = p1;
-						c[1] = p2;
-					}
-				}
-			};
-
-		if (result.c1[0] == result.c1[1])
-		{
-			findClosestFace(inP, result.normal, result.c1);
-		}
-		
-		if (result.c2[0] == result.c2[1])
-		{
-			findClosestFace(inT, -result.normal, result.c2);
-		}
-	}
+	//void HandleDegenerateFace(GJKresult& result, const std::vector<vec2>& inP, const std::vector<vec2>& inT)
+	//{
+	//	if (result.c1[0] == vec2::zero && result.c1[1] == vec2::zero &&
+	//		result.c2[0] == vec2::zero && result.c2[1] == vec2::zero)
+	//		return;
+	//	auto findClosestFace = [&](const std::vector<vec2>& a, const vec2& n, vec2(&c)[2])
+	//		{
+	//			float maxDot = -FLT_MAX;
+	//			size_t size = a.size();
+	//			for (size_t i = 0; i < size; i++) {
+	//				const vec2& p1 = a[i];
+	//				const vec2& p2 = a[(i + 1) % size];
+	//				// Compute the edge vector and its normal
+	//				vec2 edge = p2 - p1;
+	//				vec2 edgeNormal = { edge.y, -edge.x };
+	//				edgeNormal = edgeNormal.normalized();
+	//				float dot = edgeNormal.dot(n);
+	//				if (dot > maxDot) {
+	//					maxDot = dot;
+	//					c[0] = p1;
+	//					c[1] = p2;
+	//				}
+	//			}
+	//		};
+	//	if (result.c1[0] == result.c1[1])
+	//	{
+	//		findClosestFace(inP, result.normal, result.c1);
+	//	}
+	//	
+	//	if (result.c2[0] == result.c2[1])
+	//	{
+	//		findClosestFace(inT, -result.normal, result.c2);
+	//	}
+	//}
 
 	void PhysicsWorld::simulate(float inDT)
 	{
@@ -156,39 +152,14 @@ namespace chiori
 				cGJKProxy gjkb{ shp_b->vertices.data(), static_cast<int>(shp_b->vertices.size()) };
 				cGJKOutput result;
 				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
-				cGJK(result, input, &cache);
+				GJK(input, result, &cache);
 				
-				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 				CP_Graphics_DrawCircle(result.pointA.x, result.pointA.y, 8);
 				CP_Graphics_DrawCircle(result.pointB.x, result.pointB.y, 8);
-				//CP_Settings_StrokeWeight(2);
-				//CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
-				//// get normal line
-				//vec2 normal = result.normal;
-				//vec2 nxtVert = result.z1 + normal * 50;
-				//CP_Graphics_DrawLine(result.z1.x, result.z1.y, nxtVert.x, nxtVert.y);
-				//CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
-				//HandleDegenerateFace(result, shp_a->getVertices(tfm_a), shp_b->getVertices(tfm_b));
-				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 
 				
 
-				//for (const Mvert& w : result.s)
-				//{
-				//	vec2 a = w.a;
-				//	vec2 b = w.b;
-				//	CP_Graphics_DrawCircle(a.x, a.y, 8);
-				//	CP_Graphics_DrawCircle(b.x, b.y, 8);
-				//}
-				//for (vec2& c : result.c1)
-				//{
-				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
-				//}
-				//for (vec2& c : result.c2)
-				//{
-				//	CP_Graphics_DrawCircle(c.x, c.y, 8);
-				//}
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 			}
 		}

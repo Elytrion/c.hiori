@@ -12,8 +12,6 @@ namespace chiori
 		void* primary;
 		void* target;
 
-		GJKresult collisionData;
-
 		enum
 		{
 			ENTER,

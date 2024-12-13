@@ -155,7 +155,7 @@ namespace chiori
 		{
 			pos = vec2::zero;
 			rot = 0.0f;
-			scale = vec2::zero;
+			scale = vec2::one;
 		}
 
 		// Set this based on the position and angle (radians).
