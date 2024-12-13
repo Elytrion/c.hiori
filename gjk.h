@@ -40,7 +40,7 @@ namespace chiori
 
     /*
     * A proxy object used by the GJK algorithm that
-    * encapsulates any shape
+    * Encapsulates any shape
     */
     struct cGJKProxy
     {

@@ -355,5 +355,30 @@ namespace chiori
 		simplex.WriteCache(cache);
 		output.distance = dir.magnitude();
 		output.iterations = itr;
+
+		if (input.useRadii)
+		{
+			if (output.distance < eps)
+			{
+				// Shapes are too close to safely compute normal
+				vec2 p { 0.5f * (output.pointA.x + output.pointB.x), 0.5f * (output.pointA.y + output.pointB.y) };
+				output.pointA = p;
+				output.pointB = p;
+				output.distance = 0.0f;
+			}
+			else
+			{
+				// Keep closest points on perimeter even if overlapped, this way
+				// the points move smoothly.
+				float rA = proxyA.m_radius;
+				float rB = proxyB.m_radius;
+				output.distance = max(0.0f, output.distance - rA - rB);
+				vec2 normal = output.pointB - output.pointA).normalized();
+				vec2 offsetA { rA * normal.x, rA * normal.y };
+				vec2 offsetB { rB * normal.x, rB * normal.y };
+				output.pointA += offsetA;
+				output.pointB += offsetB;
+			}
+		}
 	}
 }
