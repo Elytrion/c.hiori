@@ -11,6 +11,12 @@ namespace chiori
 		return (a > 0 && b > 0) || (a < 0 && b < 0);
 	}
 	
+	int GetSupportIndex(const cGJKProxy& proxy, const cTransform& xf, const vec2& dir)
+	{
+		vec2 localDir = dir.rotated(-xf.rot);
+		return proxy.getSupport(localDir);
+	}
+	
 	struct cSimplexVertex
 	{
 		vec2 wA{ vec2::zero };		// support point in proxyA
@@ -95,10 +101,13 @@ namespace chiori
 			// If the cache is empty or invalid ...
 			if (s_size == 0)
 			{				
-				m1.indexA = 0;
-				m1.indexB = 0;
-				m1.wA = cTransformVec(transformA, proxyA.GetVertex(0));
-				m1.wB = cTransformVec(transformB, proxyB.GetVertex(0));
+				vec2 dir = transformA.pos - transformB.pos;
+				m1.indexA = GetSupportIndex(proxyA, transformA, -dir);
+				m1.indexB = GetSupportIndex(proxyB, transformB, dir);
+				vec2 localVertA = proxyA.GetVertex(m1.indexA);
+				vec2 localVertB = proxyB.GetVertex(m1.indexB);
+				m1.wA = cTransformVec(transformA, localVertA);
+				m1.wB = cTransformVec(transformB, localVertB);
 				m1.w = m1.wA - m1.wB;
 				m1.l = 1.0f;
 				s_size = 1;
@@ -119,15 +128,24 @@ namespace chiori
 			}
 		}
 		
+		bool isDupe(cSimplexVertex& v)
+		{
+			cSimplexVertex* m = &m1;
+			bool duplicate = false;
+			for (int i = 0; i < s_size; i++)
+			{
+				if (m[i].indexA == v.indexA && m[i].indexB == v.indexB)
+				{
+					duplicate = true;
+					break;
+				}
+			}
+			return duplicate;
+		}
+
 		cSimplexVertex m1, m2, m3;
 		int s_size;
 	};
-
-	int GetSupportIndex(const cGJKProxy& proxy, const cTransform& xf, const vec2& dir)
-	{
-		vec2 localDir = dir.rotated(-xf.rot);
-		return proxy.getSupport(localDir);
-	}
 
 	void GetSupportPoint(cSimplexVertex* w,
 		const cGJKProxy& proxyA, const cTransform& xfA,
@@ -143,18 +161,13 @@ namespace chiori
 		w->w = w->wA - w->wB;
 	}
 
-
-	
 	#pragma region Distance Subalgorithm
 	void S1D(cSimplex& simplex)
 	{
-		cSimplexVertex& m1 = simplex.m1;
-		cSimplexVertex& m2 = simplex.m2;
-		
-		const vec2& s1 = m1.w;
-		const vec2& s2 = m2.w;
+		const vec2& s1 = simplex.m1.w;
+		const vec2& s2 = simplex.m2.w;
 		vec2 t = s2 - s1;
-		
+
 		// orthogonal projection of the origin onto the infinite line s1s2
 		vec2 p0 = s1 + (-s1.dot(t) / t.dot(t)) * t;
 
@@ -176,18 +189,17 @@ namespace chiori
 
 		if (allSignsMatch)
 		{
-			m1.l = C1 / mu_max;
-			m2.l = C2 / mu_max;
-			return;
+			simplex.m1.l = C1 / mu_max;
+			simplex.m2.l = C2 / mu_max;
+			simplex.s_size = 2;
 		}
 		else
 		{
+			simplex.m1.l = 1.0f;
 			simplex.s_size = 1;
-			m1.l = 1.0f;
-			return;
 		}
 	}
-	
+
 	float computeDStar(const cSimplex& simplex)
 	{
 		vec2 weightedSum = vec2::zero; // Initialize the weighted sum as a 2D vector
@@ -198,26 +210,22 @@ namespace chiori
 		return weightedSum.magnitude(); // Return the magnitude of the weighted sum
 	}
 
-	void S2D(cSimplex& simplex, boolean debugSpit = false)
+	void S2D(cSimplex& simplex)
 	{
-		cSimplexVertex& m1 = simplex.m1;
-		cSimplexVertex& m2 = simplex.m2;
-		cSimplexVertex& m3 = simplex.m3;
-		
-		const vec2& s1 = m1.w;
-		const vec2& s2 = m2.w;
-		const vec2& s3 = m3.w;
+		const vec2& s1 = simplex.m1.w;
+		const vec2& s2 = simplex.m2.w;
+		const vec2& s3 = simplex.m3.w;
 
 		// no need to calculate p0 (projection of origin onto plane), as the origin will lie in the same plane as these points
-		
+
 		// Find signed area
 		// Normally we reduce to the dimension with the largest absolute value, but since
 		// we are already in 2D, our vectors don't have a 3rd component to reduce,
 		// so we just leave them alone (in 3D, we would have to remove the coordinate to project everything into 2D)
 		// the signed area of the triangle remains the same in 2D
-		float mu_max =	s1.x * (s2.y - s3.y) +
-						s2.x * (s3.y - s1.y) +	
-						s3.x * (s1.y - s2.y);
+		float mu_max = s1.x * (s2.y - s3.y) +
+			s2.x * (s3.y - s1.y) +
+			s3.x * (s1.y - s2.y);
 
 		// Calculate barycentric coordinates for s1, s2, and s3
 		// In the paper it uses a determinant calculation, which we can simplify in 2D
@@ -228,17 +236,18 @@ namespace chiori
 		float C2 = s3.cross(s1);
 		// Corresponds to the signed area of 2-simplex: (p0, s1, s2)
 		float C3 = s1.cross(s2);
-	
+
 		bool cmp1 = compareSigns(mu_max, C1),
 			cmp2 = compareSigns(mu_max, C2),
 			cmp3 = compareSigns(mu_max, C3);
-		
+
 		if (cmp1 && cmp2 && cmp3)
 		{
 			// encloses origin in 2D
-			m1.l = C1 / mu_max;
-			m2.l = C2 / mu_max;
-			m3.l = C3 / mu_max;
+			simplex.m1.l = C1 / mu_max;
+			simplex.m2.l = C2 / mu_max;
+			simplex.m3.l = C3 / mu_max;
+			simplex.s_size = 3;
 			return;
 		}
 
@@ -247,8 +256,8 @@ namespace chiori
 		if (!cmp2)
 		{
 			// s2 appears to be non-contributing, so we check the reduced simplex { s1. s3 }
-			w.m1 = m1;//simplex[0];
-			w.m2 = m3;// simplex[2];
+			w.m1 = simplex.m1;
+			w.m2 = simplex.m3;
 			w.s_size = 2;
 			S1D(w);
 			float ds = computeDStar(w);
@@ -262,8 +271,8 @@ namespace chiori
 		if (!cmp3)
 		{
 			// s3 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
-			w.m1 = m1;// simplex[0];
-			w.m2 = m2;// simplex[1];
+			w.m1 = simplex.m1;
+			w.m2 = simplex.m2;
 			w.s_size = 2;
 			S1D(w);
 			float ds = computeDStar(w);
@@ -279,19 +288,17 @@ namespace chiori
 			// s1 appears to be non-contributing, so we check the reduced simplex { s1. s2 }
 			// Unlikely to reach here, as s1 is meant to be the latest point towards the origin
 			// however, included for robustness
-			w.m1 = m2;//simplex[1];
-			w.m2 = m3;//simplex[2];
+			w.m1 = simplex.m2;
+			w.m2 = simplex.m3;
 			w.s_size = 2;
 			S1D(w);
-			float ds = computeDStar(w);  
+			float ds = computeDStar(w);
 			if (ds < d)
 			{
 				simplex = w;
 				d = ds;
 			}
 		}
-
-		return;
 	}
 
 	void signedVolumeDistanceSubalgorithm(cSimplex& outSimplex)
@@ -315,28 +322,20 @@ namespace chiori
 	{		
 		const cGJKProxy& proxyA = input.proxyA;
 		const cGJKProxy& proxyB = input.proxyB;
-
 		cTransform xfA = input.transformA;
 		cTransform xfB = input.transformB;
 		const int max_itrs = input.maxIterations;
 		const float eps = input.tolerance;	
+		
 		cSimplex simplex;
 		simplex.ReadCache(cache, proxyA, xfA, proxyB, xfB);
-		vec2 dir = vec2::zero;
-		int saveA[3], saveB[3];
-		int saveCount = 0;
 		
+		vec2 dir = vec2::zero;
 		cSimplexVertex* simplexVerts = &simplex.m1;
+		
 		int itr;
 		for (itr = 0; itr < max_itrs; itr++)
 		{				
-			saveCount = simplex.s_size;
-			for (int i = 0; i < saveCount; ++i)
-			{
-				saveA[i] = simplexVerts[i].indexA;
-				saveB[i] = simplexVerts[i].indexB;
-			}
-			
 			signedVolumeDistanceSubalgorithm(simplex);
 			// We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
@@ -358,18 +357,7 @@ namespace chiori
 			cSimplexVertex w;
 			GetSupportPoint(&w, proxyA, xfA, proxyB, xfB, -dir);
 			
-			bool duplicate = false;
-			// Termination condition B, duplicate support points. This is the main termination criteria.
-			for (int i = 0; i < saveCount; ++i)
-			{
-				if (w.indexA == saveA[i] && w.indexB == saveB[i])
-				{
-					duplicate = true;
-					break;
-				}
-			}
-			// If we found a duplicate support point we must exit to avoid cycling.
-			if (duplicate)
+			if (simplex.isDupe(w))
 				break;
 			// Termination condition A
 			if ((dirm - dir.dot(w.w)) <= (dirm * eps * eps)) 
