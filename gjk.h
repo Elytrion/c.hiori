@@ -1,6 +1,6 @@
 #pragma once
 
-#include "simplex.h"
+#include "chioriMath.h"
 
 namespace chiori
 {        
@@ -79,6 +79,7 @@ namespace chiori
         vec2 pointB;		// closest point on shapeB
         float distance;     // distance between two shapes (if distance is roughly <= 0 (within LEPSILON tolerance) it is an overlapping collision)
         int iterations;     // the number of iterations the GJK ran for, used for determining efficiency
+        vec2 normal;        // normal of the collision, left as 0,0 if no EPA is run
     };
 
     /*
@@ -114,5 +115,7 @@ namespace chiori
         return bestIndex;
     }
 
-    void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache = nullptr);
+    void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache);
+
+    void cEPA(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache);
 }

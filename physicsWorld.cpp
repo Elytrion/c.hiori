@@ -2,6 +2,7 @@
 #include "physicsWorld.h"
 #include "gjk.h"
 #include "cprocessing.h" //!!TO REMOVE!!
+#include "manifold.h"
 
 namespace chiori
 {
@@ -133,7 +134,7 @@ namespace chiori
 			m_broadphase.MoveProxy(s->broadphaseIndex, aabb, a->getVelocity(inDT) * inDT);
 			
 			a->_iflags.clear(cActor::IS_DIRTY_TFM);
-
+			
 			for (int itr2 = 0; itr2 < p_actors.size(); itr2++)
 			{
 				cActor* b = p_actors[itr2];
@@ -143,8 +144,8 @@ namespace chiori
 
 				cTransform tfm_a = a->getTransform();
 				cTransform tfm_b = b->getTransform();
-				cShape* shp_a = p_shapes[a->shapeIndex];
-				cShape* shp_b = p_shapes[b->shapeIndex];
+				const cShape* shp_a = p_shapes[a->shapeIndex];
+				const cShape* shp_b = p_shapes[b->shapeIndex];
 
 				cGJKCache cache;
 				cache.count = 0;
@@ -153,10 +154,16 @@ namespace chiori
 				cGJKOutput result;
 				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
 				cGJK(input, result, &cache);
+				cEPA(input, result, &cache);
+				////std::cout << result.distance << std::endl;
+				//cManifold m = CollideShapes(shp_a, tfm_a, shp_b, tfm_b, &cache);
 				
+				vec2 pointA, pointB;
+				pointA = result.pointA; // cTransformVec(tfm_a, m.points[0].localAnchorA);
+				pointB = result.pointB; //cTransformVec(tfm_a, m.points[1].localAnchorA);
 				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-				CP_Graphics_DrawCircle(result.pointA.x, result.pointA.y, 8);
-				CP_Graphics_DrawCircle(result.pointB.x, result.pointB.y, 8);
+				CP_Graphics_DrawCircle(pointA.x, pointA.y, 8);
+				CP_Graphics_DrawCircle(pointB.x, pointB.y, 8);
 
 				
 

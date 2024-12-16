@@ -87,7 +87,7 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
     actors.push_back(newActor);
 }
 
-void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
+cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
 {
     std::vector<vec2> vertices;
 	vertices.push_back({ -width / 2.0f, -height / 2.0f });
@@ -111,6 +111,7 @@ void CreateRectActor(float width, float height, vec2& centrePos, bool isStatic =
     }
     shapes.push_back(newShape);
     actors.push_back(newActor);
+    return newActor;
 }
 
 void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
@@ -169,7 +170,10 @@ void InitPhysics()
     //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
     CreateRectActor(100, 100, middle);
-	CreateRectActor(100, 100, vec2{ middle.x + 150, middle.y});
+	cActor* a = CreateRectActor(100, 100, vec2{ middle.x + 50, middle.y});
+    cTransform tfm = a->getTransform();
+    tfm.rot = 0;
+    a->setTransform(tfm);
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();

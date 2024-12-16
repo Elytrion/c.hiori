@@ -145,6 +145,37 @@ namespace chiori
 	inline constexpr vec2 vec2::right = vec2{ 1.0f, 0.0f };
 	inline constexpr vec2 vec2::up = vec2{ 0.0f, 1.0f };
 
+	static inline float cross(const vec2& inLHS, const vec2& inRHS)
+	{
+		return (inLHS.x * inRHS.y) - (inLHS.y * inRHS.x);
+	}
+
+	static inline vec2 cross(float inScalar, const vec2& inVec)
+	{
+		return { -inScalar * inVec.y, inScalar * inVec.x };
+	}
+
+	static inline vec2 cross(const vec2& inVec, float inScalar)
+	{
+		return { inScalar * inVec.y, -inScalar * inVec.x };
+	}
+
+	static inline float dot(const vec2& inLHS, const vec2& inRHS)
+	{
+		return inLHS.dot(inRHS);
+	}
+
+	static inline float distance(const vec2& inLHS, const vec2& inRHS)
+	{
+		vec2 v = inLHS - inRHS;
+		return v.magnitude();
+	}
+
+	// vector linear interpolation
+	static inline vec2 vlerp(vec2 a, vec2 b, float t)
+	{
+		return { a.x + t * (b.x - a.x), a.y + t * (b.y - a.y) };
+	}
 	
 	struct cTransform 
 	{
@@ -177,56 +208,8 @@ namespace chiori
 		vec2 scale{ vec2::one };
 		float rot{ 0.0f };
 	};
-	static inline vec2 cTransformVec(const cTransform& xf, const vec2& v)
-	{
-		vec2 nv = v.rotated(xf.rot);
-		nv += xf.pos;
-		nv = nv.cmult(xf.scale);
-		return nv;
-	}
-	static inline vec2 cInvTransformVec(const cTransform& xf, const vec2& v)
-	{
-		vec2 nv = v - xf.pos;
-		nv = nv.cdiv(xf.scale); 
-		nv = nv.rotated(-xf.rot);
-		return nv;
-	}
 
-	static inline float cross(const vec2& inLHS, const vec2& inRHS)
-	{
-		return (inLHS.x * inRHS.y) - (inLHS.y * inRHS.x);
-	}
-	
-	static inline vec2 cross(float inScalar, const vec2& inVec)
-	{
-		return { -inScalar * inVec.y, inScalar * inVec.x };
-	}
-
-	static inline vec2 cross(const vec2& inVec, float inScalar)
-	{
-		return { inScalar * inVec.y, -inScalar * inVec.x };
-	}
-	
-	static inline float dot(const vec2& inLHS, const vec2& inRHS)
-	{
-		return inLHS.dot(inRHS);
-	}
-
-	static inline float distance(const vec2& inLHS, const vec2& inRHS)
-	{
-		vec2 v = inLHS - inRHS;
-		return v.magnitude();
-	}
-
-	// vector linear interpolation
-	static inline vec2 vlerp(vec2 a, vec2 b, float t)
-	{
-		return { a.x + t * (b.x - a.x), a.y + t * (b.y - a.y) };
-	}
-
-
-
-	cTransform InvMulTransforms(const cTransform& A, const cTransform& B)
+	inline cTransform InvMulTransforms(const cTransform& A, const cTransform& B)
 	{
 		cTransform C;
 
@@ -239,8 +222,7 @@ namespace chiori
 
 		return C;
 	}
-
-	cTransform MulTransforms(const cTransform& A, const cTransform& B)
+	inline cTransform MulTransforms(const cTransform& A, const cTransform& B)
 	{
 		cTransform C;
 
@@ -251,5 +233,20 @@ namespace chiori
 		C.pos = A.pos + B.pos.rotated(A.rot);
 
 		return C;
+	}
+	
+	static inline vec2 cTransformVec(const cTransform& xf, const vec2& v)
+	{
+		vec2 nv = v.rotated(xf.rot);
+		nv = nv.cmult(xf.scale);
+		nv += xf.pos;
+		return nv;
+	}
+	static inline vec2 cInvTransformVec(const cTransform& xf, const vec2& v)
+	{
+		vec2 nv = v - xf.pos;
+		nv = nv.cdiv(xf.scale); 
+		nv = nv.rotated(-xf.rot);
+		return nv;
 	}
 }

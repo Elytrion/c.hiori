@@ -4,7 +4,9 @@
 
 namespace chiori
 {
-	bool compareSigns(float a, float b)
+	
+	#pragma region SA-GJK Algorithm
+	static bool compareSigns(float a, float b)
 	{
 		return (a > 0 && b > 0) || (a < 0 && b < 0);
 	}
@@ -17,6 +19,16 @@ namespace chiori
 		float l{ -1.0f };		// barycentric lambda for closest point
 		int indexA{ -1 };		// wA index
 		int indexB{ -1 };		// wB index
+
+		friend std::ostream& operator<<(std::ostream& inOS, const cSimplexVertex& inVec) {
+			inOS << "simplexVert( ";
+			inOS << " a: " << inVec.wA << " | ";
+			inOS << " b: " << inVec.wB << " | ";
+			inOS << " w: " << inVec.w << " | ";
+			inOS << " l: " << inVec.l << " ";
+			inOS << ")";
+			return inOS;
+		}
 	};
 
 	struct cSimplex
@@ -82,7 +94,7 @@ namespace chiori
 			
 			// If the cache is empty or invalid ...
 			if (s_size == 0)
-			{
+			{				
 				m1.indexA = 0;
 				m1.indexB = 0;
 				m1.wA = cTransformVec(transformA, proxyA.GetVertex(0));
@@ -110,6 +122,28 @@ namespace chiori
 		cSimplexVertex m1, m2, m3;
 		int s_size;
 	};
+
+	int GetSupportIndex(const cGJKProxy& proxy, const cTransform& xf, const vec2& dir)
+	{
+		vec2 localDir = dir.rotated(-xf.rot);
+		return proxy.getSupport(localDir);
+	}
+
+	void GetSupportPoint(cSimplexVertex* w,
+		const cGJKProxy& proxyA, const cTransform& xfA,
+		const cGJKProxy& proxyB, const cTransform& xfB,
+		const vec2& dir)
+	{
+		w->indexA = GetSupportIndex(proxyA, xfA, dir);
+		w->indexB = GetSupportIndex(proxyB, xfB, -dir);
+		vec2 localVertA = proxyA.GetVertex(w->indexA);
+		vec2 localVertB = proxyB.GetVertex(w->indexB);
+		w->wA = cTransformVec(xfA, localVertA);
+		w->wB = cTransformVec(xfB, localVertB);
+		w->w = w->wA - w->wB;
+	}
+
+
 	
 	#pragma region Distance Subalgorithm
 	void S1D(cSimplex& simplex)
@@ -278,9 +312,10 @@ namespace chiori
 	#pragma endregion
 
 	void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
-	{
+	{		
 		const cGJKProxy& proxyA = input.proxyA;
-		const cGJKProxy& proxyB = input.proxyA;
+		const cGJKProxy& proxyB = input.proxyB;
+
 		cTransform xfA = input.transformA;
 		cTransform xfB = input.transformB;
 		const int max_itrs = input.maxIterations;
@@ -290,6 +325,7 @@ namespace chiori
 		vec2 dir = vec2::zero;
 		int saveA[3], saveB[3];
 		int saveCount = 0;
+		
 		cSimplexVertex* simplexVerts = &simplex.m1;
 		int itr;
 		for (itr = 0; itr < max_itrs; itr++)
@@ -304,24 +340,24 @@ namespace chiori
 			signedVolumeDistanceSubalgorithm(simplex);
 			// We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
-			for (int l = 0; l < simplex.s_size; l++) // the size of the simplex should always be the size of the lambdas
+			float max_norm = 1.0f;
+			for (int l = 0; l < simplex.s_size; l++)
+			{
 				dir += simplexVerts[l].l * simplexVerts[l].w;
+				float norm = simplexVerts[l].w.sqrMagnitude();
+				max_norm = (max_norm > norm) ? max_norm : norm;
+			}
 				
 			if (simplex.s_size >= 3)
 				break;
-
+			
+			if (dir.sqrMagnitude() < (eps * max_norm))
+				break;
+			
 			float dirm = dir.sqrMagnitude();
 			cSimplexVertex w;
-			vec2 localDirA = (-dir).rotated(-xfA.rot);
-			vec2 localDirB = (dir).rotated(-xfB.rot);
-			w.indexA = proxyA.getSupport(localDirA);
-			w.indexB = proxyB.getSupport(localDirB);
-			vec2 localVertA = proxyA.GetVertex(w.indexA);
-			vec2 localVertB = proxyB.GetVertex(w.indexB);
-			w.wA = cTransformVec(xfA, localVertA);
-			w.wB = cTransformVec(xfB, localVertB);
-			w.w = w.wA - w.wB;
-
+			GetSupportPoint(&w, proxyA, xfA, proxyB, xfB, -dir);
+			
 			bool duplicate = false;
 			// Termination condition B, duplicate support points. This is the main termination criteria.
 			for (int i = 0; i < saveCount; ++i)
@@ -355,7 +391,6 @@ namespace chiori
 		simplex.WriteCache(cache);
 		output.distance = dir.magnitude();
 		output.iterations = itr;
-
 		if (input.useRadii)
 		{
 			if (output.distance < eps)
@@ -373,7 +408,7 @@ namespace chiori
 				float rA = proxyA.m_radius;
 				float rB = proxyB.m_radius;
 				output.distance = max(0.0f, output.distance - rA - rB);
-				vec2 normal = output.pointB - output.pointA).normalized();
+				vec2 normal = (output.pointB - output.pointA).normalized();
 				vec2 offsetA { rA * normal.x, rA * normal.y };
 				vec2 offsetB { rB * normal.x, rB * normal.y };
 				output.pointA += offsetA;
@@ -381,4 +416,123 @@ namespace chiori
 			}
 		}
 	}
+	#pragma endregion
+
+	#pragma region EPA
+	struct cEdge
+	{
+		// default constructor
+		cEdge() : distance{ 0.0f }, normal{ vec2::zero }, index{ 0 } {}
+
+		float distance;     // The distance of the edge from the origin
+		vec2 normal;		// The normal of the edge
+		int index;          // The index of the edge (the index of the second vertex that makes up the edge in the polytope)
+	};
+
+	struct cPolytope
+	{		
+		void ReadCache(const cGJKCache* cache,
+			const cGJKProxy& proxyA, const cTransform& transformA,
+			const cGJKProxy& proxyB, const cTransform& transformB)
+		{
+			// Copy data from cache.
+			for (int i = 0; i < cache->count; ++i)
+			{
+				cSimplexVertex v;
+				v.indexA = cache->indexA[i];
+				v.indexB = cache->indexB[i];
+				v.wA = cTransformVec(transformA, proxyA.GetVertex(v.indexA));
+				v.wB = cTransformVec(transformB, proxyB.GetVertex(v.indexB));
+				v.w = v.wA - v.wB;
+				poly.push_back(v);
+			}
+		}
+		
+		std::vector<cSimplexVertex> poly;
+	};
+
+	static cEdge FindClosestEdge(const std::vector<cSimplexVertex>& poly)
+	{
+		cEdge closest;
+		closest.distance = FLT_MAX;
+		for (size_t i = 0; i < poly.size(); i++)
+		{
+			size_t j = (i + 1) % poly.size();
+			vec2 edge = poly[i].w - poly[j].w;
+			vec2 normal;
+			normal = { edge.y, -edge.x };
+			normal = normal.normalized();
+			float distance = normal.dot(poly[i].w);
+			// wrong normal, facing away from origin
+			// flip normal
+			if (distance < 0)
+			{
+				distance *= -1;
+				normal *= -1;
+			}
+			// if this distance is closer, use this distance
+			if (distance < closest.distance)
+			{
+				closest.distance = distance;
+				closest.normal = normal;
+				closest.index = (int)j;
+			}
+		}
+		// return closest edge found
+		return closest;
+	}
+
+	static void ComputeWitnessPoints(const std::vector<cSimplexVertex>& polytope, const cEdge& closestEdge, vec2& witnessA, vec2& witnessB)
+	{
+		int I = closestEdge.index;
+		const cSimplexVertex& m1 = polytope[(I - 1 + polytope.size()) % polytope.size()];
+		const cSimplexVertex& m2 = polytope[I];
+		vec2 edge = m2.w - m1.w;
+		float lengthSqr = edge.sqrMagnitude();
+		// Barycentric coordinates
+		float lambda1 = (m2.w.dot(edge)) / lengthSqr;
+		float lambda2 = 1.0f - lambda1;
+		// Interpolate witness points
+		witnessA = lambda1 * m1.wA + lambda2 * m2.wA;
+		witnessB = lambda1 * m1.wB + lambda2 * m2.wB;
+	}
+
+	void cEPA(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
+	{
+		const float eps = input.tolerance;		
+		if (output.distance > eps)
+			return;
+
+		const cGJKProxy& proxyA = input.proxyA;
+		const cGJKProxy& proxyB = input.proxyB;
+		cTransform xfA = input.transformA;
+		cTransform xfB = input.transformB;
+		
+		cEdge closestEdge;
+		float supportDist = 0.0f;
+		cPolytope polytope;
+		polytope.ReadCache(cache, proxyA, xfA, proxyB, xfB);
+
+		for (int i = 0; i < commons::GJK_ITERATIONS; i++)
+		{
+			closestEdge = FindClosestEdge(polytope.poly);
+			
+			const vec2& dir = closestEdge.normal;
+			cSimplexVertex support;
+			GetSupportPoint(&support, proxyA, xfA, proxyB, xfB, dir);
+
+			supportDist = support.w.dot(closestEdge.normal);
+
+			if (abs(supportDist - closestEdge.distance) < eps)
+				break;
+
+			polytope.poly.insert(polytope.poly.begin() + closestEdge.index, support);
+		}
+
+		output.normal = closestEdge.normal;
+		output.distance = -supportDist;
+		ComputeWitnessPoints(polytope.poly, closestEdge, output.pointA, output.pointB);
+		
+	}
+	#pragma endregion
 }
