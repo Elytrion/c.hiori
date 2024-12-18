@@ -146,7 +146,6 @@ namespace chiori
 				cTransform tfm_b = b->getTransform();
 				const cShape* shp_a = p_shapes[a->shapeIndex];
 				const cShape* shp_b = p_shapes[b->shapeIndex];
-
 				cGJKCache cache;
 				cache.count = 0;
 				cGJKProxy gjka{ shp_a->vertices.data(), shp_a->count };
@@ -154,9 +153,20 @@ namespace chiori
 				cGJKOutput result;
 				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
 				cGJK(input, result, &cache);
-				cEPA(input, result, &cache);
+				if (result.distance < EPSILON && cache.count > 1)
+				{
+					cEPA(input, result, &cache);
+				}
+				std::cout << result.distance << std::endl;
 				////std::cout << result.distance << std::endl;
 				//cManifold m = CollideShapes(shp_a, tfm_a, shp_b, tfm_b, &cache);
+				if (result.normal != vec2::zero)
+				{
+					CP_Settings_StrokeWeight(2);
+					CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
+					vec2 lineEnd = tfm_a.pos + result.normal * 25;
+					CP_Graphics_DrawLine(tfm_a.pos.x, tfm_a.pos.y, lineEnd.x, lineEnd.y);
+				}
 				
 				vec2 pointA, pointB;
 				pointA = result.pointA; // cTransformVec(tfm_a, m.points[0].localAnchorA);

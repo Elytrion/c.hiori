@@ -171,9 +171,10 @@ void InitPhysics()
     
     CreateRectActor(100, 100, middle);
 	cActor* a = CreateRectActor(100, 100, vec2{ middle.x + 50, middle.y});
-    cTransform tfm = a->getTransform();
-    tfm.rot = 0;
-    a->setTransform(tfm);
+    cTransform xf = a->getTransform();
+    xf.pos = vec2{ 726, 517 };
+    xf.rot = 1.71739519;
+    a->setTransform(xf);
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();

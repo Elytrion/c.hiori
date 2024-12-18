@@ -26,15 +26,6 @@ namespace chiori
 		int indexA{ -1 };		// wA index
 		int indexB{ -1 };		// wB index
 
-		friend std::ostream& operator<<(std::ostream& inOS, const cSimplexVertex& inVec) {
-			inOS << "simplexVert( ";
-			inOS << " a: " << inVec.wA << " | ";
-			inOS << " b: " << inVec.wB << " | ";
-			inOS << " w: " << inVec.w << " | ";
-			inOS << " l: " << inVec.l << " ";
-			inOS << ")";
-			return inOS;
-		}
 	};
 
 	struct cSimplex
@@ -339,18 +330,13 @@ namespace chiori
 			signedVolumeDistanceSubalgorithm(simplex);
 			// We determine the closest points on each shape via the barycentric coordinates
 			dir = vec2::zero;
-			float max_norm = 1.0f;
+
 			for (int l = 0; l < simplex.s_size; l++)
 			{
 				dir += simplexVerts[l].l * simplexVerts[l].w;
-				float norm = simplexVerts[l].w.sqrMagnitude();
-				max_norm = (max_norm > norm) ? max_norm : norm;
 			}
 				
 			if (simplex.s_size >= 3)
-				break;
-			
-			if (dir.sqrMagnitude() < (eps * max_norm))
 				break;
 			
 			float dirm = dir.sqrMagnitude();
@@ -439,18 +425,30 @@ namespace chiori
 		std::vector<cSimplexVertex> poly;
 	};
 
-	static cEdge FindClosestEdge(const std::vector<cSimplexVertex>& poly)
+	// Finds the closest edge to the origin on a simplex
+	// Used for EPA
+	cEdge FindClosestEdge(const std::vector<cSimplexVertex>& poly)
 	{
 		cEdge closest;
 		closest.distance = FLT_MAX;
-		for (size_t i = 0; i < poly.size(); i++)
+		int i;
+		for (i = 0; i < poly.size(); i++)
 		{
+			if (i == 4)
+			{
+				std::cout << std::endl;
+			}
+			
 			size_t j = (i + 1) % poly.size();
+
 			vec2 edge = poly[i].w - poly[j].w;
 			vec2 normal;
+
 			normal = { edge.y, -edge.x };
 			normal = normal.normalized();
+
 			float distance = normal.dot(poly[i].w);
+
 			// wrong normal, facing away from origin
 			// flip normal
 			if (distance < 0)
@@ -458,6 +456,7 @@ namespace chiori
 				distance *= -1;
 				normal *= -1;
 			}
+
 			// if this distance is closer, use this distance
 			if (distance < closest.distance)
 			{
@@ -466,20 +465,27 @@ namespace chiori
 				closest.index = (int)j;
 			}
 		}
-		// return closest edge found
+		if (poly.size() == 5)
+		{
+			std::cout << i;
+		}
+
 		return closest;
 	}
 
-	static void ComputeWitnessPoints(const std::vector<cSimplexVertex>& polytope, const cEdge& closestEdge, vec2& witnessA, vec2& witnessB)
+	void ComputeWitnessPoints(const std::vector<cSimplexVertex>& polytope, const cEdge& closestEdge, vec2& witnessA, vec2& witnessB)
 	{
+		const vec2& col_normal = closestEdge.normal;
 		int I = closestEdge.index;
 		const cSimplexVertex& m1 = polytope[(I - 1 + polytope.size()) % polytope.size()];
 		const cSimplexVertex& m2 = polytope[I];
 		vec2 edge = m2.w - m1.w;
 		float lengthSqr = edge.sqrMagnitude();
+
 		// Barycentric coordinates
 		float lambda1 = (m2.w.dot(edge)) / lengthSqr;
 		float lambda2 = 1.0f - lambda1;
+
 		// Interpolate witness points
 		witnessA = lambda1 * m1.wA + lambda2 * m2.wA;
 		witnessB = lambda1 * m1.wB + lambda2 * m2.wB;
@@ -488,39 +494,38 @@ namespace chiori
 	void cEPA(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
 	{
 		const float eps = input.tolerance;		
-		if (output.distance > eps)
-			return;
+		const int max_itr = input.maxIterations;
 
 		const cGJKProxy& proxyA = input.proxyA;
 		const cGJKProxy& proxyB = input.proxyB;
 		cTransform xfA = input.transformA;
 		cTransform xfB = input.transformB;
 		
+		cPolytope p;
+		p.ReadCache(cache, proxyA, xfA, proxyB, xfB);
+		std::vector<cSimplexVertex>& polytope = p.poly;
+
 		cEdge closestEdge;
 		float supportDist = 0.0f;
-		cPolytope polytope;
-		polytope.ReadCache(cache, proxyA, xfA, proxyB, xfB);
-
-		for (int i = 0; i < commons::GJK_ITERATIONS; i++)
+		int itr = 0;
+		for (itr = 0; itr < max_itr; itr++)
 		{
-			closestEdge = FindClosestEdge(polytope.poly);
+			closestEdge = FindClosestEdge(polytope);
 			
-			const vec2& dir = closestEdge.normal;
+			const vec2& normal = closestEdge.normal;
 			cSimplexVertex support;
-			GetSupportPoint(&support, proxyA, xfA, proxyB, xfB, dir);
+			GetSupportPoint(&support, proxyA, xfA, proxyB, xfB, normal);
 
-			supportDist = support.w.dot(closestEdge.normal);
+			supportDist = support.w.dot(normal);
 
-			if (abs(supportDist - closestEdge.distance) < eps)
+			if (abs(supportDist - closestEdge.distance) < EPSILON)
 				break;
 
-			polytope.poly.insert(polytope.poly.begin() + closestEdge.index, support);
+			polytope.insert(polytope.begin() + closestEdge.index, support);
 		}
-
 		output.normal = closestEdge.normal;
-		output.distance = -supportDist;
-		ComputeWitnessPoints(polytope.poly, closestEdge, output.pointA, output.pointB);
-		
+		output.distance = supportDist; // this will be a negative value
+		ComputeWitnessPoints(polytope, closestEdge, output.pointA, output.pointB);
 	}
 	#pragma endregion
 }
