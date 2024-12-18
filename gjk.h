@@ -4,40 +4,6 @@
 
 namespace chiori
 {        
-	/*
-	
-	float epsilon = 0.0001f; // Precision threshold
-    int maxIterations = 20;  // Maximum number of iterations
-
-    float lowerBound = 0.0f;  // Start of the time step
-    float upperBound = 1.0f;  // End of the time step
-    float toi = upperBound;   // Time of Impact
-
-    for (int i = 0; i < maxIterations; ++i) {
-        float midPoint = (lowerBound + upperBound) / 2.0f;
-    
-        // Move object A by midPoint * velocity
-        MoveObjectAlongVelocity(objectA, midPoint * relativeVelocity);
-    
-        // Check for collision using GJK
-        bool collision = PerformGJK(objectA, objectB);
-    
-        if (collision) {
-            toi = midPoint;   // Update TOI if a collision is found
-            upperBound = midPoint; // Narrow down search to earlier times
-        } else {
-            lowerBound = midPoint; // Narrow down search to later times
-        }
-    
-        // Stop if time interval is smaller than epsilon
-        if ((upperBound - lowerBound) < epsilon) {
-            break;
-        }
-    }
-
-    return toi;  // Return the estimated Time of Impact
-	*/
-
     /*
     * A proxy object used by the GJK algorithm that
     * Encapsulates any shape
@@ -75,8 +41,8 @@ namespace chiori
     */
     struct cGJKOutput
     {
-        vec2 pointA;		// closest point on shapeA
-        vec2 pointB;		// closest point on shapeB
+        vec2 pointA;		// closest point on shapeA to shapeB (EPA will return the furthest point on shape A into shape B in the direction of the nomal)
+        vec2 pointB;		// closest point on shapeB to shapeA (EPA will return the furthest point on shape B into shape A in the direction of the nomal)
         float distance;     // distance between two shapes (if distance is roughly <= 0 (within LEPSILON tolerance) it is an overlapping collision)
         int iterations;     // the number of iterations the GJK ran for, used for determining efficiency
         vec2 normal;        // normal of the collision, left as 0,0 if no EPA is run

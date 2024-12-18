@@ -518,7 +518,7 @@ namespace chiori
 
 			supportDist = support.w.dot(normal);
 
-			if (abs(supportDist - closestEdge.distance) < EPSILON)
+			if (abs(supportDist - closestEdge.distance) < eps)
 				break;
 
 			polytope.insert(polytope.begin() + closestEdge.index, support);
