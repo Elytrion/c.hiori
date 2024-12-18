@@ -9,7 +9,7 @@ namespace chiori
 	cShape* PhysicsWorld::CreateShape(const std::vector<vec2>& vertices)
 	{
 		cShape* n_shape = p_shapes.Alloc();
-		std::vector<vec2> v = n_shape->vertices;
+		std::vector<vec2> v = n_shape->polygon.vertices;
 		float index = n_shape->broadphaseIndex;
 		n_shape->setVertices(vertices);
 		AABB& aabb = n_shape->aabb;
@@ -146,34 +146,47 @@ namespace chiori
 				cTransform tfm_b = b->getTransform();
 				const cShape* shp_a = p_shapes[a->shapeIndex];
 				const cShape* shp_b = p_shapes[b->shapeIndex];
-				cGJKCache cache;
-				cache.count = 0;
-				cGJKProxy gjka{ shp_a->vertices.data(), shp_a->count };
-				cGJKProxy gjkb{ shp_b->vertices.data(), shp_b->count };
-				cGJKOutput result;
-				cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
-				cGJK(input, result, &cache);
-				if (result.distance < EPSILON && cache.count > 1)
-				{
-					cEPA(input, result, &cache);
-				}
-				std::cout << result.distance << std::endl;
-				////std::cout << result.distance << std::endl;
-				//cManifold m = CollideShapes(shp_a, tfm_a, shp_b, tfm_b, &cache);
-				if (result.normal != vec2::zero)
+				cManifold manifold = getShapeManifold(&shp_a->polygon, &shp_b->polygon, tfm_a, tfm_b);
+				
+				//cGJKCache cache;
+				//cache.count = 0;
+				//cGJKProxy gjka{ shp_a->polygon.vertices.data(), shp_a->polygon.count };
+				//cGJKProxy gjkb{ shp_b->polygon.vertices.data(), shp_b->polygon.count };
+				//cGJKOutput result;
+				//cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
+				//cGJK(input, result, &cache);
+				//if (result.distance < EPSILON && cache.count > 1)
+				//{
+				//	cEPA(input, result, &cache);
+				//}
+				
+				if (manifold.normal != vec2::zero)
 				{
 					CP_Settings_StrokeWeight(2);
 					CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
-					vec2 lineEnd = tfm_a.pos + result.normal * 25;
+					vec2 lineEnd = tfm_a.pos + manifold.normal * 25;
 					CP_Graphics_DrawLine(tfm_a.pos.x, tfm_a.pos.y, lineEnd.x, lineEnd.y);
 				}
 				
 				vec2 pointA, pointB;
-				pointA = result.pointA; // cTransformVec(tfm_a, m.points[0].localAnchorA);
-				pointB = result.pointB; //cTransformVec(tfm_a, m.points[1].localAnchorA);
-				CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-				CP_Graphics_DrawCircle(pointA.x, pointA.y, 8);
-				CP_Graphics_DrawCircle(pointB.x, pointB.y, 8);
+				//pointA = manifold.pointA; // cTransformVec(tfm_a, m.points[0].localAnchorA);
+				//pointB = manifold.pointB; //cTransformVec(tfm_a, m.points[1].localAnchorA);
+				//CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
+				//CP_Graphics_DrawCircle(pointA.x, pointA.y, 8);
+				//CP_Graphics_DrawCircle(pointB.x, pointB.y, 8);
+				if (manifold.pointCount > 0)
+				{
+					// Transform contact points to world space
+					pointA = cTransformVec(tfm_a, manifold.points[0].localAnchorA);
+					CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
+					CP_Graphics_DrawCircle(pointA.x, pointA.y, 8); // Draw the first contact point
+				}
+				if (manifold.pointCount > 1)
+				{
+					pointB = cTransformVec(tfm_a, manifold.points[1].localAnchorA);
+					CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
+					CP_Graphics_DrawCircle(pointB.x, pointB.y, 8); // Draw the second contact point
+				}
 
 				
 

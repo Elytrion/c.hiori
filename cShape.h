@@ -7,6 +7,30 @@
 namespace chiori
 {
 	class PhysicsWorld; // forward declaration
+
+	struct cPolygon
+	{
+		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
+		std::vector<vec2> normals;  // the normals of all the faces of the shape
+		int count;					// the number of vertices/normals
+
+		void setVertices(const std::vector<vec2>& inVertices)
+		{
+			cassert(inVertices.size() >= 3);
+			// copy over the data
+			vertices = inVertices;
+			count = static_cast<int>(inVertices.size());
+			// calculate normals
+			for (int i = 0; i < count; ++i)
+			{
+				int i1 = i;
+				int i2 = (i + 1) % count;
+				vec2 edge = vertices[i2] - vertices[i1];
+				cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
+				normals.push_back(edge.scross(1.0f).normalize());
+			}
+		}
+	};
 	
 	class cShape
 	{
@@ -16,9 +40,7 @@ namespace chiori
 		int broadphaseIndex = -1;	// the index of this shape in the broadphase structure
 		
 	public:
-		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
-		std::vector<vec2> normals;  // the normals of all the faces of the shape
-		int count;					// the number of vertices/normals
+		cPolygon polygon;			// holds the vertices and normals of the shape
 		enum // Shape flags
 		{
 			SCENE_QUERYABLE = (1 << 0), // this shape can be queried (either by raycasts or triggers)
@@ -49,6 +71,9 @@ namespace chiori
 	{
 		cassert(inVertices.size() >= 3);
 		// copy over the data
+		std::vector<vec2>& vertices = polygon.vertices;
+		std::vector<vec2>& normals = polygon.normals;
+		int& count = polygon.count;
 		vertices = inVertices;
 		// build AABB
 		aabb = CreateAABBHull(vertices.data(), vertices.size()); 
@@ -62,13 +87,11 @@ namespace chiori
 			cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
 			normals.push_back(edge.scross(1.0f).normalize());
 		}
-
-
 	}
 
 	inline std::vector<vec2> cShape::getVertices(cTransform inTfm)
 	{
-		std::vector<vec2> n_verts = vertices;
+		std::vector<vec2> n_verts = polygon.vertices;
 		// Apply position, scale and rotation to base vertices
 		for (auto& vertex : n_verts)
 		{

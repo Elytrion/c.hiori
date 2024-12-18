@@ -433,12 +433,7 @@ namespace chiori
 		closest.distance = FLT_MAX;
 		int i;
 		for (i = 0; i < poly.size(); i++)
-		{
-			if (i == 4)
-			{
-				std::cout << std::endl;
-			}
-			
+		{			
 			size_t j = (i + 1) % poly.size();
 
 			vec2 edge = poly[i].w - poly[j].w;
@@ -464,10 +459,6 @@ namespace chiori
 				closest.normal = normal;
 				closest.index = (int)j;
 			}
-		}
-		if (poly.size() == 5)
-		{
-			std::cout << i;
 		}
 
 		return closest;
@@ -524,7 +515,7 @@ namespace chiori
 			polytope.insert(polytope.begin() + closestEdge.index, support);
 		}
 		output.normal = closestEdge.normal;
-		output.distance = supportDist; // this will be a negative value
+		output.distance = supportDist;
 		ComputeWitnessPoints(polytope, closestEdge, output.pointA, output.pointB);
 	}
 	#pragma endregion

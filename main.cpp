@@ -104,11 +104,11 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStati
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
-    std::cout << "NEW SHAPE!" << std::endl;
-    for (vec2& v : vertices)
-    {
-        std::cout << v + centrePos << std::endl;
-    }
+    //std::cout << "NEW SHAPE!" << std::endl;
+    //for (vec2& v : vertices)
+    //{
+    //    std::cout << v + centrePos << std::endl;
+    //}
     shapes.push_back(newShape);
     actors.push_back(newActor);
     return newActor;

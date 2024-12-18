@@ -3,8 +3,9 @@
 
 namespace chiori
 {
-	class cShape;
-	struct cGJKCache;
+	// forward declaration
+	struct cPolygon;
+
 	struct cManifoldPoint
 	{
 		// local anchors relative to body origin
@@ -20,7 +21,5 @@ namespace chiori
 		unsigned pointCount{ 0 };
 	};
 
-	cManifold CollideShapes(const cShape* shapeA, const cTransform& xfA,
-		const cShape* shapeB, const cTransform& xfB,
-		cGJKCache* cache);
+	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB);
 }
