@@ -9,141 +9,66 @@ namespace chiori
 {
 	#define clinearSlop 0.005f
 	#define cspeculativeDistance (4.0f * clinearSlop)
-	/*
-	 * Generates a contact manifold for two convex shapes based on their edges.
-	 *
-	 * This function computes the contact points between two shapes using the following steps:
-	 * 1. Determine the reference and incident edges:
-	 *    - The reference edge defines the clipping planes.
-	 *    - The incident edge is clipped against the reference edge to determine valid contact points.
-	 * 2. Perform scalar clipping:
-	 *    - The incident edge's vertices are projected onto the reference edge's tangent.
-	 *    - Clipping is performed to identify the overlap of the two edges.
-	 *    - Clipped points are computed using linear interpolation.
-	 * 3. Calculate separations:
-	 *    - The distances of the clipped points from the reference edge along its normal are calculated.
-	 * 4. Populate the manifold:
-	 *    - The manifold contains up to two contact points, each with:
-	 *        - The clipped point relative to the reference shape (localAnchorA).
-	 *        - The separation (penetration depth) along the reference normal.
-	 *    - The normal direction is flipped if necessary, based on the `flip` flag.
-	 *
-	 * This method is robust for handling edge-to-edge contact and ensures efficient calculation of
-	 * contact points for convex shapes. 
-	 */
-	cManifold getManifold(const cPolygon* refShape, const cPolygon* incShape, int edgeA, int edgeB)
+
+
+	static std::vector<vec2> clipEdge(vec2& v1, vec2& v2, vec2& n, float o)
 	{
-		cManifold manifold;
-		int i11, i12; // reference edge vert indices
-		int i21, i22; // incident edge vert indices
-		i11 = edgeA;
-		i12 = edgeA + 1 < refShape->count ? edgeA + 1 : 0;
-		i21 = edgeB;
-		i22 = edgeB + 1 < incShape->count ? edgeB + 1 : 0;
-
-
-		vec2 normal = refShape->normals[i11]; // normal of the reference plane
-
-		const vec2& v11 = refShape->vertices[i11]; // reference edge vertices
-		const vec2& v12 = refShape->vertices[i12];
-		
-		const vec2& v21 = incShape->vertices[i21]; // incident edge vertices
-		const vec2& v22 = incShape->vertices[i22];
-
-		vec2 tangent = vec2(-normal.y, normal.x); // Perpendicular to normal
-
-		float lower1 = 0.0f;
-		float upper1 = (v12 - v11).dot(tangent);
-
-		// Incident edge points opposite of tangent due to CCW winding
-		float upper2 = (v21 - v11).dot(tangent);
-		float lower2 = (v22- v11).dot(tangent);
-		
-		// Compute clipped points
-		vec2 vLower, vUpper;
-		// Clip lower point
-		if (lower2 < lower1 && (upper2 - lower2) > FLT_EPSILON)
-		{
-			float t = (lower1 - lower2) / (upper2 - lower2);
-			vLower = v21 + t * (v22 - v21);
-		}
-		else
-		{
-			vLower = v21;
-		}
-		// Clip upper point
-		if (upper2 > upper1 && (upper2 - lower2) > FLT_EPSILON)
-		{
-			float t = (upper1 - lower2) / (upper2 - lower2);
-			vUpper = v21 + t * (v22 - v21);
-		}
-		else
-		{
-			vUpper = v22;
+		std::vector<vec2> result;
+		float d1 = n.dot(v1) - o;
+		float d2 = n.dot(v2) - o;
+		// if either point is past o along n
+		// then we can keep the point
+		if (d1 >= 0.0) result.push_back(v1);
+		if (d2 >= 0.0) result.push_back(v2);
+		// finally we need to check if they
+		// are on opposing sides so that we can
+		// compute the correct point
+		if (d1 * d2 < 0.0) {
+			// if they are on different sides of the
+			// offset, d1 and d2 will be a (+) * (-)
+			// and will yield a (-) and therefore be
+			// less than zero
+			// get the vector for the edge we are clipping
+			vec2 e = v2 - v1;
+			// compute the location along e
+			float u = d1 / (d1 - d2);
+			e *= u;
+			e += v1;
+			// add the point
+			result.push_back(e);
 		}
 
-		// Compute separations
-		float separationLower = (vLower - v11).dot(normal);
-		float separationUpper = (vUpper - v11).dot(normal);
-
-		// Populate manifold
-		manifold.normal = normal;
-		cManifoldPoint& cp1 = manifold.points[0];
-		cp1.localAnchorA = vLower;
-		cp1.separation = separationLower;
-		manifold.pointCount++;
-	
-		cManifoldPoint& cp2 = manifold.points[1];
-		cp2.localAnchorA = vUpper;
-		cp2.separation = separationUpper ;
-		manifold.pointCount++;
-
-		return manifold;
+		return result;
 	}
 
-	cManifold getOverlapManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, const vec2 normal)
+	static cManifold PolygonClipper(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
 	{
-		bool flip = (xfB.pos - xfA.pos).dot(normal) < 0;
-		const cPolygon* refShape = (flip) ? shapeB : shapeA;
-		const cPolygon* incShape = (flip) ? shapeA : shapeB;
-		const cTransform& xfRef = (flip) ? xfB : xfA;
-		const cTransform& xfInc = (flip) ? xfA : xfB;
-		int edgeRef, edgeInc;
-		
-		edgeRef = -1;
-		float maxAlignment = -FLT_MAX;
-		for (int i = 0; i < refShape->count; i++)
-		{
-			const vec2& ln = refShape->normals[i];
-			vec2 wn = ln.rotated(xfRef.rot);
-			float alignment = wn.dot(normal);
-			if (alignment > maxAlignment)
-			{
-				maxAlignment = alignment;
-				edgeRef = i;
-			}
-		}
-
-		edgeInc = -1;
-		float minAlignment = FLT_MAX;
-		for (int i = 0; i < incShape->count; i++)
-		{
-			const vec2& ln = incShape->normals[i];
-			vec2 wn = ln.rotated(xfInc.rot);
-			float alignment = wn.dot(-normal);
-			if (alignment < minAlignment)
-			{
-				minAlignment = alignment;
-				edgeInc = i;
-			}
-		}
-
-		return getManifold(refShape, incShape, edgeRef, edgeInc);
-	}
-
-	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
-	static cManifold s2ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
-	{
+		//std::cout << "CLIPPING POLYS" << std::endl;
+		//std::cout << "POLYA" << std::endl;
+		//std::cout << "Verts: " << std::endl;
+		//for (int i = 0; i < polyA->count; i++)
+		//{
+		//	std::cout << polyA->vertices[i] << " , ";
+		//}
+		//std::cout << "\nNorms: " << std::endl;
+		//for (int i = 0; i < polyA->count; i++)
+		//{
+		//	std::cout << polyA->normals[i] << " , ";
+		//}
+		//std::cout << "POLYB" << std::endl;
+		//std::cout << "Verts: " << std::endl;
+		//for (int i = 0; i < polyB->count; i++)
+		//{
+		//	std::cout << polyB->vertices[i] << " , ";
+		//}
+		//std::cout << "\nNorms: " << std::endl;
+		//for (int i = 0; i < polyB->count; i++)
+		//{
+		//	std::cout << polyB->normals[i] << " , ";
+		//}
+		//std::cout << "\nEdgeA: " << edgeA << std::endl;
+		//std::cout << "EdgeB: " << edgeB << std::endl;
+		//std::cout << "Flipped? " << flip << std::endl;
 		cManifold manifold = {};
 
 		// reference polygon
@@ -178,11 +103,120 @@ namespace chiori
 		// Reference edge vertices
 		vec2 v11 = poly1->vertices[i11];
 		vec2 v12 = poly1->vertices[i12];
-
+		//std::cout << "Ref edge: " << v11 << " + " << v12 << std::endl;
 		// Incident edge vertices
 		vec2 v21 = poly2->vertices[i21];
 		vec2 v22 = poly2->vertices[i22];
+		//std::cout << "Inc edge: " << v21 << " + " << v22 << std::endl;
 
+		vec2 refv = (v12 - v11);
+		refv.normalize();
+		float offset1 = refv.dot(v11);
+		std::vector<vec2> cpts1 = clipEdge(v21, v22, refv, offset1);
+		if (cpts1.size() < 2)
+		{
+			//std::cout << " FIRST CLIPPING FAILED! " << std::endl;
+			return manifold;
+		}
+		float offset2 = refv.dot(v12);
+		std::vector<vec2> cpts = clipEdge(cpts1[0], cpts1[1], -refv, -offset2);
+		if (cpts.size() < 2)
+		{
+			//std::cout << " SECOND CLIPPING FAILED! " << std::endl;
+			return manifold;
+		}
+
+		// Compute the maximum penetration depth
+		float maxDepth = normal.dot(v11);
+
+		// Validate clipped points and populate the manifold
+		for (size_t i = 0; i < cpts.size(); ++i)
+		{
+			float separation = normal.dot(cpts[i]) - maxDepth;
+			if (separation <= 0.0f && manifold.pointCount < 2)
+			{
+				cManifoldPoint& mp = manifold.points[manifold.pointCount++];
+				mp.localAnchorA = cpts[i];
+				mp.separation = separation;
+			}
+		}
+		
+		manifold.normal = flip ? -normal : normal;
+		//if (manifold.pointCount == 0)
+		//{
+		//	std::cout << "ERROR! NO CONTACT POINTS ADDED" << std::endl;
+		//}
+		return manifold;
+	}
+	
+	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
+	static cManifold ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
+	{
+		//std::cout << "CLIPPING POLYS" << std::endl;
+		//std::cout << "POLYA" << std::endl;
+		//std::cout << "Verts: " << std::endl;
+		//for (int i = 0; i < polyA->count; i++)
+		//{
+		//	std::cout << polyA->vertices[i] << " , ";
+		//}
+		//std::cout << "\nNorms: " << std::endl;
+		//for (int i = 0; i < polyA->count; i++)
+		//{
+		//	std::cout << polyA->normals[i] << " , ";
+		//}
+		//std::cout << "POLYB" << std::endl;
+		//std::cout << "Verts: " << std::endl;
+		//for (int i = 0; i < polyB->count; i++)
+		//{
+		//	std::cout << polyB->vertices[i] << " , ";
+		//}
+		//std::cout << "\nNorms: " << std::endl;
+		//for (int i = 0; i < polyB->count; i++)
+		//{
+		//	std::cout << polyB->normals[i] << " , ";
+		//}
+		//std::cout << "\nEdgeA: " << edgeA << std::endl;
+		//std::cout << "EdgeB: " << edgeB << std::endl;
+		//std::cout << "Flipped? " << flip << std::endl;
+		cManifold manifold = {};
+
+		// reference polygon
+		const cPolygon* poly1;
+		int i11, i12;
+
+		// incident polygon
+		const cPolygon* poly2;
+		int i21, i22;
+
+		if (flip)
+		{
+			poly1 = polyB;
+			poly2 = polyA;
+			i11 = edgeB;
+			i12 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
+			i21 = edgeA;
+			i22 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
+		}
+		else
+		{
+			poly1 = polyA;
+			poly2 = polyB;
+			i11 = edgeA;
+			i12 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
+			i21 = edgeB;
+			i22 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
+		}
+
+		vec2 normal = poly1->normals[i11];
+
+		// Reference edge vertices
+		vec2 v11 = poly1->vertices[i11];
+		vec2 v12 = poly1->vertices[i12];
+		//std::cout << "Ref edge: " << v11 << " + " << v12 << std::endl;
+		// Incident edge vertices
+		vec2 v21 = poly2->vertices[i21];
+		vec2 v22 = poly2->vertices[i22];
+		//std::cout << "Inc edge: " << v21 << " + " << v22 << std::endl;
 		vec2 tangent = cross(1.0f, normal);
 
 		float lower1 = 0.0f;
@@ -252,7 +286,7 @@ namespace chiori
 	}
 
 	// Find the max separation between poly1 and poly2 using edge normals from poly1.
-	static float s2FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
+	static float FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
@@ -291,13 +325,13 @@ namespace chiori
 	}
 
 	// This function assumes there is overlap
-	static cManifold s2PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
+	static cManifold PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
 	{
 		int edgeA = 0;
-		float separationA = s2FindMaxSeparation(&edgeA, polyA, polyB);
+		float separationA = FindMaxSeparation(&edgeA, polyA, polyB);
 
 		int edgeB = 0;
-		float separationB = s2FindMaxSeparation(&edgeB, polyB, polyA);
+		float separationB = FindMaxSeparation(&edgeB, polyB, polyA);
 
 		bool flip;
 
@@ -341,8 +375,7 @@ namespace chiori
 				}
 			}
 		}
-
-		return s2ClipPolygons(polyA, polyB, edgeA, edgeB, flip);
+		return PolygonClipper(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
 	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB)
@@ -381,7 +414,7 @@ namespace chiori
 		if (output.distance < 0.1f * clinearSlop)
 		{
 			//cEPA(input, output, &cache);
-			manifold = s2PolygonSAT(shapeA, &localShapeB);
+			manifold = PolygonSAT(shapeA, &localShapeB);
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
 			{

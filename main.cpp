@@ -114,7 +114,7 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStati
     return newActor;
 }
 
-void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
+cActor* CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
 {
     // Equilateral triangle
 	std::vector<vec2> vertices{
@@ -133,6 +133,7 @@ void CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
     newActor->setFlags(f);
     shapes.push_back(newShape);
     actors.push_back(newActor);
+    return newActor;
 }
 
 
@@ -171,19 +172,22 @@ void InitPhysics()
     
     
     cActor* a = CreateRectActor(100, 100, middle);
-	cActor* b = CreateRectActor(100, 100, vec2{ middle.x, middle.y + 95});
+	//cActor* b = CreateRectActor(100, 100, vec2{ middle.x, middle.y + 95});
     cTransform xfa = a->getTransform();
-    cTransform xfb = b->getTransform();
+    //cTransform xfb = b->getTransform();
     //xfa.rot = 45 * DEG2RAD;
-    xfb.rot = 45 * DEG2RAD;
+    //xfb.rot = 45 * DEG2RAD;
     //xf.pos = vec2{ 726, 517 };
     //xf.rot = 45 * DEG2RAD;
     a->setTransform(xfa);
-    b->setTransform(xfb);
+    //b->setTransform(xfb);
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();
-    //CreateTriangleActor(50, vec2{ middle.x - 150, middle.y });
+    cActor* t = CreateTriangleActor(50, vec2{ middle.x + 25, middle.y + 25 });
+    cTransform xft = t->getTransform();
+    xft.rot = 45 * DEG2RAD;
+    t->setTransform(xft);
    // CreateRandomizedActor(5, 50, middle);
     //CreateRandomizedActor(5, 50, vec2{ middle.x, middle.y + 150 });
     // // create floor
@@ -293,19 +297,19 @@ void HandleInput(CP_Vector mousePos)
 
         if (CP_Input_KeyDown(KEY_RIGHT))
         {
-            tfm.pos += vec2::right * 0.01f;
+            tfm.pos += vec2::right * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_LEFT))
         {
-            tfm.pos += vec2::left * 0.01f;
+            tfm.pos += vec2::left * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_UP))
         {
-            tfm.pos += vec2::up * 0.01f;
+            tfm.pos += vec2::down * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_DOWN))
         {
-            tfm.pos += vec2::down * 0.01f;
+            tfm.pos += vec2::up * 0.1f;
         }
         selectedActor->setTransform(tfm);
     }
