@@ -83,5 +83,5 @@ namespace chiori
 
     void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache);
 
-    void cEPA(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache);
+    void cEPA(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache); // TODO: Very unstable, unsure why
 }

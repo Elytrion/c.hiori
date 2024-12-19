@@ -104,11 +104,11 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStati
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
-    //std::cout << "NEW SHAPE!" << std::endl;
-    //for (vec2& v : vertices)
-    //{
-    //    std::cout << v + centrePos << std::endl;
-    //}
+    std::cout << "NEW SHAPE!" << std::endl;
+    for (vec2& v : vertices)
+    {
+        std::cout << v << std::endl;
+    }
     shapes.push_back(newShape);
     actors.push_back(newActor);
     return newActor;
@@ -169,12 +169,17 @@ void InitPhysics()
     //CreateTriangleActor(50, middle);
     //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
-    CreateRectActor(100, 100, middle);
-	cActor* a = CreateRectActor(100, 100, vec2{ middle.x + 50, middle.y});
-    cTransform xf = a->getTransform();
-    xf.pos = vec2{ 726, 517 };
-    xf.rot = 1.71739519;
-    a->setTransform(xf);
+    
+    cActor* a = CreateRectActor(100, 100, middle);
+	cActor* b = CreateRectActor(100, 100, vec2{ middle.x, middle.y + 95});
+    cTransform xfa = a->getTransform();
+    cTransform xfb = b->getTransform();
+    //xfa.rot = 45 * DEG2RAD;
+    xfb.rot = 45 * DEG2RAD;
+    //xf.pos = vec2{ 726, 517 };
+    //xf.rot = 45 * DEG2RAD;
+    a->setTransform(xfa);
+    b->setTransform(xfb);
     //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
 
     //calculateCSO();

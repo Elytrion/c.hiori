@@ -3,6 +3,8 @@
 #include "gjk.h"
 #include "cShape.h"
 
+#include "cprocessing.h" //!!TO REMOVE!!
+
 namespace chiori
 {
 	#define clinearSlop 0.005f
@@ -138,6 +140,210 @@ namespace chiori
 
 		return getManifold(refShape, incShape, edgeRef, edgeInc);
 	}
+
+	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
+	static cManifold s2ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
+	{
+		cManifold manifold = {};
+
+		// reference polygon
+		const cPolygon* poly1;
+		int i11, i12;
+
+		// incident polygon
+		const cPolygon* poly2;
+		int i21, i22;
+
+		if (flip)
+		{
+			poly1 = polyB;
+			poly2 = polyA;
+			i11 = edgeB;
+			i12 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
+			i21 = edgeA;
+			i22 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
+		}
+		else
+		{
+			poly1 = polyA;
+			poly2 = polyB;
+			i11 = edgeA;
+			i12 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
+			i21 = edgeB;
+			i22 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
+		}
+
+		vec2 normal = poly1->normals[i11];
+
+		// Reference edge vertices
+		vec2 v11 = poly1->vertices[i11];
+		vec2 v12 = poly1->vertices[i12];
+
+		// Incident edge vertices
+		vec2 v21 = poly2->vertices[i21];
+		vec2 v22 = poly2->vertices[i22];
+
+		vec2 tangent = cross(1.0f, normal);
+
+		float lower1 = 0.0f;
+		float upper1 = (v12 - v11).dot(tangent);
+
+		// Incident edge points opposite of tangent due to CCW winding
+		float upper2 = (v21 - v11).dot(tangent);
+		float lower2 = (v22 - v11).dot(tangent);
+
+
+		vec2 vLower;
+		if (lower2 < lower1 && upper2 - lower2 > FLT_EPSILON)
+		{
+			vLower = vlerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
+		}
+		else
+		{
+			vLower = v22;
+		}
+
+		vec2 vUpper;
+		if (upper2 > upper1 && upper2 - lower2 > FLT_EPSILON)
+		{
+			vUpper = vlerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
+		}
+		else
+		{
+			vUpper = v21;
+		}
+
+		// TODO_ERIN vLower can be very close to vUpper, reduce to one point?
+
+		float separationLower = (vLower - v11).dot(normal);
+		float separationUpper = (vUpper - v11).dot(normal);
+
+		if (flip == false)
+		{
+			manifold.normal = normal;
+			cManifoldPoint* cp = manifold.points + 0;
+
+			cp->localAnchorA = vLower;
+			cp->separation = separationLower;
+			manifold.pointCount += 1;
+			cp += 1;
+
+			cp->localAnchorA = vUpper;
+			cp->separation = separationUpper;
+			manifold.pointCount += 1;
+			
+		}
+		else
+		{
+			manifold.normal = -normal;
+			cManifoldPoint* cp = manifold.points + 0;
+
+			cp->localAnchorA = vUpper;
+			cp->separation = separationUpper;
+			manifold.pointCount += 1;
+			cp += 1;
+
+			cp->localAnchorA = vLower;
+			cp->separation = separationLower;
+			manifold.pointCount += 1;
+		}
+
+		return manifold;
+	}
+
+	// Find the max separation between poly1 and poly2 using edge normals from poly1.
+	static float s2FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
+	{
+		int count1 = poly1->count;
+		int count2 = poly2->count;
+		const std::vector<vec2>& n1s = poly1->normals;
+		const std::vector<vec2>& v1s = poly1->vertices;
+		const std::vector<vec2>& v2s = poly2->vertices;
+
+		int bestIndex = 0;
+		float maxSeparation = -FLT_MAX;
+		for (int i = 0; i < count1; ++i)
+		{
+			// Get poly1 normal in frame2.
+			vec2 n = n1s[i];
+			vec2 v1 = v1s[i];
+
+			// Find the deepest point for normal i.
+			float si = FLT_MAX;
+			for (int j = 0; j < count2; ++j)
+			{
+				float sij = n.dot(v2s[j] - v1);
+				if (sij < si)
+				{
+					si = sij;
+				}
+			}
+
+			if (si > maxSeparation)
+			{
+				maxSeparation = si;
+				bestIndex = i;
+			}
+		}
+
+		*edgeIndex = bestIndex;
+		return maxSeparation;
+	}
+
+	// This function assumes there is overlap
+	static cManifold s2PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
+	{
+		int edgeA = 0;
+		float separationA = s2FindMaxSeparation(&edgeA, polyA, polyB);
+
+		int edgeB = 0;
+		float separationB = s2FindMaxSeparation(&edgeB, polyB, polyA);
+
+		bool flip;
+
+		if (separationB > separationA)
+		{
+			flip = true;
+			vec2 searchDirection = polyB->normals[edgeB];
+
+			// Find the incident edge on polyA
+			int count = polyA->count;
+			const std::vector<vec2>& normals = polyA->normals;
+			edgeA = 0;
+			float minDot = FLT_MAX;
+			for (int i = 0; i < count; ++i)
+			{
+				float dot = searchDirection.dot(normals[i]);
+				if (dot < minDot)
+				{
+					minDot = dot;
+					edgeA = i;
+				}
+			}
+		}
+		else
+		{
+			flip = false;
+			vec2 searchDirection = polyA->normals[edgeA];
+
+			// Find the incident edge on polyB
+			int count = polyB->count;
+			const std::vector<vec2>& normals = polyB->normals;
+			edgeB = 0;
+			float minDot = FLT_MAX;
+			for (int i = 0; i < count; ++i)
+			{
+				float dot = searchDirection.dot(normals[i]);
+				if (dot < minDot)
+				{
+					minDot = dot;
+					edgeB = i;
+				}
+			}
+		}
+
+		return s2ClipPolygons(polyA, polyB, edgeA, edgeB, flip);
+	}
 	
 	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB)
 	{
@@ -174,8 +380,9 @@ namespace chiori
 
 		if (output.distance < 0.1f * clinearSlop)
 		{
-			cEPA(input, output, &cache);
-			manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
+			//cEPA(input, output, &cache);
+			manifold = s2PolygonSAT(shapeA, &localShapeB);
+			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
 			{
 				manifold.normal.rotate(xfA.rot);
