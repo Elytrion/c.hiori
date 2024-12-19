@@ -378,6 +378,82 @@ namespace chiori
 		return PolygonClipper(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
+	void ProjectPolygonOntoAxis(
+		const vec2* vert, const int& vertCount, const vec2& axis,
+		float& minVal, float& maxVal)
+	{
+		minVal = FLT_MAX;
+		maxVal = -FLT_MAX;
+		for (int i = 0; i < vertCount; i++)
+		{
+			float projDist = vert[i] * axis;
+			minVal = min(projDist, minVal);
+			maxVal = max(projDist, maxVal);
+		}
+	}
+	// Determine if two convex polygons intersect using the Seperating Axis Theorem (SAT)
+	bool SAT(
+		const vec2& pos_a, const vec2* vert_a, const int& vertCount_a,
+		const vec2& pos_b, const vec2* vert_b, const int& vertCount_b,
+		float& inter_dist, vec2& col_normal)
+	{
+		inter_dist = FLT_MAX;
+		// for first polygon
+		for (int i = 0; i < vertCount_a; i++)
+		{
+			vec2 polygonEdge = vert_a[(i + 1) % vertCount_a] - vert_a[i];
+			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x };
+			axis = axis.normalized();
+
+			float min_a, max_a, min_b, max_b;
+			ProjectPolygonOntoAxis(vert_a, vertCount_a, axis, min_a, max_a);
+			ProjectPolygonOntoAxis(vert_b, vertCount_b, axis, min_b, max_b);
+
+			if (min_a >= max_b || min_b >= max_a)
+			{
+				return false;
+			}
+
+			float currOverlap = min(max_b - min_a, max_a - min_b);
+			if (currOverlap < inter_dist)
+			{
+				inter_dist = currOverlap;
+				col_normal = axis;
+			}
+		}
+
+		// for second polygon
+		for (int j = 0; j < vertCount_b; j++)
+		{
+			vec2 polygonEdge = vert_b[(j + 1) % vertCount_b] - vert_b[j];
+			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x }.normalized();
+
+			float min_a, max_a, min_b, max_b;
+			ProjectPolygonOntoAxis(vert_a, vertCount_a, axis, min_a, max_a);
+			ProjectPolygonOntoAxis(vert_b, vertCount_b, axis, min_b, max_b);
+
+			if (min_a >= max_b || min_b >= max_a)
+			{
+				return false;
+			}
+
+			float currOverlap = min(max_b - min_a, max_a - min_b);
+			if (currOverlap < inter_dist)
+			{
+				inter_dist = currOverlap;
+				col_normal = axis;
+			}
+		}
+
+		// flip normal if facing the wrong way;
+		vec2 dirVec = pos_b - pos_a;
+		col_normal = ((dirVec * col_normal) < 0.0f) ? -col_normal : col_normal;
+
+		// All axis checked, no gaps, hence collision!
+		return true;
+	}
+
+	
 	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB)
 	{
 		cManifold manifold = {};
@@ -414,6 +490,11 @@ namespace chiori
 		if (output.distance < 0.1f * clinearSlop)
 		{
 			//cEPA(input, output, &cache);
+			vec2 normal;
+			float penDepth;
+			vec2 pos1 = vec2::zero;
+			vec2 pos2 = xfRel.pos;
+			SAT(pos1, shapeA->vertices.data(), shapeA->count, pos2, localShapeB.vertices.data(), localShapeB.count, penDepth, normal);
 			manifold = PolygonSAT(shapeA, &localShapeB);
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
