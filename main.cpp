@@ -25,6 +25,12 @@ CP_Color randomColors[] = {
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
 
+int recommendedWidth = 1600;
+int recommendedHeight = 900;
+bool drawColors = true;
+bool drawFPS = true;
+vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
+
 bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
 {
     float distX = pos.x - center.x;
@@ -34,8 +40,12 @@ bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
 }
 
 void DrawActor(cShape*& inShape, const cTransform& inTfm)
-{
-	const std::vector<vec2> vertices = inShape->getVertices(inTfm);
+{    
+    cTransform xfAlt = inTfm;
+    xfAlt.pos *= 100;
+    xfAlt.pos += middle;
+    xfAlt.scale = { 100,100 };
+	const std::vector<vec2> vertices = inShape->getVertices(xfAlt);
     for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
@@ -46,10 +56,12 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
-    CP_Graphics_DrawCircle(inTfm.pos.x, inTfm.pos.y, 3);
+    vec2 middlePos = inTfm.pos * 100;
+    middlePos += middle;
+    CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
 }
 
-void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
+cActor* CreateRandomPolygonActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
 {
     bool validAngle = false;
 	std::vector<vec2> vertices;
@@ -79,15 +91,22 @@ void CreateRandomizedActor(int vertexCount, float radius, const vec2& centrePos)
     }
     cShape* newShape = world.CreateShape(vertices);
 	cActor* newActor = world.CreateActor(newShape);
+
     newActor->setMass(10);
     cTransform tfm = newActor->getTransform();
     tfm.pos = centrePos;
     newActor->setTransform(tfm);
     shapes.push_back(newShape);
     actors.push_back(newActor);
+
+    auto f = newActor->getFlags();
+    f.toggle(cActor::USE_GRAVITY);
+    newActor->setFlags(f);
+    
+    return newActor;
 }
 
-cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStatic = false)
+cActor* CreateRectActor(float width, float height, vec2& centrePos)
 {
     std::vector<vec2> vertices;
 	vertices.push_back({ -width / 2.0f, -height / 2.0f });
@@ -114,13 +133,15 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos, bool isStati
     return newActor;
 }
 
-cActor* CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false)
+cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
 {
+    float height = (sqrt(3.0f) / 2.0f) * edgeLength;
+
     // Equilateral triangle
 	std::vector<vec2> vertices{
-		vec2 { 0, radius },
-		vec2 { -radius, -radius },
-		vec2 { radius, -radius }
+        vec2(0, (2.0f / 3.0f) * height),
+        vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
+        vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
 	};
     cShape* newShape = world.CreateShape(vertices);
     cActor* newActor = world.CreateActor(newShape);
@@ -136,11 +157,24 @@ cActor* CreateTriangleActor(float radius, vec2& centrePos, bool isStatic = false
     return newActor;
 }
 
+cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
+{
+    cShape* newShape = world.CreateShape(inVertices);
+    cActor* newActor = world.CreateActor(newShape);
+    newActor->setMass(10);
+    cTransform tfm = newActor->getTransform();
+    tfm.pos = centrePos;
+    newActor->setTransform(tfm);
+    shapes.push_back(newShape);
+    actors.push_back(newActor);
+    auto f = newActor->getFlags();
+    f.toggle(cActor::USE_GRAVITY);
+    newActor->setFlags(f);
+    return newActor;
+}
 
-int recommendedWidth = 1600;
-int recommendedHeight = 900;
-bool drawColors = true;
-bool drawFPS = true;
+
+
 
 //void calculateCSO()
 //{
@@ -165,31 +199,17 @@ bool drawFPS = true;
 
 void InitPhysics()
 {
-    vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
-  
-    //CreateTriangleActor(50, middle);
-    //CreateTriangleActor(50, vec2{ /*middle.x + 150, middle.y*/904, 510 });
     
-    
-    cActor* a = CreateRectActor(100, 100, middle);
-	//cActor* b = CreateRectActor(100, 100, vec2{ middle.x, middle.y + 95});
-    cTransform xfa = a->getTransform();
-    //cTransform xfb = b->getTransform();
-    //xfa.rot = 45 * DEG2RAD;
-    //xfb.rot = 45 * DEG2RAD;
-    //xf.pos = vec2{ 726, 517 };
-    //xf.rot = 45 * DEG2RAD;
-    a->setTransform(xfa);
-    //b->setTransform(xfb);
-    //CreateRectActor(100, 100, vec2{ middle.x, middle.y + 150 });
+    std::vector<vec2> verts{ {0, -0.577f}, {0.5f, 0.289f}, {-0.5f, 0.289f} };
+	cActor* poly = CreatePolygonActor(verts, vec2::zero);
+    cTransform xfp = poly->getTransform();
+    xfp.pos = { 0.0f, 1.0f };
+    poly->setTransform(xfp);
 
-    //calculateCSO();
-    cActor* t = CreateTriangleActor(50, vec2{ middle.x + 25, middle.y + 25 });
-    cTransform xft = t->getTransform();
-    xft.rot = 45 * DEG2RAD;
-    t->setTransform(xft);
-   // CreateRandomizedActor(5, 50, middle);
-    //CreateRandomizedActor(5, 50, vec2{ middle.x, middle.y + 150 });
+    verts.clear();
+    verts = { {-1,-1}, {1,-1}, {1,1}, {-1, 1} };
+    cActor* box = CreatePolygonActor(verts, vec2::zero);
+ 
     // // create floor
 	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }

@@ -150,35 +150,9 @@ namespace chiori
 	}
 	
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
-	static cManifold ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
+	static cManifold s2ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
 	{
-		//std::cout << "CLIPPING POLYS" << std::endl;
-		//std::cout << "POLYA" << std::endl;
-		//std::cout << "Verts: " << std::endl;
-		//for (int i = 0; i < polyA->count; i++)
-		//{
-		//	std::cout << polyA->vertices[i] << " , ";
-		//}
-		//std::cout << "\nNorms: " << std::endl;
-		//for (int i = 0; i < polyA->count; i++)
-		//{
-		//	std::cout << polyA->normals[i] << " , ";
-		//}
-		//std::cout << "POLYB" << std::endl;
-		//std::cout << "Verts: " << std::endl;
-		//for (int i = 0; i < polyB->count; i++)
-		//{
-		//	std::cout << polyB->vertices[i] << " , ";
-		//}
-		//std::cout << "\nNorms: " << std::endl;
-		//for (int i = 0; i < polyB->count; i++)
-		//{
-		//	std::cout << polyB->normals[i] << " , ";
-		//}
-		//std::cout << "\nEdgeA: " << edgeA << std::endl;
-		//std::cout << "EdgeB: " << edgeB << std::endl;
-		//std::cout << "Flipped? " << flip << std::endl;
-		cManifold manifold = {};
+		cManifold manifold = { };
 
 		// reference polygon
 		const cPolygon* poly1;
@@ -212,11 +186,11 @@ namespace chiori
 		// Reference edge vertices
 		vec2 v11 = poly1->vertices[i11];
 		vec2 v12 = poly1->vertices[i12];
-		//std::cout << "Ref edge: " << v11 << " + " << v12 << std::endl;
+
 		// Incident edge vertices
 		vec2 v21 = poly2->vertices[i21];
 		vec2 v22 = poly2->vertices[i22];
-		//std::cout << "Inc edge: " << v21 << " + " << v22 << std::endl;
+
 		vec2 tangent = cross(1.0f, normal);
 
 		float lower1 = 0.0f;
@@ -226,6 +200,14 @@ namespace chiori
 		float upper2 = (v21 - v11).dot(tangent);
 		float lower2 = (v22 - v11).dot(tangent);
 
+		// This check can fail slightly due to mismatch with GJK code.
+		// Perhaps fallback to a single point here? Otherwise we get two coincident points.
+		// if (upper2 < lower1 || upper1 < lower2)
+		//{
+		//	// numeric failure
+		//	S2_ASSERT(false);
+		//	return manifold;
+		//}
 
 		vec2 vLower;
 		if (lower2 < lower1 && upper2 - lower2 > FLT_EPSILON)
@@ -257,42 +239,49 @@ namespace chiori
 			manifold.normal = normal;
 			cManifoldPoint* cp = manifold.points + 0;
 
-			cp->localAnchorA = vLower;
-			cp->separation = separationLower;
-			manifold.pointCount += 1;
-			cp += 1;
+			{
+				cp->localAnchorA = vLower;
+				cp->separation = separationLower;
+				manifold.pointCount += 1;
+				cp += 1;
+			}
 
-			cp->localAnchorA = vUpper;
-			cp->separation = separationUpper;
-			manifold.pointCount += 1;
-			
+			{
+				cp->localAnchorA = vUpper;
+				cp->separation = separationUpper;
+				manifold.pointCount += 1;
+			}
 		}
 		else
 		{
-			manifold.normal = -normal;
+			manifold.normal = -(normal);
 			cManifoldPoint* cp = manifold.points + 0;
 
-			cp->localAnchorA = vUpper;
-			cp->separation = separationUpper;
-			manifold.pointCount += 1;
-			cp += 1;
+			{
+				cp->localAnchorA = vUpper;
+				cp->separation = separationUpper ;
+				manifold.pointCount += 1;
+				cp += 1;
+			}
 
-			cp->localAnchorA = vLower;
-			cp->separation = separationLower;
-			manifold.pointCount += 1;
+			{
+				cp->localAnchorA = vLower;
+				cp->separation = separationLower;
+				manifold.pointCount += 1;
+			}
 		}
 
 		return manifold;
 	}
 
 	// Find the max separation between poly1 and poly2 using edge normals from poly1.
-	static float FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
+	static float s2FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
-		const std::vector<vec2>& n1s = poly1->normals;
-		const std::vector<vec2>& v1s = poly1->vertices;
-		const std::vector<vec2>& v2s = poly2->vertices;
+		const vec2* n1s = poly1->normals.data();
+		const vec2* v1s = poly1->vertices.data();
+		const vec2* v2s = poly2->vertices.data();
 
 		int bestIndex = 0;
 		float maxSeparation = -FLT_MAX;
@@ -306,7 +295,7 @@ namespace chiori
 			float si = FLT_MAX;
 			for (int j = 0; j < count2; ++j)
 			{
-				float sij = n.dot(v2s[j] - v1);
+				float sij = dot(n, (v2s[j] - v1));
 				if (sij < si)
 				{
 					si = sij;
@@ -325,13 +314,13 @@ namespace chiori
 	}
 
 	// This function assumes there is overlap
-	static cManifold PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
+	static cManifold s2PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
 	{
 		int edgeA = 0;
-		float separationA = FindMaxSeparation(&edgeA, polyA, polyB);
+		float separationA = s2FindMaxSeparation(&edgeA, polyA, polyB);
 
 		int edgeB = 0;
-		float separationB = FindMaxSeparation(&edgeB, polyB, polyA);
+		float separationB = s2FindMaxSeparation(&edgeB, polyB, polyA);
 
 		bool flip;
 
@@ -342,7 +331,7 @@ namespace chiori
 
 			// Find the incident edge on polyA
 			int count = polyA->count;
-			const std::vector<vec2>& normals = polyA->normals;
+			const vec2* normals = polyA->normals.data();
 			edgeA = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -362,7 +351,7 @@ namespace chiori
 
 			// Find the incident edge on polyB
 			int count = polyB->count;
-			const std::vector<vec2>& normals = polyB->normals;
+			const vec2* normals = polyB->normals.data();
 			edgeB = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -375,7 +364,8 @@ namespace chiori
 				}
 			}
 		}
-		return PolygonClipper(polyA, polyB, edgeA, edgeB, flip);
+
+		return s2ClipPolygons(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
 	void ProjectPolygonOntoAxis(
@@ -395,15 +385,19 @@ namespace chiori
 	bool SAT(
 		const vec2& pos_a, const vec2* vert_a, const int& vertCount_a,
 		const vec2& pos_b, const vec2* vert_b, const int& vertCount_b,
-		float& inter_dist, vec2& col_normal)
+		float& inter_dist, vec2& col_normal,
+		int& edgeA, int& edgeB, bool& flip)
 	{
 		inter_dist = FLT_MAX;
-		// for first polygon
+		edgeA = -1;
+		edgeB = -1;
+		flip = false;
+
+		// for first polygon (polyA as reference)
 		for (int i = 0; i < vertCount_a; i++)
 		{
 			vec2 polygonEdge = vert_a[(i + 1) % vertCount_a] - vert_a[i];
-			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x };
-			axis = axis.normalized();
+			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x }.normalized();
 
 			float min_a, max_a, min_b, max_b;
 			ProjectPolygonOntoAxis(vert_a, vertCount_a, axis, min_a, max_a);
@@ -411,6 +405,7 @@ namespace chiori
 
 			if (min_a >= max_b || min_b >= max_a)
 			{
+				// Found a separating axis, no collision
 				return false;
 			}
 
@@ -419,10 +414,12 @@ namespace chiori
 			{
 				inter_dist = currOverlap;
 				col_normal = axis;
+				edgeA = i; // Update edgeA to current reference edge of polyA
+				flip = false; // polyA is the reference shape
 			}
 		}
 
-		// for second polygon
+		// for second polygon (polyB as reference)
 		for (int j = 0; j < vertCount_b; j++)
 		{
 			vec2 polygonEdge = vert_b[(j + 1) % vertCount_b] - vert_b[j];
@@ -434,6 +431,7 @@ namespace chiori
 
 			if (min_a >= max_b || min_b >= max_a)
 			{
+				// Found a separating axis, no collision
 				return false;
 			}
 
@@ -442,6 +440,8 @@ namespace chiori
 			{
 				inter_dist = currOverlap;
 				col_normal = axis;
+				edgeB = j; // Update edgeB to current reference edge of polyB
+				flip = true; // polyB is the reference shape
 			}
 		}
 
@@ -452,6 +452,7 @@ namespace chiori
 		// All axis checked, no gaps, hence collision!
 		return true;
 	}
+		
 
 	
 	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB)
@@ -494,8 +495,11 @@ namespace chiori
 			float penDepth;
 			vec2 pos1 = vec2::zero;
 			vec2 pos2 = xfRel.pos;
-			SAT(pos1, shapeA->vertices.data(), shapeA->count, pos2, localShapeB.vertices.data(), localShapeB.count, penDepth, normal);
-			manifold = PolygonSAT(shapeA, &localShapeB);
+			int edgeA = 0;
+			int edgeB = 0;
+			bool flip;
+			SAT(pos1, shapeA->vertices.data(), shapeA->count, pos2, localShapeB.vertices.data(), localShapeB.count, penDepth, normal, edgeA, edgeB, flip);
+			manifold = s2PolygonSAT(shapeA, &localShapeB);
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
 			{
