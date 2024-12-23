@@ -10,6 +10,25 @@ namespace chiori
 	#define clinearSlop 0.005f
 	#define cspeculativeDistance (4.0f * clinearSlop)
 
+	static inline vec2 s2Sub(vec2 a, vec2 b)
+	{
+		return { a.x - b.x, a.y - b.y };
+	}
+	static float s2Dot(vec2 a, vec2 b)
+	{
+		return a.x * b.x + a.y * b.y;
+	}
+	static vec2 s2Lerp(vec2 a, vec2 b, float t)
+	{
+		return { a.x + t * (b.x - a.x), a.y + t * (b.y - a.y) };
+	}
+	/// a + s * b
+	static vec2 s2MulAdd(vec2 a, float s, vec2 b)
+	{
+		return { a.x + s * b.x, a.y + s * b.y };
+	}
+
+
 
 	static std::vector<vec2> clipEdge(vec2& v1, vec2& v2, vec2& n, float o)
 	{
@@ -152,7 +171,7 @@ namespace chiori
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
 	static cManifold s2ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
 	{
-		cManifold manifold = { };
+		cManifold manifold = {};
 
 		// reference polygon
 		const cPolygon* poly1;
@@ -191,28 +210,19 @@ namespace chiori
 		vec2 v21 = poly2->vertices[i21];
 		vec2 v22 = poly2->vertices[i22];
 
-		vec2 tangent = cross(1.0f, normal);
+		vec2 tangent = {-normal.y, normal.x};
 
 		float lower1 = 0.0f;
-		float upper1 = (v12 - v11).dot(tangent);
+		float upper1 = s2Dot(s2Sub(v12, v11), tangent);
 
 		// Incident edge points opposite of tangent due to CCW winding
-		float upper2 = (v21 - v11).dot(tangent);
-		float lower2 = (v22 - v11).dot(tangent);
-
-		// This check can fail slightly due to mismatch with GJK code.
-		// Perhaps fallback to a single point here? Otherwise we get two coincident points.
-		// if (upper2 < lower1 || upper1 < lower2)
-		//{
-		//	// numeric failure
-		//	S2_ASSERT(false);
-		//	return manifold;
-		//}
+		float upper2 = s2Dot(s2Sub(v21, v11), tangent);
+		float lower2 = s2Dot(s2Sub(v22, v11), tangent);
 
 		vec2 vLower;
 		if (lower2 < lower1 && upper2 - lower2 > FLT_EPSILON)
 		{
-			vLower = vlerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
+			vLower = s2Lerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
 		}
 		else
 		{
@@ -222,7 +232,7 @@ namespace chiori
 		vec2 vUpper;
 		if (upper2 > upper1 && upper2 - lower2 > FLT_EPSILON)
 		{
-			vUpper = vlerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
+			vUpper = s2Lerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
 		}
 		else
 		{
@@ -231,8 +241,17 @@ namespace chiori
 
 		// TODO_ERIN vLower can be very close to vUpper, reduce to one point?
 
-		float separationLower = (vLower - v11).dot(normal);
-		float separationUpper = (vUpper - v11).dot(normal);
+		float separationLower = s2Dot(s2Sub(vLower, v11), normal);
+		float separationUpper = s2Dot(s2Sub(vUpper, v11), normal);
+
+		float r1 = 0.0f;
+		float r2 = 0.0f;
+
+		// Put contact points at midpoint, accounting for radii
+		vLower = s2MulAdd(vLower, 0.5f * (r1 - r2 - separationLower), normal);
+		vUpper = s2MulAdd(vUpper, 0.5f * (r1 - r2 - separationUpper), normal);
+
+		float radius = r1 + r2;
 
 		if (flip == false)
 		{
@@ -241,14 +260,22 @@ namespace chiori
 
 			{
 				cp->localAnchorA = vLower;
-				cp->separation = separationLower;
+				cp->separation = separationLower - radius;
+				if (cp->separation < -0.5f)
+				{
+					cp->separation += 0.0f;
+				}
 				manifold.pointCount += 1;
 				cp += 1;
 			}
 
 			{
 				cp->localAnchorA = vUpper;
-				cp->separation = separationUpper;
+				cp->separation = separationUpper - radius;
+				if (cp->separation < -0.5f)
+				{
+					cp->separation += 0.0f;
+				}
 				manifold.pointCount += 1;
 			}
 		}
@@ -259,14 +286,22 @@ namespace chiori
 
 			{
 				cp->localAnchorA = vUpper;
-				cp->separation = separationUpper ;
+				cp->separation = separationUpper - radius;
+				if (cp->separation < -0.5f)
+				{
+					cp->separation += 0.0f;
+				}
 				manifold.pointCount += 1;
 				cp += 1;
 			}
 
 			{
 				cp->localAnchorA = vLower;
-				cp->separation = separationLower;
+				cp->separation = separationLower - radius;
+				if (cp->separation < -0.5f)
+				{
+					cp->separation += 0.0f;
+				}
 				manifold.pointCount += 1;
 			}
 		}
@@ -295,7 +330,7 @@ namespace chiori
 			float si = FLT_MAX;
 			for (int j = 0; j < count2; ++j)
 			{
-				float sij = dot(n, (v2s[j] - v1));
+				float sij = s2Dot(n, s2Sub(v2s[j], v1));
 				if (sij < si)
 				{
 					si = sij;
@@ -336,7 +371,7 @@ namespace chiori
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
 			{
-				float dot = searchDirection.dot(normals[i]);
+				float dot = s2Dot(searchDirection, normals[i]);
 				if (dot < minDot)
 				{
 					minDot = dot;
@@ -356,7 +391,7 @@ namespace chiori
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
 			{
-				float dot = searchDirection.dot(normals[i]);
+				float dot = s2Dot(searchDirection, normals[i]);
 				if (dot < minDot)
 				{
 					minDot = dot;
@@ -368,90 +403,6 @@ namespace chiori
 		return s2ClipPolygons(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
-	void ProjectPolygonOntoAxis(
-		const vec2* vert, const int& vertCount, const vec2& axis,
-		float& minVal, float& maxVal)
-	{
-		minVal = FLT_MAX;
-		maxVal = -FLT_MAX;
-		for (int i = 0; i < vertCount; i++)
-		{
-			float projDist = vert[i] * axis;
-			minVal = min(projDist, minVal);
-			maxVal = max(projDist, maxVal);
-		}
-	}
-	// Determine if two convex polygons intersect using the Seperating Axis Theorem (SAT)
-	bool SAT(
-		const vec2& pos_a, const vec2* vert_a, const int& vertCount_a,
-		const vec2& pos_b, const vec2* vert_b, const int& vertCount_b,
-		float& inter_dist, vec2& col_normal,
-		int& edgeA, int& edgeB, bool& flip)
-	{
-		inter_dist = FLT_MAX;
-		edgeA = -1;
-		edgeB = -1;
-		flip = false;
-
-		// for first polygon (polyA as reference)
-		for (int i = 0; i < vertCount_a; i++)
-		{
-			vec2 polygonEdge = vert_a[(i + 1) % vertCount_a] - vert_a[i];
-			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x }.normalized();
-
-			float min_a, max_a, min_b, max_b;
-			ProjectPolygonOntoAxis(vert_a, vertCount_a, axis, min_a, max_a);
-			ProjectPolygonOntoAxis(vert_b, vertCount_b, axis, min_b, max_b);
-
-			if (min_a >= max_b || min_b >= max_a)
-			{
-				// Found a separating axis, no collision
-				return false;
-			}
-
-			float currOverlap = min(max_b - min_a, max_a - min_b);
-			if (currOverlap < inter_dist)
-			{
-				inter_dist = currOverlap;
-				col_normal = axis;
-				edgeA = i; // Update edgeA to current reference edge of polyA
-				flip = false; // polyA is the reference shape
-			}
-		}
-
-		// for second polygon (polyB as reference)
-		for (int j = 0; j < vertCount_b; j++)
-		{
-			vec2 polygonEdge = vert_b[(j + 1) % vertCount_b] - vert_b[j];
-			vec2 axis = vec2{ -polygonEdge.y, polygonEdge.x }.normalized();
-
-			float min_a, max_a, min_b, max_b;
-			ProjectPolygonOntoAxis(vert_a, vertCount_a, axis, min_a, max_a);
-			ProjectPolygonOntoAxis(vert_b, vertCount_b, axis, min_b, max_b);
-
-			if (min_a >= max_b || min_b >= max_a)
-			{
-				// Found a separating axis, no collision
-				return false;
-			}
-
-			float currOverlap = min(max_b - min_a, max_a - min_b);
-			if (currOverlap < inter_dist)
-			{
-				inter_dist = currOverlap;
-				col_normal = axis;
-				edgeB = j; // Update edgeB to current reference edge of polyB
-				flip = true; // polyB is the reference shape
-			}
-		}
-
-		// flip normal if facing the wrong way;
-		vec2 dirVec = pos_b - pos_a;
-		col_normal = ((dirVec * col_normal) < 0.0f) ? -col_normal : col_normal;
-
-		// All axis checked, no gaps, hence collision!
-		return true;
-	}
 		
 
 	
@@ -491,14 +442,6 @@ namespace chiori
 		if (output.distance < 0.1f * clinearSlop)
 		{
 			//cEPA(input, output, &cache);
-			vec2 normal;
-			float penDepth;
-			vec2 pos1 = vec2::zero;
-			vec2 pos2 = xfRel.pos;
-			int edgeA = 0;
-			int edgeB = 0;
-			bool flip;
-			SAT(pos1, shapeA->vertices.data(), shapeA->count, pos2, localShapeB.vertices.data(), localShapeB.count, penDepth, normal, edgeA, edgeB, flip);
 			manifold = s2PolygonSAT(shapeA, &localShapeB);
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
