@@ -13,6 +13,7 @@ namespace chiori
 		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
 		std::vector<vec2> normals;  // the normals of all the faces of the shape
 		int count;					// the number of vertices/normals
+		float radius{ 0.0f };		// for curved shapes (TODO: not implemented yet)
 
 		void setVertices(const std::vector<vec2>& inVertices)
 		{

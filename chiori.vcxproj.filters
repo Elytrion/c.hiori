@@ -26,7 +26,7 @@
       <Filter>Source\Components</Filter>
     </ClCompile>
     <ClCompile Include="manifold.cpp">
-      <Filter>Source\Collision Detection</Filter>
+      <Filter>Source\Contacts</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +53,12 @@
     </Filter>
     <Filter Include="Source\Components">
       <UniqueIdentifier>{56ce437f-058d-449b-8372-16f3ccad792d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Contacts">
+      <UniqueIdentifier>{f94fb8e9-832f-4113-b081-1a853d43070b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Contacts">
+      <UniqueIdentifier>{fd717bcf-09af-41ec-90f4-ca25b0e3323f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -98,11 +104,8 @@
     <ClInclude Include="chioriPool.h">
       <Filter>Headers\Commons</Filter>
     </ClInclude>
-    <ClInclude Include="simplex.h">
-      <Filter>Headers\Collision Detection</Filter>
-    </ClInclude>
     <ClInclude Include="manifold.h">
-      <Filter>Headers\Collision Detection</Filter>
+      <Filter>Headers\Contacts</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -87,6 +87,10 @@ namespace chiori
 	//	}
 	//}
 
+	int recommendedWidth = 1600;
+	int recommendedHeight = 900;
+	vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
+
 	void PhysicsWorld::simulate(float inDT)
 	{
 		p_pairs.clear();
@@ -146,7 +150,9 @@ namespace chiori
 				cTransform tfm_b = b->getTransform();
 				const cShape* shp_a = p_shapes[a->shapeIndex];
 				const cShape* shp_b = p_shapes[b->shapeIndex];
-				cManifold manifold = getShapeManifold(&shp_a->polygon, &shp_b->polygon, tfm_a, tfm_b);
+				cGJKCache cache;
+				cache.count = 0;
+				cManifold manifold = CollideShapes(&shp_a->polygon, &shp_b->polygon, tfm_a, tfm_b, &cache);
 				
 				//cGJKCache cache;
 				//cache.count = 0;
@@ -178,12 +184,16 @@ namespace chiori
 				{
 					// Transform contact points to world space
 					pointA = cTransformVec(tfm_a, manifold.points[0].localAnchorA);
+					pointA *= 100;
+					pointA += middle;
 					CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 					CP_Graphics_DrawCircle(pointA.x, pointA.y, 8); // Draw the first contact point
 				}
 				if (manifold.pointCount > 1)
 				{
 					pointB = cTransformVec(tfm_a, manifold.points[1].localAnchorA);
+					pointB *= 100;
+					pointB += middle;
 					CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
 					CP_Graphics_DrawCircle(pointB.x, pointB.y, 8); // Draw the second contact point
 				}

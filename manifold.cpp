@@ -9,167 +9,10 @@ namespace chiori
 {
 	#define clinearSlop 0.005f
 	#define cspeculativeDistance (4.0f * clinearSlop)
-
-	static inline vec2 s2Sub(vec2 a, vec2 b)
-	{
-		return { a.x - b.x, a.y - b.y };
-	}
-	static float s2Dot(vec2 a, vec2 b)
-	{
-		return a.x * b.x + a.y * b.y;
-	}
-	static vec2 s2Lerp(vec2 a, vec2 b, float t)
-	{
-		return { a.x + t * (b.x - a.x), a.y + t * (b.y - a.y) };
-	}
-	/// a + s * b
-	static vec2 s2MulAdd(vec2 a, float s, vec2 b)
-	{
-		return { a.x + s * b.x, a.y + s * b.y };
-	}
-
-
-
-	static std::vector<vec2> clipEdge(vec2& v1, vec2& v2, vec2& n, float o)
-	{
-		std::vector<vec2> result;
-		float d1 = n.dot(v1) - o;
-		float d2 = n.dot(v2) - o;
-		// if either point is past o along n
-		// then we can keep the point
-		if (d1 >= 0.0) result.push_back(v1);
-		if (d2 >= 0.0) result.push_back(v2);
-		// finally we need to check if they
-		// are on opposing sides so that we can
-		// compute the correct point
-		if (d1 * d2 < 0.0) {
-			// if they are on different sides of the
-			// offset, d1 and d2 will be a (+) * (-)
-			// and will yield a (-) and therefore be
-			// less than zero
-			// get the vector for the edge we are clipping
-			vec2 e = v2 - v1;
-			// compute the location along e
-			float u = d1 / (d1 - d2);
-			e *= u;
-			e += v1;
-			// add the point
-			result.push_back(e);
-		}
-
-		return result;
-	}
-
-	static cManifold PolygonClipper(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
-	{
-		//std::cout << "CLIPPING POLYS" << std::endl;
-		//std::cout << "POLYA" << std::endl;
-		//std::cout << "Verts: " << std::endl;
-		//for (int i = 0; i < polyA->count; i++)
-		//{
-		//	std::cout << polyA->vertices[i] << " , ";
-		//}
-		//std::cout << "\nNorms: " << std::endl;
-		//for (int i = 0; i < polyA->count; i++)
-		//{
-		//	std::cout << polyA->normals[i] << " , ";
-		//}
-		//std::cout << "POLYB" << std::endl;
-		//std::cout << "Verts: " << std::endl;
-		//for (int i = 0; i < polyB->count; i++)
-		//{
-		//	std::cout << polyB->vertices[i] << " , ";
-		//}
-		//std::cout << "\nNorms: " << std::endl;
-		//for (int i = 0; i < polyB->count; i++)
-		//{
-		//	std::cout << polyB->normals[i] << " , ";
-		//}
-		//std::cout << "\nEdgeA: " << edgeA << std::endl;
-		//std::cout << "EdgeB: " << edgeB << std::endl;
-		//std::cout << "Flipped? " << flip << std::endl;
-		cManifold manifold = {};
-
-		// reference polygon
-		const cPolygon* poly1;
-		int i11, i12;
-
-		// incident polygon
-		const cPolygon* poly2;
-		int i21, i22;
-
-		if (flip)
-		{
-			poly1 = polyB;
-			poly2 = polyA;
-			i11 = edgeB;
-			i12 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
-			i21 = edgeA;
-			i22 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
-		}
-		else
-		{
-			poly1 = polyA;
-			poly2 = polyB;
-			i11 = edgeA;
-			i12 = edgeA + 1 < polyA->count ? edgeA + 1 : 0;
-			i21 = edgeB;
-			i22 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
-		}
-
-		vec2 normal = poly1->normals[i11];
-
-		// Reference edge vertices
-		vec2 v11 = poly1->vertices[i11];
-		vec2 v12 = poly1->vertices[i12];
-		//std::cout << "Ref edge: " << v11 << " + " << v12 << std::endl;
-		// Incident edge vertices
-		vec2 v21 = poly2->vertices[i21];
-		vec2 v22 = poly2->vertices[i22];
-		//std::cout << "Inc edge: " << v21 << " + " << v22 << std::endl;
-
-		vec2 refv = (v12 - v11);
-		refv.normalize();
-		float offset1 = refv.dot(v11);
-		std::vector<vec2> cpts1 = clipEdge(v21, v22, refv, offset1);
-		if (cpts1.size() < 2)
-		{
-			//std::cout << " FIRST CLIPPING FAILED! " << std::endl;
-			return manifold;
-		}
-		float offset2 = refv.dot(v12);
-		std::vector<vec2> cpts = clipEdge(cpts1[0], cpts1[1], -refv, -offset2);
-		if (cpts.size() < 2)
-		{
-			//std::cout << " SECOND CLIPPING FAILED! " << std::endl;
-			return manifold;
-		}
-
-		// Compute the maximum penetration depth
-		float maxDepth = normal.dot(v11);
-
-		// Validate clipped points and populate the manifold
-		for (size_t i = 0; i < cpts.size(); ++i)
-		{
-			float separation = normal.dot(cpts[i]) - maxDepth;
-			if (separation <= 0.0f && manifold.pointCount < 2)
-			{
-				cManifoldPoint& mp = manifold.points[manifold.pointCount++];
-				mp.localAnchorA = cpts[i];
-				mp.separation = separation;
-			}
-		}
-		
-		manifold.normal = flip ? -normal : normal;
-		//if (manifold.pointCount == 0)
-		//{
-		//	std::cout << "ERROR! NO CONTACT POINTS ADDED" << std::endl;
-		//}
-		return manifold;
-	}
 	
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
-	static cManifold s2ClipPolygons(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
+	// Taken from Box2D by Erin Catto
+	static cManifold PolygonScalarClipper(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
 	{
 		cManifold manifold = {};
 
@@ -213,16 +56,16 @@ namespace chiori
 		vec2 tangent = {-normal.y, normal.x};
 
 		float lower1 = 0.0f;
-		float upper1 = s2Dot(s2Sub(v12, v11), tangent);
+		float upper1 = (v12 - v11).dot(tangent);
 
 		// Incident edge points opposite of tangent due to CCW winding
-		float upper2 = s2Dot(s2Sub(v21, v11), tangent);
-		float lower2 = s2Dot(s2Sub(v22, v11), tangent);
+		float upper2 = (v21 - v11).dot(tangent);
+		float lower2 = (v22-  v11).dot(tangent);
 
 		vec2 vLower;
 		if (lower2 < lower1 && upper2 - lower2 > FLT_EPSILON)
 		{
-			vLower = s2Lerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
+			vLower = vlerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
 		}
 		else
 		{
@@ -232,24 +75,22 @@ namespace chiori
 		vec2 vUpper;
 		if (upper2 > upper1 && upper2 - lower2 > FLT_EPSILON)
 		{
-			vUpper = s2Lerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
+			vUpper = vlerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
 		}
 		else
 		{
 			vUpper = v21;
 		}
 
-		// TODO_ERIN vLower can be very close to vUpper, reduce to one point?
-
-		float separationLower = s2Dot(s2Sub(vLower, v11), normal);
-		float separationUpper = s2Dot(s2Sub(vUpper, v11), normal);
-
-		float r1 = 0.0f;
-		float r2 = 0.0f;
-
+		float separationLower = (vLower - v11).dot(normal);
+		float separationUpper = (vUpper - v11).dot(normal);
+		float r1 = polyA->radius;
+		float r2 = polyB->radius;
+		vec2 radiiNormalLower = normal * (0.5f * (r1 - r2 - separationLower));
+		vec2 radiiNormalUpper = normal * (0.5f * (r1 - r2 - separationUpper));
 		// Put contact points at midpoint, accounting for radii
-		vLower = s2MulAdd(vLower, 0.5f * (r1 - r2 - separationLower), normal);
-		vUpper = s2MulAdd(vUpper, 0.5f * (r1 - r2 - separationUpper), normal);
+		vLower += radiiNormalLower;
+		vUpper += radiiNormalUpper;
 
 		float radius = r1 + r2;
 
@@ -261,21 +102,12 @@ namespace chiori
 			{
 				cp->localAnchorA = vLower;
 				cp->separation = separationLower - radius;
-				if (cp->separation < -0.5f)
-				{
-					cp->separation += 0.0f;
-				}
 				manifold.pointCount += 1;
 				cp += 1;
 			}
-
 			{
 				cp->localAnchorA = vUpper;
 				cp->separation = separationUpper - radius;
-				if (cp->separation < -0.5f)
-				{
-					cp->separation += 0.0f;
-				}
 				manifold.pointCount += 1;
 			}
 		}
@@ -287,21 +119,12 @@ namespace chiori
 			{
 				cp->localAnchorA = vUpper;
 				cp->separation = separationUpper - radius;
-				if (cp->separation < -0.5f)
-				{
-					cp->separation += 0.0f;
-				}
 				manifold.pointCount += 1;
 				cp += 1;
 			}
-
 			{
 				cp->localAnchorA = vLower;
 				cp->separation = separationLower - radius;
-				if (cp->separation < -0.5f)
-				{
-					cp->separation += 0.0f;
-				}
 				manifold.pointCount += 1;
 			}
 		}
@@ -310,7 +133,8 @@ namespace chiori
 	}
 
 	// Find the max separation between poly1 and poly2 using edge normals from poly1.
-	static float s2FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
+	// Taken from Box2D by Erin Catto
+	static float FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
@@ -330,7 +154,7 @@ namespace chiori
 			float si = FLT_MAX;
 			for (int j = 0; j < count2; ++j)
 			{
-				float sij = s2Dot(n, s2Sub(v2s[j], v1));
+				float sij = n.dot(v2s[j] - v1);
 				if (sij < si)
 				{
 					si = sij;
@@ -348,14 +172,15 @@ namespace chiori
 		return maxSeparation;
 	}
 
-	// This function assumes there is overlap
-	static cManifold s2PolygonSAT(const cPolygon* polyA, const cPolygon* polyB)
+	// SAT + Polygon clipper to determine contact points for solver
+	// Taken from Box2D by Erin Catto
+	static cManifold PolygonSATClipper(const cPolygon* polyA, const cPolygon* polyB)
 	{
 		int edgeA = 0;
-		float separationA = s2FindMaxSeparation(&edgeA, polyA, polyB);
+		float separationA = FindMaxSeparation(&edgeA, polyA, polyB);
 
 		int edgeB = 0;
-		float separationB = s2FindMaxSeparation(&edgeB, polyB, polyA);
+		float separationB = FindMaxSeparation(&edgeB, polyB, polyA);
 
 		bool flip;
 
@@ -371,7 +196,7 @@ namespace chiori
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
 			{
-				float dot = s2Dot(searchDirection, normals[i]);
+				float dot = searchDirection.dot(normals[i]);
 				if (dot < minDot)
 				{
 					minDot = dot;
@@ -391,7 +216,7 @@ namespace chiori
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
 			{
-				float dot = s2Dot(searchDirection, normals[i]);
+				float dot = searchDirection.dot(normals[i]);
 				if (dot < minDot)
 				{
 					minDot = dot;
@@ -400,16 +225,29 @@ namespace chiori
 			}
 		}
 
-		return s2ClipPolygons(polyA, polyB, edgeA, edgeB, flip);
+		return PolygonScalarClipper(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
-		
-
-	
-	cManifold getShapeManifold(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB)
+	// Due to speculation, every polygon is rounded
+	// Algorithm:
+	// compute distance
+	// if distance <= 0.1f * s2_linearSlop
+	//   SAT
+	// else
+	//   find closest features from GJK
+	//   expect 2-1 or 1-1 or 1-2 features
+	//   if 2-1 or 1-2
+	//     clip
+	//   else
+	//     vertex-vertex
+	//   end
+	// end
+	// taken from Box2D by Erin Catto
+	cManifold CollideShapes(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, cGJKCache* cache)
 	{
 		cManifold manifold = {};
 		cPolygon localShapeB;
+		float radius = shapeA->radius + shapeB->radius;
 
 		cTransform xfRel = InvMulTransforms(xfA, xfB); // we convert shapeB to be in shapeA's local space
 		
@@ -424,14 +262,12 @@ namespace chiori
 		
 		cTransform identity;
 		identity.SetIdentity();
-		cGJKCache cache = {};
-		cache.count = 0;
 		cGJKProxy gjka{ shapeA->vertices.data(), shapeA->count };
 		cGJKProxy gjkb{ localShapeB.vertices.data(), localShapeB.count };
 		cGJKInput input{ gjka, gjkb, identity, identity }; // xfs are identity as we run everything in shapeA local space
 		cGJKOutput output;
 
-		cGJK(input, output, &cache);
+		cGJK(input, output, cache);
 
 		if (output.distance > cspeculativeDistance)
 		{
@@ -442,7 +278,7 @@ namespace chiori
 		if (output.distance < 0.1f * clinearSlop)
 		{
 			//cEPA(input, output, &cache);
-			manifold = s2PolygonSAT(shapeA, &localShapeB);
+			manifold = PolygonSATClipper(shapeA, &localShapeB);
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
 			{
@@ -454,6 +290,96 @@ namespace chiori
 			}
 
 			return manifold;
+		}
+
+		if (cache->count == 1)
+		{
+			// vertex-vertex collision
+			vec2 pA = output.pointA;
+			vec2 pB = output.pointB;
+
+			float distance = output.distance;
+			vec2 normal = (pB-pA).normalized();
+			vec2 radiiNormal = normal * 0.5f * (shapeA->radius - localShapeB.radius - distance);
+			vec2 contactPointA = pB + radiiNormal;
+
+			manifold.normal = normal.rotated(xfA.rot);
+			cManifoldPoint* cp = manifold.points + 0;
+			cp->localAnchorA = contactPointA;
+			cp->localAnchorB = cInvTransformVec(xfRel, contactPointA);
+			cp->separation = distance - radius;
+			manifold.pointCount = 1;
+			return manifold;
+		}
+
+		// vertex-edge collision
+		cassert(cache->count == 2);
+		bool flip;
+		int countA = shapeA->count;
+		int countB = localShapeB.count;
+		int edgeA, edgeB;
+
+		int a1 = cache->indexA[0];
+		int a2 = cache->indexA[1];
+		int b1 = cache->indexB[0];
+		int s2x = cache->indexB[1];
+
+		if (a1 == a2)
+		{
+			// 1 point on A, expect 2 points on B
+			cassert(b1 != s2x);
+
+			// Find reference edge that most aligns with vector between closest points.
+			// This works for capsules and polygons
+			vec2 axis = output.pointA - output.pointB;
+			float dot1 = axis.dot(localShapeB.normals[b1]);
+			float dot2 = axis.dot(localShapeB.normals[s2x]);
+			edgeB = dot1 > dot2 ? b1 : s2x;
+
+			flip = true;
+
+			// Get the normal of the reference edge in polyA's frame.
+			axis = localShapeB.normals[edgeB];
+
+			// Find the incident edge on polyA
+			// Limit search to edges adjacent to closest vertex on A
+			int edgeA1 = a1;
+			int edgeA2 = edgeA1 == 0 ? countA - 1 : edgeA1 - 1;
+			dot1 = axis.dot(shapeA->normals[edgeA1]);
+			dot2 = axis.dot(shapeA->normals[edgeA2]);
+			edgeA = dot1 < dot2 ? edgeA1 : edgeA2;
+		}
+		else
+		{
+			// Find reference edge that most aligns with vector between closest points.
+			// This works for capsules and polygons
+			vec2 axis = (output.pointB - output.pointA);
+			float dot1 = axis.dot(shapeA->normals[a1]);
+			float dot2 = axis.dot(shapeA->normals[a2]);
+			edgeA = dot1 > dot2 ? a1 : a2;
+
+			flip = false;
+
+			// Get the normal of the reference edge in polyB's frame.
+			axis = shapeA->normals[edgeA];
+
+			// Find the incident edge on polyB
+			// Limit search to edges adjacent to closest vertex
+			int edgeB1 = b1;
+			int edgeB2 = edgeB1 == 0 ? countB - 1 : edgeB1 - 1;
+			dot1 = axis.dot(localShapeB.normals[edgeB1]);
+			dot2 = axis.dot(localShapeB.normals[edgeB2]);
+			edgeB = dot1 < dot2 ? edgeB1 : edgeB2;
+		}
+
+		manifold = PolygonScalarClipper(shapeA, &localShapeB, edgeA, edgeB, flip);
+		if (manifold.pointCount > 0)
+		{
+			manifold.normal.rotate(xfA.rot);
+			for (int i = 0; i < manifold.pointCount; ++i)
+			{
+				manifold.points[i].localAnchorB = cInvTransformVec(xfRel, manifold.points[i].localAnchorA);
+			}
 		}
 
 		return manifold;
