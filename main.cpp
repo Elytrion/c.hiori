@@ -246,15 +246,17 @@ void UpdatePhysics()
 }
 
 cActor* selectedActor;
-void HandleInput(CP_Vector mousePos)
+void HandleInput(CP_Vector mousePosIn)
 {
+    CP_Vector mousePos = mousePosIn;// CP_Vector_Add(mousePosIn, { middle.x / 2, middle.y / 2 });
     if ((CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding_mouse))
     {
         for (int itr = 0; itr < world.p_actors.size(); itr++)
         {
             cActor* a = world.p_actors[itr];
             cTransform tfm = a->getTransform();
-            if (IsPointInRadius(CP_Vector{ tfm.pos.x, tfm.pos.y }, 50, mousePos))
+            vec2 realCenter = (tfm.pos * 100) + middle;
+            if (IsPointInRadius(CP_Vector{ realCenter.x, realCenter.y }, 50, mousePos))
             {
                 selectedActor = a;
                 isHolding_mouse = true;
@@ -270,7 +272,8 @@ void HandleInput(CP_Vector mousePos)
             {
                 cActor* a = world.p_actors[itr];
                 cTransform tfm = a->getTransform();
-                if (IsPointInRadius(CP_Vector{ tfm.pos.x, tfm.pos.y }, 50, mousePos))
+                vec2 realCenter = (tfm.pos * 100) + middle;
+                if (IsPointInRadius(CP_Vector{ realCenter.x, realCenter.y }, 50, mousePos))
                 {
                     selectedActor = a;
                     isHolding_keys = true;
@@ -294,7 +297,7 @@ void HandleInput(CP_Vector mousePos)
     if (isHolding_mouse && selectedActor)
     {
         cTransform tfm = selectedActor->getTransform();
-        tfm.pos = vec2{ mousePos.x, mousePos.y };
+        tfm.pos = vec2{ mousePos.x - middle.x, mousePos.y - middle.y } / 100;
         selectedActor->setTransform(tfm);
 
         if (CP_Input_MouseDown(MOUSE_BUTTON_2))
