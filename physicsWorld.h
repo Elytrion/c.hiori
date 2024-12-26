@@ -9,22 +9,15 @@
 
 namespace chiori
 {
-	class PhysicsWorld
+	class cPhysicsWorld
 	{
 	private:
 		using Allocator = DEFAULT_ALLOCATOR;
 		float accumulator = 0.0f;
 		Broadphase m_broadphase;
-		struct ppair // TEMP
-		{
-			ppair(cShape* ia, cShape* ib) : a{ ia }, b{ ib } {}
-			cShape* a;
-			cShape* b;
-		};
-		std::vector<ppair> p_pairs; // TEMP
 		
 	public:		
-		~PhysicsWorld();
+		~cPhysicsWorld();
 		
 		float physicsStepTime = 0.0167f;
 		vec2 gravity = { 0.0f, 9.81f };
@@ -43,6 +36,7 @@ namespace chiori
 		
 		cPool<cActor, Allocator> p_actors;
 		cPool<cShape, Allocator> p_shapes;
+		cFLUTable p_pairs;
 		cPool<cContact, Allocator> p_contacts;
 	};
 }

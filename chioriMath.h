@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include "commons.h"
 
 namespace chiori
 {

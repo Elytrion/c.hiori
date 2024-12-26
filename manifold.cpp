@@ -9,6 +9,7 @@ namespace chiori
 {
 	#define clinearSlop 0.005f
 	#define cspeculativeDistance (4.0f * clinearSlop)
+	#define MAKE_MPT_ID(A, B) ((uint8_t)(A) << 8 | (uint8_t)(B))
 	
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
 	// Taken from Box2D by Erin Catto
@@ -103,11 +104,13 @@ namespace chiori
 				cp->localAnchorA = vLower;
 				cp->separation = separationLower - radius;
 				manifold.pointCount += 1;
+				cp->id = MAKE_MPT_ID(i11, i22);
 				cp += 1;
 			}
 			{
 				cp->localAnchorA = vUpper;
 				cp->separation = separationUpper - radius;
+				cp->id = MAKE_MPT_ID(i12, i21);
 				manifold.pointCount += 1;
 			}
 		}
@@ -120,11 +123,13 @@ namespace chiori
 				cp->localAnchorA = vUpper;
 				cp->separation = separationUpper - radius;
 				manifold.pointCount += 1;
+				cp->id = MAKE_MPT_ID(i21, i12);
 				cp += 1;
 			}
 			{
 				cp->localAnchorA = vLower;
 				cp->separation = separationLower - radius;
+				cp->id = MAKE_MPT_ID(i22, i11);
 				manifold.pointCount += 1;
 			}
 		}

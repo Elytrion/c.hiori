@@ -6,7 +6,7 @@
 
 namespace chiori
 {
-	cShape* PhysicsWorld::CreateShape(const std::vector<vec2>& vertices)
+	cShape* cPhysicsWorld::CreateShape(const std::vector<vec2>& vertices)
 	{
 		cShape* n_shape = p_shapes.Alloc();
 		std::vector<vec2> v = n_shape->polygon.vertices;
@@ -17,7 +17,7 @@ namespace chiori
 		return n_shape;
 	}
 	
-	cActor* PhysicsWorld::CreateActor(cShape* shape)
+	cActor* cPhysicsWorld::CreateActor(cShape* shape)
 	{
 		cActor* n_actor = p_actors.Alloc();
 		n_actor->shapeIndex = p_shapes.getIndex(shape);
@@ -25,20 +25,20 @@ namespace chiori
 		return n_actor;
 	}
 	
-	void PhysicsWorld::RemoveShape(cShape* shape)
+	void cPhysicsWorld::RemoveShape(cShape* shape)
 	{
 		m_broadphase.DestroyProxy(shape->broadphaseIndex);
 		p_actors[shape->actorIndex]->shapeIndex = -1;
 		p_shapes.Free(shape);
 	}
 
-	void PhysicsWorld::RemoveActor(cActor* inActor)
+	void cPhysicsWorld::RemoveActor(cActor* inActor)
 	{
 		RemoveShape(p_shapes[inActor->shapeIndex]);
 		p_actors.Free(inActor);
 	}
 	
-	void PhysicsWorld::update(float inDT)
+	void cPhysicsWorld::update(float inDT)
 	{
 		// Accumulate the time since the last frame
 		accumulator += inDT;
@@ -88,18 +88,18 @@ namespace chiori
 	int recommendedHeight = 900;
 	vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
 
-	void PhysicsWorld::simulate(float inDT)
+	void cPhysicsWorld::simulate(float inDT)
 	{
 		//RunBroadphase();
 
-		for (ppair& pair : p_pairs)
-		{
-			//cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
-			//cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
-			//GJKobject a{ pair.a->vertices, pair.a->normals, tfm_a };
-			//GJKobject b{ pair.b->vertices, pair.b->normals, tfm_b };
-			//GJKresult result = CollisionDetection(a, b);
-		}
+		//for (ppair& pair : p_pairs)
+		//{
+		//	//cTransform tfm_a = p_actors[pair.a->actorIndex]->getTransform();
+		//	//cTransform tfm_b = p_actors[pair.b->actorIndex]->getTransform();
+		//	//GJKobject a{ pair.a->vertices, pair.a->normals, tfm_a };
+		//	//GJKobject b{ pair.b->vertices, pair.b->normals, tfm_b };
+		//	//GJKresult result = CollisionDetection(a, b);
+		//}
 		
 		for (int itr = 0; itr < p_actors.size(); itr++)
 		{
@@ -263,24 +263,28 @@ namespace chiori
 		//}
 	}
 	
-	PhysicsWorld::~PhysicsWorld()
+	cPhysicsWorld::~cPhysicsWorld()
 	{
 		
 	}
 
-	void PhysicsWorld::HandleBroadphasePair(void* userDataA, void* userDataB)
+	void cPhysicsWorld::HandleBroadphasePair(void* userDataA, void* userDataB)
 	{
-		std::cout << "CALLS" << std::endl;
-		cShape* dataA = static_cast<cShape*>(userDataA);
-		cShape* dataB = static_cast<cShape*>(userDataB);
-		p_pairs.emplace_back(dataA, dataB);
+		cShape* shapeA = static_cast<cShape*>(userDataA);
+		cShape* shapeB = static_cast<cShape*>(userDataB);
+		// Create a new contact
+
+		int shapeAIndex = p_shapes.getIndex(shapeA);
+		int shapeBIndex = p_shapes.getIndex(shapeB);
+		if (p_pairs.contains(shapeAIndex, shapeBIndex))
+			return; // no need to create a contact for these shapes since they already exist
+		CreateContact(this, shapeA, shapeB);
 	}
 
-	void PhysicsWorld::RunBroadphase()
+	void cPhysicsWorld::RunBroadphase()
 	{
-		p_pairs.clear();
 		m_broadphase.UpdatePairs(
-			std::bind(&PhysicsWorld::HandleBroadphasePair, this, std::placeholders::_1, std::placeholders::_2)
+			std::bind(&cPhysicsWorld::HandleBroadphasePair, this, std::placeholders::_1, std::placeholders::_2)
 		);
 	}
 }

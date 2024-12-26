@@ -9,13 +9,14 @@ namespace chiori
 	// Forward declarations
 	class cShape;
 	class cActor;
+	class cPhysicsWorld;
 
 	// A contact edge is used to connect bodies and contacts together
 	// in a contact graph where each body is a node and each contact
 	// is an edge. A contact edge belongs to a doubly linked list
 	// maintained in each attached body. Each contact has two contact
 	// edges, one for each attached body.
-	struct ContactEdge
+	struct cContactEdge
 	{
 		int bodyIndex;
 		int prevKey;
@@ -36,7 +37,7 @@ namespace chiori
 			EXITED = (1 << 2),
 		};
 		Flag_8 flags;
-		ContactEdge edges[2];
+		cContactEdge edges[2];
 		int shapeIndexA;
 		int shapeIndexB;
 		cGJKCache cache;
@@ -46,7 +47,7 @@ namespace chiori
 		float restitution;
 	};
 
-	void CreateContact(cContact* contact, cShape* shapeA, cShape* shapeB);
-	void DestroyContact(cContact* contact);
-	void UpdateContact(cContact* contact, cShape* shapeA, cActor* bodyA, cShape* shapeB, cActor* bodyB);
+	void CreateContact(cPhysicsWorld* world, cShape* shapeA, cShape* shapeB);
+	void DestroyContact(cPhysicsWorld* world, cContact* contact);
+	void UpdateContact(cPhysicsWorld* world, cContact* contact, cShape* shapeA, cActor* bodyA, cShape* shapeB, cActor* bodyB);
 }

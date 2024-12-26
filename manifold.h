@@ -22,15 +22,17 @@ namespace chiori
 
 		float normalImpulse;
 		float tangentImpulse;
+		uint16_t id;
 
-		bool persisted;
+		bool persisted{ false };
 	};
 
 	struct cManifold
 	{
 		cManifoldPoint points[2];
 		vec2 normal{ vec2::zero };
-		unsigned pointCount{ 0 };
+		int pointCount{ 0 };
+		int constraintIndex;
 		bool frictionPersisted;
 	};
 

@@ -6,13 +6,11 @@
 
 namespace chiori
 {
-	class PhysicsWorld; // forward declaration
-
 	struct cPolygon
 	{
 		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
 		std::vector<vec2> normals;  // the normals of all the faces of the shape
-		int count;					// the number of vertices/normals
+		int count {-1};				// the number of vertices/normals
 		float radius{ 0.0f };		// for curved shapes (TODO: not implemented yet)
 
 		void setVertices(const std::vector<vec2>& inVertices)
@@ -35,12 +33,10 @@ namespace chiori
 	
 	class cShape
 	{
-	private:
-		friend class PhysicsWorld;	// the physics world will be able to access all internal values as required, while users cannot and should not touch them
+	public:
 		int actorIndex = -1;		// the index of the actor that holds this shape
 		int broadphaseIndex = -1;	// the index of this shape in the broadphase structure
 		
-	public:
 		cPolygon polygon;			// holds the vertices and normals of the shape
 		enum // Shape flags
 		{

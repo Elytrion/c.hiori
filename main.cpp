@@ -10,7 +10,7 @@
 #include "gjk.h"
 
 using namespace chiori;
-PhysicsWorld world; // create an instance of the physics world
+cPhysicsWorld world; // create an instance of the physics world
 bool isHolding_mouse = false;
 bool isHolding_keys = false;
 

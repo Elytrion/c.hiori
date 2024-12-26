@@ -6,8 +6,6 @@
 
 namespace chiori
 {
-	class PhysicsWorld;
-	
 	class cActor
 	{
 	public:
@@ -17,18 +15,17 @@ namespace chiori
 			IS_KINEMATIC = (1 << 1),
 			USE_GRAVITY = (1 << 2)
 		};
-	private:	
-		friend class PhysicsWorld;
+
 		enum // Internal flags used by the system, should not be touched by the user
 		{
 			IS_DIRTY_TFM = (1 << 0),
 			IS_DIRTY_DENSITY = (1 << 1),
 			ASLEEP = (1 << 2)
 		};
-		Flag_8 _iflags = 0;
+		Flag_8 _iflags = 0; // internal flags
 		int shapeIndex = -1;
 
-		Flag_8 _flags = SIMULATED | USE_GRAVITY;
+		Flag_8 _flags = SIMULATED | USE_GRAVITY; // actor setting flags
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
 		float mass, invMass;
@@ -36,7 +33,9 @@ namespace chiori
 		vec2 soffset;				// shape offset from local transform, is the center of mass (COM)
 		cTransform ptfm;
 
-	public:
+		int contactList;		// the head of the dll 
+		int contactCount;
+
 		cActor() {};
 		cActor(const cTransform& inTfm) : tfm{ inTfm } { }
 		cTransform tfm;
