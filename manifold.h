@@ -13,6 +13,17 @@ namespace chiori
 		vec2 localAnchorA{ vec2::zero };
 		vec2 localAnchorB{ vec2::zero };
 		float separation{ 0 };
+
+		// Friction anchors
+		vec2 frictionAnchorA;
+		vec2 frictionAnchorB;	
+		vec2 frictionNormalA;
+		vec2 frictionNormalB;
+
+		float normalImpulse;
+		float tangentImpulse;
+
+		bool persisted;
 	};
 
 	struct cManifold
@@ -20,6 +31,7 @@ namespace chiori
 		cManifoldPoint points[2];
 		vec2 normal{ vec2::zero };
 		unsigned pointCount{ 0 };
+		bool frictionPersisted;
 	};
 
 	cManifold CollideShapes(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, cGJKCache* cache);

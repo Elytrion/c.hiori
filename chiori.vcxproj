@@ -206,6 +206,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClCompile Include="broadphase.cpp" />
     <ClCompile Include="cActor.cpp" />
     <ClCompile Include="collision.cpp" />
+    <ClCompile Include="contact.cpp" />
     <ClCompile Include="gjk.cpp" />
     <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -230,6 +231,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="chioriPool.h" />
     <ClInclude Include="collision.h" />
     <ClInclude Include="commons.h" />
+    <ClInclude Include="contact.h" />
     <ClInclude Include="cShape.h" />
     <ClInclude Include="flag.h" />
     <ClInclude Include="gjk.h" />

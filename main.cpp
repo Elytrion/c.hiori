@@ -237,10 +237,10 @@ void UpdatePhysics()
         DrawActor(s, a->getTransform());
         cTransform tfm = a->getTransform();
         vec2& pos = tfm.pos;
-        if (pos.x >= recommendedWidth) pos.x = recommendedWidth;
-        if (pos.y >= recommendedHeight) pos.y = recommendedHeight;
-        if (pos.x < 0) pos.x = 0;
-        if (pos.y < 0) pos.y = 0;
+        if (pos.x >= recommendedWidth / 2) pos.x = recommendedWidth / 2;
+        if (pos.y >= recommendedHeight / 2) pos.y = recommendedHeight / 2;
+        if (pos.x < -recommendedWidth / 2) pos.x = -recommendedWidth / 2;
+        if (pos.y < -recommendedHeight / 2) pos.y = -recommendedHeight / 2;
         a->setTransform(tfm);
     }
 }

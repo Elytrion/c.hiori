@@ -13,7 +13,7 @@ namespace chiori
 	{
 		inline int GJK_ITERATIONS = 32;
 		inline int CTREE_START_CAPACITY = 32;
-		inline float AABB_FATTEN_FACTOR = 1.0f; // This is used to fatten AABBs in the dynamic tree. 
+		inline float AABB_FATTEN_FACTOR = 0.1f; // This is used to fatten AABBs in the dynamic tree. 
 		
 	}
 }

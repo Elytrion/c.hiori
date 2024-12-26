@@ -28,6 +28,9 @@
     <ClCompile Include="manifold.cpp">
       <Filter>Source\Contacts</Filter>
     </ClCompile>
+    <ClCompile Include="contact.cpp">
+      <Filter>Source\Contacts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -105,6 +108,9 @@
       <Filter>Headers\Commons</Filter>
     </ClInclude>
     <ClInclude Include="manifold.h">
+      <Filter>Headers\Contacts</Filter>
+    </ClInclude>
+    <ClInclude Include="contact.h">
       <Filter>Headers\Contacts</Filter>
     </ClInclude>
   </ItemGroup>

@@ -37,9 +37,6 @@ namespace chiori
 		RemoveShape(p_shapes[inActor->shapeIndex]);
 		p_actors.Free(inActor);
 	}
-
-
-
 	
 	void PhysicsWorld::update(float inDT)
 	{
@@ -93,15 +90,7 @@ namespace chiori
 
 	void PhysicsWorld::simulate(float inDT)
 	{
-		p_pairs.clear();
-		m_broadphase.UpdatePairs(
-			[this](void* userDataA, void* userDataB)
-			{
-				cShape* dataA = static_cast<cShape*>(userDataA);
-				cShape* dataB = static_cast<cShape*>(userDataB);
-				p_pairs.emplace_back(dataA, dataB);
-			}
-		);
+		//RunBroadphase();
 
 		for (ppair& pair : p_pairs)
 		{
@@ -208,17 +197,24 @@ namespace chiori
 		//	{
 		//		CP_Settings_StrokeWeight(2);
 		//		CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
-		//		vec2 tl{ aabb.min };
-		//		vec2 tr{ aabb.max.x, aabb.min.y };
-		//		vec2 br{ aabb.max };
-		//		vec2 bl{ aabb.min.x, aabb.max.y };
-		//		CP_Graphics_DrawLine(tl.x, tl.y, tr.x, tr.y);
-		//		CP_Graphics_DrawLine(tr.x, tr.y, br.x, br.y);
-		//		CP_Graphics_DrawLine(br.x, br.y, bl.x, bl.y);
-		//		CP_Graphics_DrawLine(bl.x, bl.y, tl.x, tl.y);
+		//		vec2 aabbv[4];
+		//		aabbv[0] = { aabb.min };
+		//		aabbv[1] = { aabb.max.x, aabb.min.y };
+		//		aabbv[2] = { aabb.max };
+		//		aabbv[3] = { aabb.min.x, aabb.max.y };
+		//		for (int i = 0; i < 4; i++)
+		//		{
+		//			int j = (i + 1) % 4;
+		//			vec2 p = aabbv[i];
+		//			vec2 q = aabbv[j];
+		//			p *= 100;
+		//			q *= 100;
+		//			p += {800, 450};
+		//			q += {800, 450};
+		//			CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
+		//		}
 		//		CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 		//	};
-		//
 		//m_broadphase.GetTree().DisplayTree(drawFunc);
 
 		//for (int i = 0; i < m_actors.size(); i++)
@@ -270,5 +266,21 @@ namespace chiori
 	PhysicsWorld::~PhysicsWorld()
 	{
 		
+	}
+
+	void PhysicsWorld::HandleBroadphasePair(void* userDataA, void* userDataB)
+	{
+		std::cout << "CALLS" << std::endl;
+		cShape* dataA = static_cast<cShape*>(userDataA);
+		cShape* dataB = static_cast<cShape*>(userDataB);
+		p_pairs.emplace_back(dataA, dataB);
+	}
+
+	void PhysicsWorld::RunBroadphase()
+	{
+		p_pairs.clear();
+		m_broadphase.UpdatePairs(
+			std::bind(&PhysicsWorld::HandleBroadphasePair, this, std::placeholders::_1, std::placeholders::_2)
+		);
 	}
 }

@@ -4,6 +4,7 @@
 #include "cShape.h"
 #include "broadphase.h"
 #include "chioriPool.h"
+#include "contact.h"
 #include "commons.h"
 
 namespace chiori
@@ -34,8 +35,14 @@ namespace chiori
 		cActor* CreateActor(cShape* shape);
 		void RemoveShape(cShape* shape);
 		void RemoveActor(cActor* inActor);
+
+		void HandleBroadphasePair(void* a, void* b);
+		void RunBroadphase();
+		void RunNarrowphase();
+		void RunSolver();
 		
 		cPool<cActor, Allocator> p_actors;
 		cPool<cShape, Allocator> p_shapes;
+		cPool<cContact, Allocator> p_contacts;
 	};
 }

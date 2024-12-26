@@ -6,6 +6,8 @@
 
 namespace chiori
 {
+	inline const int INIT_POOL_SIZE = 16;
+
 	struct cObjHeader
 	{
 		unsigned index;
@@ -74,7 +76,7 @@ namespace chiori
 		}
 		
 	public:
-		cPool(size_t objectSize = sizeof(T), size_t capacity = 16, const Allocator& alloc = Allocator()) :
+		cPool(size_t objectSize = sizeof(T), size_t capacity = INIT_POOL_SIZE, const Allocator& alloc = Allocator()) :
 			pool {nullptr}, p_count {0}, p_capacity {0}, freeList(static_cast<unsigned>(-1)),
 			p_objectSize(objectSize + sizeof(cObjHeader)), allocator(alloc)
 		{
