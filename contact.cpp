@@ -25,7 +25,6 @@ namespace chiori
 
 		// Connect contact to actor A
 		int keyA = (contactIndex << 1) | 0;
-		int32_t keyA = (contactIndex << 1) | 0;
 		if (bodyA->contactList != NULL_INDEX)
 		{
 			cContact* contactA = world->p_contacts[(bodyA->contactList >> 1)];
