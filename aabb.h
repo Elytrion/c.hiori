@@ -51,11 +51,17 @@ namespace chiori
 		}
 
 		bool intersects(const AABB& inAABB) const
-		{
+		{			
 			bool xAxisColliding = (max.x > inAABB.min.x && inAABB.max.x > min.x);
 			bool yAxisColliding = (max.y > inAABB.min.y && inAABB.max.y > min.y);
 
 			return (xAxisColliding && yAxisColliding);
+		}
+
+		void shift(const vec2& inOffset)
+		{
+			min += inOffset;
+			max += inOffset;
 		}
 	};
 

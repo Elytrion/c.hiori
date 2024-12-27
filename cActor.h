@@ -22,7 +22,7 @@ namespace chiori
 			IS_DIRTY_DENSITY = (1 << 1),
 			ASLEEP = (1 << 2)
 		};
-		Flag_8 _iflags = 0; // internal flags
+		Flag_8 _iflags = IS_DIRTY_DENSITY; // internal flags
 		int shapeIndex = -1;
 
 		Flag_8 _flags = SIMULATED | USE_GRAVITY; // actor setting flags
@@ -33,8 +33,8 @@ namespace chiori
 		vec2 soffset;				// shape offset from local transform, is the center of mass (COM)
 		cTransform ptfm;
 
-		int contactList;		// the head of the dll 
-		int contactCount;
+		int contactList{ -1 };		// the head of the dll (-1 means an invalid head) 
+		int contactCount{ 0 };		// the number of contacts
 
 		cActor() {};
 		cActor(const cTransform& inTfm) : tfm{ inTfm } { }

@@ -44,11 +44,11 @@ namespace chiori
 			IS_TRIGGER = (1 << 1),		// this shape is a trigger and will not participate in collision response
 			IS_STATIC = (1 << 2)		// this shape will not move during simulation time (set for broadphase optimization)
 		};
-		float friction;
-		float restitution;
+		float friction{ 0.5f };
+		float restitution{ 0.1f };
 		AABB aabb;						// untransformed close fit AABB
 		Flag_8 shapeFlags = SCENE_QUERYABLE;
-		void* userData; 			// to hold a pointer to any user specific data (user holds ownership of data)
+		void* userData{ nullptr }; 			// to hold a pointer to any user specific data (user holds ownership of data)
 
 		cShape() {};
 		cShape(const std::vector<vec2>& inVertices) { setVertices(inVertices); }

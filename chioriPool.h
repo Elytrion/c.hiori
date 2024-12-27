@@ -184,21 +184,36 @@ namespace chiori
 		/// <summary>
 		/// Provides array-like access to objects in the pool by their index.
 		/// </summary>
-		/// <param name="indx"> - the index of the object </param>
+		/// <param name="index"> - the index of the object </param>
 		/// <returns> A pointer to the object in the pool </returns>
-		T* operator[](int indx) { return GetFromIndex(indx); }
+		T* operator[](int index) { return GetFromIndex(index); }
 		
 		/// <summary>
 		/// Provides const array-like access to objects in the pool by their index.
 		/// </summary>
-		/// <param name="indx"> - the index of the object </param>
+		/// <param name="index"> - the index of the object </param>
 		/// <returns> A pointer to the const object in the pool </returns>
-		const T* operator[](int indx) const { return GetFromIndex(indx); }
+		const T* operator[](int index) const { return GetFromIndex(index); }
 		
 		/// <summary>
 		/// Gets the actual memory of the pool. It is recommended not to manipulate this due to the addition of metadata.
 		/// </summary>
 		char*& data() { return pool; }
+
+		/// <summary>
+		/// Determines if a given index is allocated and thus valid to access
+		/// This can be used if dynamically freeing and accessing items in the pool
+		/// </summary>
+		/// <param name="index"> - the index to check</param>
+		/// <returns> if the index is allocated and valid </returns>
+		bool isValid(int index)
+		{
+			if (index >= p_capacity || index < 0) {
+				throw std::out_of_range("Index out of range");
+			}
+			cObjHeader* header = reinterpret_cast<cObjHeader*>(pool + index * p_objectSize);
+			return header->next == header->index;
+		}
 	};
 
 	// Fast lookup table for pairs of ints, used for pair lookups

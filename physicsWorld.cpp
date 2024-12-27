@@ -17,11 +17,15 @@ namespace chiori
 		return n_shape;
 	}
 	
-	cActor* cPhysicsWorld::CreateActor(cShape* shape)
+	cActor* cPhysicsWorld::CreateActor(cShape* shape, cTransform tfm)
 	{
 		cActor* n_actor = p_actors.Alloc();
 		n_actor->shapeIndex = p_shapes.getIndex(shape);
 		shape->actorIndex = p_actors.getIndex(n_actor);
+		n_actor->tfm = tfm;
+		// update the shape AABB in broadphase to new position
+		shape->aabb.shift(tfm.pos);
+		m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
 		return n_actor;
 	}
 	
@@ -90,7 +94,48 @@ namespace chiori
 
 	void cPhysicsWorld::simulate(float inDT)
 	{
-		//RunBroadphase();
+		// Step 1: Broadphase + Narrowphase + Contact Generation
+		// Update collision pairs, and create all new contacts for this frame
+		// This includes the broadphase AABB tree query, narrowphase using GJK
+		// and contact generation in one sweep
+		CreateCollisionContacts();
+
+		// Step 2: Update Contacts
+		// All contacts are run through and updated or removed
+		// as required. We loop backwards to ensure that the
+		// removal of items doesn't invalidate the pool loop
+		size_t contactCapacity = p_contacts.capacity();
+		int i = static_cast<int>(contactCapacity) - 1;
+		for (; i >= 0; --i)
+		{
+			if (!p_contacts.isValid(i))
+				continue;
+
+			cContact* contact = p_contacts[i];
+			cShape* shapeA = p_shapes[contact->shapeIndexA];
+			cShape* shapeB = p_shapes[contact->shapeIndexB];
+			AABB aabb_a = m_broadphase.GetFattenedAABB(shapeA->broadphaseIndex);
+			AABB aabb_b = m_broadphase.GetFattenedAABB(shapeB->broadphaseIndex);
+			bool overlaps = aabb_a.intersects(aabb_b);
+			if (overlaps)
+			{
+				// Shape fat AABBs are still overlapping, so keep this contact
+				// and update it with the new info
+				cActor* actorA = p_actors[shapeA->actorIndex];
+				cActor* actorB = p_actors[shapeB->actorIndex];
+				UpdateContact(this, contact, shapeA, actorA, shapeB, actorB);
+			}
+			else
+			{
+				DestroyContact(this, contact);
+			}
+		}
+
+
+
+
+		// Step 3: Integrate velocities, solve velocity constraints,
+		// and integrate positions. This is all done in the solver.
 
 		//for (ppair& pair : p_pairs)
 		//{
@@ -192,30 +237,30 @@ namespace chiori
 				CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
 			}
 		}
-
-		//auto drawFunc = [&](int height, const AABB& aabb)
-		//	{
-		//		CP_Settings_StrokeWeight(2);
-		//		CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
-		//		vec2 aabbv[4];
-		//		aabbv[0] = { aabb.min };
-		//		aabbv[1] = { aabb.max.x, aabb.min.y };
-		//		aabbv[2] = { aabb.max };
-		//		aabbv[3] = { aabb.min.x, aabb.max.y };
-		//		for (int i = 0; i < 4; i++)
-		//		{
-		//			int j = (i + 1) % 4;
-		//			vec2 p = aabbv[i];
-		//			vec2 q = aabbv[j];
-		//			p *= 100;
-		//			q *= 100;
-		//			p += {800, 450};
-		//			q += {800, 450};
-		//			CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
-		//		}
-		//		CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
-		//	};
-		//m_broadphase.GetTree().DisplayTree(drawFunc);
+		
+		auto drawFunc = [&](int height, const AABB& aabb)
+			{
+				CP_Settings_StrokeWeight(2);
+				CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
+				vec2 aabbv[4];
+				aabbv[0] = { aabb.min };
+				aabbv[1] = { aabb.max.x, aabb.min.y };
+				aabbv[2] = { aabb.max };
+				aabbv[3] = { aabb.min.x, aabb.max.y };
+				for (int i = 0; i < 4; i++)
+				{
+					int j = (i + 1) % 4;
+					vec2 p = aabbv[i];
+					vec2 q = aabbv[j];
+					p *= 100;
+					q *= 100;
+					p += {800, 450};
+					q += {800, 450};
+					CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
+				}
+				CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
+			};
+		m_broadphase.GetTree().DisplayTree(drawFunc);
 
 		//for (int i = 0; i < m_actors.size(); i++)
 		//{
@@ -268,23 +313,20 @@ namespace chiori
 		
 	}
 
-	void cPhysicsWorld::HandleBroadphasePair(void* userDataA, void* userDataB)
-	{
-		cShape* shapeA = static_cast<cShape*>(userDataA);
-		cShape* shapeB = static_cast<cShape*>(userDataB);
-		// Create a new contact
-
-		int shapeAIndex = p_shapes.getIndex(shapeA);
-		int shapeBIndex = p_shapes.getIndex(shapeB);
-		if (p_pairs.contains(shapeAIndex, shapeBIndex))
-			return; // no need to create a contact for these shapes since they already exist
-		CreateContact(this, shapeA, shapeB);
-	}
-
-	void cPhysicsWorld::RunBroadphase()
+	
+	void cPhysicsWorld::CreateCollisionContacts()
 	{
 		m_broadphase.UpdatePairs(
-			std::bind(&cPhysicsWorld::HandleBroadphasePair, this, std::placeholders::_1, std::placeholders::_2)
+			[this](void* userDataA, void* userDataB)
+			{
+				cShape* shapeA = static_cast<cShape*>(userDataA);
+				cShape* shapeB = static_cast<cShape*>(userDataB);
+				int shapeAIndex = p_shapes.getIndex(shapeA);
+				int shapeBIndex = p_shapes.getIndex(shapeB);
+				if (p_pairs.contains(shapeAIndex, shapeBIndex))
+					return; // no need to create a contact for these shapes since a contact already exists
+				CreateContact(this, shapeA, shapeB);
+			}
 		);
 	}
 }

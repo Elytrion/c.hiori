@@ -89,6 +89,7 @@ cActor* CreateRandomPolygonActor(int vertexCount, float radius, const vec2& cent
         float ycoord = radius * sin(angles[i]);
         vertices.push_back({ xcoord, ycoord });
     }
+    cTransform xf{ centrePos, 0 };
     cShape* newShape = world.CreateShape(vertices);
 	cActor* newActor = world.CreateActor(newShape);
 
@@ -203,7 +204,7 @@ void InitPhysics()
     std::vector<vec2> verts{ {0, -0.577f}, {0.5f, 0.289f}, {-0.5f, 0.289f} };
 	cActor* poly = CreatePolygonActor(verts, vec2::zero);
     cTransform xfp = poly->getTransform();
-    xfp.pos = { 0.0f, 1.0f };
+    xfp.pos = { 0.0f, 2.0f };
     poly->setTransform(xfp);
 
     verts.clear();

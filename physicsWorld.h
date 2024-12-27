@@ -25,13 +25,11 @@ namespace chiori
 		void simulate(float inDT);	// simulates one time step of physics, call directly if not using update
 
 		cShape* CreateShape(const std::vector<vec2>& vertices);
-		cActor* CreateActor(cShape* shape);
+		cActor* CreateActor(cShape* shape, cTransform tfm);
 		void RemoveShape(cShape* shape);
 		void RemoveActor(cActor* inActor);
 
-		void HandleBroadphasePair(void* a, void* b);
-		void RunBroadphase();
-		void RunNarrowphase();
+		void CreateCollisionContacts();
 		void RunSolver();
 		
 		cPool<cActor, Allocator> p_actors;

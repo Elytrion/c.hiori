@@ -29,14 +29,15 @@ namespace chiori
 	{
 		enum
 		{
-			// This contact no longer has overlapping AABBs in the broadphase
-			DISJOINT = (1 << 0),
 			// This contact started touching after previously being not in contact
-			ENTERED = (1 << 1),
+			ENTERED = (1 << 0),
 			// This contact stopped touching after previously being in contact
-			EXITED = (1 << 2),
+			EXITED = (1 << 1),
+			// This contact is marked for destruction in the current frame, and should not be used
+			// Broadphase has reported these objects have non-overlapping AABBs
+			DISJOINT = (1 << 2)
 		};
-		Flag_8 flags;
+		Flag_8 flags { ENTERED };
 		cContactEdge edges[2];
 		int shapeIndexA;
 		int shapeIndexB;
