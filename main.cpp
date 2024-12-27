@@ -91,12 +91,8 @@ cActor* CreateRandomPolygonActor(int vertexCount, float radius, const vec2& cent
     }
     cTransform xf{ centrePos, 0 };
     cShape* newShape = world.CreateShape(vertices);
-	cActor* newActor = world.CreateActor(newShape);
-
+	cActor* newActor = world.CreateActor(newShape, xf);
     newActor->setMass(10);
-    cTransform tfm = newActor->getTransform();
-    tfm.pos = centrePos;
-    newActor->setTransform(tfm);
     shapes.push_back(newShape);
     actors.push_back(newActor);
 
@@ -115,12 +111,10 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos)
 	vertices.push_back({ width / 2.0f, height / 2.0f });
 	vertices.push_back({ -width / 2.0f, height / 2.0f });
 
+    cTransform xf{ centrePos, 0 };
     cShape* newShape = world.CreateShape(vertices);
-    cActor* newActor = world.CreateActor(newShape);
+    cActor* newActor = world.CreateActor(newShape, xf);
     newActor->setMass(10);
-    cTransform tfm = newActor->getTransform();
-    tfm.pos = centrePos;
-    newActor->setTransform(tfm);
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
@@ -144,12 +138,10 @@ cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
         vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
         vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
 	};
+    cTransform xf{ centrePos, 0 };
     cShape* newShape = world.CreateShape(vertices);
-    cActor* newActor = world.CreateActor(newShape);
+    cActor* newActor = world.CreateActor(newShape, xf);
     newActor->setMass(10);
-    cTransform tfm = newActor->getTransform();
-    tfm.pos = centrePos;
-    newActor->setTransform(tfm);
     auto f = newActor->getFlags();
     f.toggle(cActor::USE_GRAVITY);
     newActor->setFlags(f);
@@ -160,12 +152,10 @@ cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
 
 cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
 {
+    cTransform xf{ centrePos, 0 };
     cShape* newShape = world.CreateShape(inVertices);
-    cActor* newActor = world.CreateActor(newShape);
+    cActor* newActor = world.CreateActor(newShape, xf);
     newActor->setMass(10);
-    cTransform tfm = newActor->getTransform();
-    tfm.pos = centrePos;
-    newActor->setTransform(tfm);
     shapes.push_back(newShape);
     actors.push_back(newActor);
     auto f = newActor->getFlags();
@@ -173,30 +163,6 @@ cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
     newActor->setFlags(f);
     return newActor;
 }
-
-
-
-
-//void calculateCSO()
-//{
-//    std::cout << "CALCULATE CSO!" << std::endl;;
-//    cTransform a = actors[0]->getTransform();
-//    cTransform b = actors[1]->getTransform();
-//    cShape* sa = shapes[0];
-//    cShape* sb = shapes[1];
-//
-//    std::vector<vec2> a_verts = sa->getVertices(a);
-//    std::vector<vec2> b_verts = sb->getVertices(b);
-//    for (const vec2& va : a_verts)
-//    {
-//        for (const vec2& vb : b_verts)
-//        {
-//            Mvert w{ va, vb };
-//            std::cout << w << std::endl;
-//        }
-//    }
-//}
-
 
 void InitPhysics()
 {

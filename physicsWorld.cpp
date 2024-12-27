@@ -131,11 +131,9 @@ namespace chiori
 			}
 		}
 
-
-
-
 		// Step 3: Integrate velocities, solve velocity constraints,
-		// and integrate positions. This is all done in the solver.
+		// and integrate positions. This is done primary in the solver.
+		
 
 		//for (ppair& pair : p_pairs)
 		//{
