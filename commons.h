@@ -5,10 +5,6 @@ namespace chiori
 {
 	#define cassert(X) assert(X)
 
-	#ifndef DEFAULT_ALLOCATOR
-	#define DEFAULT_ALLOCATOR std::allocator<char>
-	#endif
-
 	using cint = int32_t;
 	using cint16 = int16_t;
 	using cunsigned = uint32_t;

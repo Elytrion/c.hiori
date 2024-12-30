@@ -12,11 +12,17 @@ namespace chiori
 	class cPhysicsWorld
 	{
 	public:
-		using Allocator = DEFAULT_ALLOCATOR;
+		std::unique_ptr<cAllocator> allocator;
 		float accumulator = 0.0f;
 		Broadphase m_broadphase;
-	
-		~cPhysicsWorld();
+
+		template <typename Allocator = cDefaultAllocator>
+		explicit cPhysicsWorld(Allocator alloc = Allocator()) :
+			allocator { std::make_unique<cAllocatorWrapper<Allocator>>(std::move(alloc)) },
+			p_actors{ allocator.get() }, p_shapes{ allocator.get() }, p_contacts{ allocator.get() }
+		{}
+
+		~cPhysicsWorld() = default;
 		
 		float physicsStepTime = 0.0167f;
 		vec2 gravity = { 0.0f, 9.81f };
@@ -28,9 +34,9 @@ namespace chiori
 		void RemoveShape(int inShapeIndex);
 		void RemoveActor(int inActorIndex);
 
-		cPool<cActor, Allocator> p_actors;
-		cPool<cShape, Allocator> p_shapes;
+		cPool<cActor> p_actors;
+		cPool<cShape> p_shapes;
 		cFLUTable p_pairs;
-		cPool<cContact, Allocator> p_contacts;
+		cPool<cContact> p_contacts;
 	};
 }

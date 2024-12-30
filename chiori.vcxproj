@@ -227,6 +227,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="aabbtree.h" />
     <ClInclude Include="broadphase.h" />
     <ClInclude Include="cActor.h" />
+    <ClInclude Include="chioriAllocator.h" />
     <ClInclude Include="chioriMath.h" />
     <ClInclude Include="chioriPool.h" />
     <ClInclude Include="commons.h" />

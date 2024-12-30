@@ -35,15 +35,13 @@ namespace chiori
 
 		enum // Actor settings
 		{
-			SIMULATED = (1 << 0),
-			IS_KINEMATIC = (1 << 1),
-			USE_GRAVITY = (1 << 2),
+			USE_GRAVITY = (1 << 0)
 		};
-
 		enum // Internal flags used by the system, should not be touched by the user
 		{
 			IS_DIRTY = (1 << 0)
 		};
+
 		Flag_8 _iflags = IS_DIRTY; // internal flags
 		int shapeIndex = -1;
 
@@ -71,10 +69,10 @@ namespace chiori
 		vec2 linearVelocity0{ vec2::zero };
 		float angularVelocity0{ 0.0f };
 
-		float linearDamping;
-		float angularDamping;
+		float linearDamping{ 0.0f };
+		float angularDamping{ 0.0f };
 
-		float gravityScale;
+		float gravityScale{ 1.0f };
 
 		int contactList{ -1 };		// the head of the dll (-1 means an invalid head) 
 		int contactCount{ 0 };		// the number of contacts
@@ -91,6 +89,15 @@ namespace chiori
 			origin = inTfm.pos;
 			rotation = inTfm.rot;
 			_iflags.set(IS_DIRTY);
+		}
+
+		float getMass() const { return mass; }
+		void setMass(float inMass)
+		{
+			if (!fltcmp(mass, inMass))
+				_iflags.set(IS_DIRTY);
+			mass = inMass;
+			invMass = mass > 0.0f ? 1.0f / mass : 0.0f;
 		}
 
 		Flag_8 getFlags() const { return _flags; }

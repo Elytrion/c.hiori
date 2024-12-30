@@ -113,5 +113,8 @@
     <ClInclude Include="solver.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="chioriAllocator.h">
+      <Filter>Headers\Commons</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

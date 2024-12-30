@@ -126,7 +126,7 @@ namespace chiori
 		auto& contacts = world->p_contacts;
 		int contactCapacity = static_cast<int>(contacts.capacity());
 
-		ContactConstraint* constraints = new ContactConstraint[contactCapacity];
+		ContactConstraint* constraints = static_cast<ContactConstraint*>(world->allocator->allocate(sizeof(ContactConstraint) * contactCapacity));
 		int constraintCount = 0;
 
 		for (int i = 0; i < contactCapacity; ++i)
@@ -138,6 +138,7 @@ namespace chiori
 			if (contact->manifold.pointCount == 0)
 				continue;
 
+			new (constraints + constraintCount) ContactConstraint(); //placement new construct to not cause errors
 			constraints[constraintCount].contact = contact;
 			constraints[constraintCount].contact->manifold.constraintIndex = constraintCount;
 			constraintCount += 1;
@@ -187,7 +188,7 @@ namespace chiori
 		StoreContactImpluses(constraints, constraintCount);
 
 		// free the constraints
-		delete[] constraints;
+		world->allocator->deallocate(constraints, sizeof(ContactConstraint) * contactCapacity);
 	}
 
 	void IntegrateVelocities(cPhysicsWorld* world, float h)

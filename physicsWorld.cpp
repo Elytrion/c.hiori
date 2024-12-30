@@ -108,6 +108,7 @@ namespace chiori
 	{
 		int actorCapacity = p_actors.capacity();
 		// Step 1: Update the transform and broadphase AABBs for all shapes
+		// We also check if any of the actors or shapes have been modified by the user and update the system accordingly
 		for (int i = 0; i < actorCapacity; ++i)
 		{
 			if (!p_actors.isValid(i))
@@ -125,6 +126,11 @@ namespace chiori
 
 			cShape* shape = p_shapes[actor->shapeIndex];
 
+			if (actor->_flags.isSet(cActor::IS_DIRTY))
+			{
+				computeActorInertia(this, actor);
+			}
+
 			shape->aabb = CreateAABBHull(shape->polygon.vertices, xf);
 
 			AABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
@@ -133,6 +139,9 @@ namespace chiori
 			{
 				m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
 			}
+
+			if (actor->_flags.isSet(cActor::IS_DIRTY))
+				actor->_flags.clear(cActor::IS_DIRTY);
 		}
 
 		// Step 2: Broadphase + Narrowphase + Contact Generation
@@ -310,11 +319,6 @@ namespace chiori
 		//		CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
 		//	};
 		//m_broadphase.GetTree().DisplayTree(drawFunc);
-	}
-	
-	cPhysicsWorld::~cPhysicsWorld()
-	{
-		
 	}
 
 }

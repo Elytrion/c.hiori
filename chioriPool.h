@@ -1,7 +1,6 @@
 #pragma once
 
-#include <memory>
-#include <stdexcept>
+#include "chioriAllocator.h"
 #include <utility> 
 #include <unordered_set>
 
@@ -28,8 +27,7 @@ namespace chiori
 	/// Items are indexed and kept in contiguous memory blocks to ensure cache coherency and fast access times.
 	/// </summary>
 	/// <typeparam name="T"> The type of object the pool will hold </typeparam>
-	/// <typeparam name="Allocator"> The allocator to use for memory allocation & deallocation, defaults to std::allocator<char>. Must be a char allocator </typeparam>
-	template <typename T, typename Allocator = std::allocator<char>>
+	template <typename T>
 	class cPool
 	{
 	public:
@@ -40,7 +38,7 @@ namespace chiori
 		size_t p_capacity;		// Total number of objects the pool can hold before needing to grow.
 		unsigned freeList;		// Index of the first free slot in the pool. Acts as the head of the free linked list.
 		size_t p_objectSize;	// Size of each object including the cObjHeader metadata
-		Allocator allocator;	// Custom memory allocator used to allocate and deallocate the memory block.
+		cAllocator* allocator;	// Custom memory allocator used to allocate and deallocate the memory block.
 
 		/// <summary>
 		/// Grows the pool by the specified capacity. Used internally by the pool to double the size to ensure dynamic growth.
@@ -51,12 +49,12 @@ namespace chiori
 			if (newCapacity <= p_capacity) return;
 
 			// Allocate a larger memory block
-			char* newPool = allocator.allocate(newCapacity * p_objectSize);
+			char* newPool = static_cast<char*>(allocator->allocate(newCapacity * p_objectSize));
 
 			// Copy existing pool to the new memory block
 			if (pool) {
 				memcpy(newPool, pool, p_capacity * p_objectSize);
-				allocator.deallocate(pool, p_capacity * p_objectSize);
+				allocator->deallocate(pool, p_capacity * p_objectSize);
 			}
 
 			// Initialize new slots in the free list
@@ -106,7 +104,7 @@ namespace chiori
 		/// <param name="objectSize"> - sizeof(T) </param>
 		/// <param name="capacity"> - Initial capacity of the pool </param>
 		/// <param name="alloc"> - Allocator to use </param>
-		cPool(size_t objectSize = sizeof(T), size_t capacity = INIT_POOL_SIZE, const Allocator& alloc = Allocator()) :
+		cPool(cAllocator* alloc, size_t objectSize = sizeof(T), size_t capacity = INIT_POOL_SIZE) :
 			pool {nullptr}, p_count {0}, p_capacity {0}, freeList(static_cast<unsigned>(-1)),
 			p_objectSize(objectSize + sizeof(cObjHeader)), allocator(alloc)
 		{
@@ -119,7 +117,7 @@ namespace chiori
 		~cPool()
 		{
 			if (pool) {
-				allocator.deallocate(pool, p_capacity * p_objectSize);
+				allocator->deallocate(pool, p_capacity * p_objectSize);
 			}
 		}
 		
