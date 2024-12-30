@@ -14,8 +14,8 @@ cPhysicsWorld world; // create an instance of the physics world
 bool isHolding_mouse = false;
 bool isHolding_keys = false;
 
-std::vector<cActor*> actors;
-std::vector<cShape*> shapes;
+std::vector<int> actors;
+std::vector<int> shapes;
 
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
@@ -61,48 +61,6 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
     CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
 }
 
-cActor* CreateRandomPolygonActor(int vertexCount, float radius, const vec2& centrePos) // TEMP!
-{
-    bool validAngle = false;
-	std::vector<vec2> vertices;
-    std::vector<float> angles;
-    while (angles.size() < vertexCount)
-    {
-        validAngle = false;
-        float newAngle = CP_Random_RangeFloat(0.0f, 2.0f * PI);
-        for (int i = 0; i < angles.size(); i++)
-        {
-            if ((newAngle <= angles[i] + 0.5f && newAngle >= angles[i] - 0.5f))
-            {
-                validAngle = true;
-            }
-        }
-        if (!validAngle)
-            angles.push_back(newAngle);
-    }
-    
-    std::sort(angles.begin(), angles.end());
-
-    for (int i = 0; i < vertexCount; i++)
-    {
-        float xcoord = radius * cos(angles[i]);
-        float ycoord = radius * sin(angles[i]);
-        vertices.push_back({ xcoord, ycoord });
-    }
-    cTransform xf{ centrePos, 0 };
-    cShape* newShape = world.CreateShape(vertices);
-	cActor* newActor = world.CreateActor(newShape, xf);
-    newActor->setMass(10);
-    shapes.push_back(newShape);
-    actors.push_back(newActor);
-
-    auto f = newActor->getFlags();
-    f.toggle(cActor::USE_GRAVITY);
-    newActor->setFlags(f);
-    
-    return newActor;
-}
-
 cActor* CreateRectActor(float width, float height, vec2& centrePos)
 {
     std::vector<vec2> vertices;
@@ -111,20 +69,15 @@ cActor* CreateRectActor(float width, float height, vec2& centrePos)
 	vertices.push_back({ width / 2.0f, height / 2.0f });
 	vertices.push_back({ -width / 2.0f, height / 2.0f });
 
-    cTransform xf{ centrePos, 0 };
-    cShape* newShape = world.CreateShape(vertices);
-    cActor* newActor = world.CreateActor(newShape, xf);
-    newActor->setMass(10);
-    auto f = newActor->getFlags();
-    f.toggle(cActor::USE_GRAVITY);
-    newActor->setFlags(f);
-    std::cout << "NEW SHAPE!" << std::endl;
-    for (vec2& v : vertices)
-    {
-        std::cout << v << std::endl;
-    }
-    shapes.push_back(newShape);
-    actors.push_back(newActor);
+    ActorConfig a_config;
+    a_config.position = centrePos;
+    int newActorIndex = world.CreateActor(a_config);
+    ShapeConfig s_config;
+    s_config.vertices = vertices;
+    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+    cActor* newActor = world.p_actors[newActorIndex];
+    shapes.push_back(newShapeIndex);
+    actors.push_back(newActorIndex);
     return newActor;
 }
 
@@ -138,29 +91,29 @@ cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
         vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
         vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
 	};
-    cTransform xf{ centrePos, 0 };
-    cShape* newShape = world.CreateShape(vertices);
-    cActor* newActor = world.CreateActor(newShape, xf);
-    newActor->setMass(10);
-    auto f = newActor->getFlags();
-    f.toggle(cActor::USE_GRAVITY);
-    newActor->setFlags(f);
-    shapes.push_back(newShape);
-    actors.push_back(newActor);
+    ActorConfig a_config;
+    a_config.position = centrePos;
+    int newActorIndex = world.CreateActor(a_config);
+    ShapeConfig s_config;
+    s_config.vertices = vertices;
+    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+    cActor* newActor = world.p_actors[newActorIndex];
+    shapes.push_back(newShapeIndex);
+    actors.push_back(newActorIndex);
     return newActor;
 }
 
 cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
 {
-    cTransform xf{ centrePos, 0 };
-    cShape* newShape = world.CreateShape(inVertices);
-    cActor* newActor = world.CreateActor(newShape, xf);
-    newActor->setMass(10);
-    shapes.push_back(newShape);
-    actors.push_back(newActor);
-    auto f = newActor->getFlags();
-    f.toggle(cActor::USE_GRAVITY);
-    newActor->setFlags(f);
+    ActorConfig a_config;
+    a_config.position = centrePos;
+    int newActorIndex = world.CreateActor(a_config);
+    ShapeConfig s_config;
+    s_config.vertices = inVertices;
+    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+    cActor* newActor = world.p_actors[newActorIndex];
+    shapes.push_back(newShapeIndex);
+    actors.push_back(newActorIndex);
     return newActor;
 }
 

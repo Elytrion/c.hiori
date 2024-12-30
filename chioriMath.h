@@ -6,6 +6,11 @@
 
 namespace chiori
 {
+	#define c_max(a, b) ((a) > (b) ? (a) : (b))
+	#define c_min(a, b) ((a) < (b) ? (a) : (b))
+	#define c_abs(A) ((A) > 0.0f ? (A) : -(A))
+	#define c_clamp(A, B, C) c_min(c_max(A, B), C)
+
 	constexpr float EPSILON = 1e-7f;		// Epislon value for comparing floats
 	constexpr float LEPSILON = 1e-6f;		// Low precision epsilon value
 	constexpr float HEPSILON = 1e-8f;		// High precision epsilon value
@@ -249,5 +254,15 @@ namespace chiori
 		nv = nv.cdiv(xf.scale); 
 		nv = nv.rotated(-xf.rot);
 		return nv;
+	}
+
+	static inline float normalizeRot(float radians)
+	{
+		float twoPI = 2.0f * PI;
+		while (radians > PI)
+			radians -= twoPI;
+		while (radians < -PI)
+			radians += twoPI;
+		return radians;
 	}
 }

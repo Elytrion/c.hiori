@@ -130,8 +130,8 @@ namespace chiori
 		// bool wasTouching = (contact->flags & s2_contactTouchingFlag) == s2_contactTouchingFlag;
 
 
-		cTransform transformA = bodyA->tfm;
-		cTransform transformB = bodyB->tfm;
+		cTransform transformA = bodyA->getTransform();
+		cTransform transformB = bodyB->getTransform();
 		contact->manifold = CollideShapes(&shapeA->polygon, &shapeB->polygon, transformA, transformB, &contact->cache);
 
 		touching = contact->manifold.pointCount > 0;

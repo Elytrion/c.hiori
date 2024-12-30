@@ -13,9 +13,6 @@
     <ClCompile Include="broadphase.cpp">
       <Filter>Source\Collision Detection</Filter>
     </ClCompile>
-    <ClCompile Include="collision.cpp">
-      <Filter>Source\Collision Detection</Filter>
-    </ClCompile>
     <ClCompile Include="gjk.cpp">
       <Filter>Source\Collision Detection</Filter>
     </ClCompile>
@@ -30,6 +27,9 @@
     </ClCompile>
     <ClCompile Include="contact.cpp">
       <Filter>Source\Contacts</Filter>
+    </ClCompile>
+    <ClCompile Include="solver.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,9 +71,6 @@
     <ClInclude Include="integrators.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="collision.h">
-      <Filter>Headers\Collision Detection</Filter>
-    </ClInclude>
     <ClInclude Include="aabb.h">
       <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
@@ -112,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="contact.h">
       <Filter>Headers\Contacts</Filter>
+    </ClInclude>
+    <ClInclude Include="solver.h">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

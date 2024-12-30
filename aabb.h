@@ -65,18 +65,24 @@ namespace chiori
 		}
 	};
 
-	inline AABB CreateAABBHull(const vec2* inVertices, int inVertexCount)
+	inline AABB CreateAABBHull(const std::vector<vec2>& inVertices, const cTransform& xf)
 	{
-		AABB aabb;
-		aabb.min = inVertices[0];
-		aabb.max = inVertices[0];
+		vec2 lower = cTransformVec(xf, inVertices[0]);
+		vec2 upper = lower;
 
-		for (int i = 1; i < inVertexCount; i++)
+		for (int32_t i = 1; i < inVertices.size(); ++i)
 		{
-			aabb.min = vec2::vmin(aabb.min, inVertices[i]);
-			aabb.max = vec2::vmax(aabb.max, inVertices[i]);
+			vec2 v = cTransformVec(xf, inVertices[i]);
+			lower = vec2::vmin(lower, v);
+			upper = vec2::vmax(upper, v);
 		}
 
-		return aabb;
+		// TODO: for curved shapes
+		//vec2 r = { radius, radius };
+		//lower = (lower - r);
+		//upper = (upper - r);
+
+
+		return { lower, upper };
 	}
 }

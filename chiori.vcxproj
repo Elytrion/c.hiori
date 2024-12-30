@@ -205,7 +205,6 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClCompile Include="aabbtree.cpp" />
     <ClCompile Include="broadphase.cpp" />
     <ClCompile Include="cActor.cpp" />
-    <ClCompile Include="collision.cpp" />
     <ClCompile Include="contact.cpp" />
     <ClCompile Include="gjk.cpp" />
     <ClCompile Include="main.cpp">
@@ -221,6 +220,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="physicsWorld.cpp" />
+    <ClCompile Include="solver.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
@@ -229,7 +229,6 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="cActor.h" />
     <ClInclude Include="chioriMath.h" />
     <ClInclude Include="chioriPool.h" />
-    <ClInclude Include="collision.h" />
     <ClInclude Include="commons.h" />
     <ClInclude Include="contact.h" />
     <ClInclude Include="cShape.h" />
@@ -239,6 +238,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="manifold.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="physicsWorld.h" />
+    <ClInclude Include="solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

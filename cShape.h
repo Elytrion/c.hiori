@@ -6,29 +6,19 @@
 
 namespace chiori
 {
+	struct ShapeConfig
+	{
+		float friction{ 0.5f };
+		float restitution{ 0.0f };
+		std::vector<vec2> vertices;
+	};
+
 	struct cPolygon
 	{
 		std::vector<vec2> vertices; // the untransformed vertices of the shape (assumes shape is centered at 0,0 with no scale nor rotation)
 		std::vector<vec2> normals;  // the normals of all the faces of the shape
 		int count {-1};				// the number of vertices/normals
 		float radius{ 0.0f };		// for curved shapes (TODO: not implemented yet)
-
-		void setVertices(const std::vector<vec2>& inVertices)
-		{
-			cassert(inVertices.size() >= 3);
-			// copy over the data
-			vertices = inVertices;
-			count = static_cast<int>(inVertices.size());
-			// calculate normals
-			for (int i = 0; i < count; ++i)
-			{
-				int i1 = i;
-				int i2 = (i + 1) % count;
-				vec2 edge = vertices[i2] - vertices[i1];
-				cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
-				normals.push_back(edge.scross(1.0f).normalize());
-			}
-		}
 	};
 	
 	class cShape
@@ -72,8 +62,6 @@ namespace chiori
 		std::vector<vec2>& normals = polygon.normals;
 		int& count = polygon.count;
 		vertices = inVertices;
-		// build AABB
-		aabb = CreateAABBHull(vertices.data(), vertices.size()); 
 		count = static_cast<int>(inVertices.size());
 		// calculate normals
 		for (int i = 0; i < count; ++i)
