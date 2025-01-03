@@ -42,6 +42,7 @@ bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
 void DrawActor(cShape*& inShape, const cTransform& inTfm)
 {    
     cTransform xfAlt = inTfm;
+    xfAlt.pos.y *= -1;
     xfAlt.pos *= 100;
     xfAlt.pos += middle;
     xfAlt.scale = { 100,100 };
@@ -57,6 +58,7 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
     vec2 middlePos = inTfm.pos * 100;
+    middlePos.y *= -1;
     middlePos += middle;
     CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
 }
@@ -68,6 +70,8 @@ void DrawContact(cContact* contact)
     cTransform xf = world.p_actors[world.p_shapes[indexA]->actorIndex]->getTransform();
     vec2 anchor0 = contact->manifold.points[0].localAnchorA;
     vec2 anchor1 = contact->manifold.points[1].localAnchorA;
+    anchor0.y *= -1;
+    anchor1.y *= -1;
     pointA = cTransformVec(xf, anchor0);
     pointB = cTransformVec(xf, anchor1);
     pointA *= 100;
@@ -80,7 +84,9 @@ void DrawContact(cContact* contact)
     vec2 pointA1, pointB1;
     vec2 normalAnchor0 = anchor0 + contact->manifold.normal;// *contact->manifold.points[0].separation;
     vec2 normalAnchor1 = anchor1 + contact->manifold.normal;// *contact->manifold.points[1].separation;
-
+    normalAnchor0.y *= -1;
+    normalAnchor1.y *= -1;
+    
     pointA1 = cTransformVec(xf, normalAnchor0);
     pointB1 = cTransformVec(xf, normalAnchor1);
     pointA1 *= 100;
@@ -164,7 +170,7 @@ void BoxScene()
     // Create a floor
     ActorConfig a_config;
     a_config.type = cActorType::STATIC;
-    a_config.position = vec2{ 0, 3 };
+    a_config.position = vec2{ 0, 0 };
     int floorActorIndex = world.CreateActor(a_config);
     ShapeConfig s_config;
     std::vector<vec2> vertices;
@@ -178,7 +184,7 @@ void BoxScene()
     actors.push_back(floorActorIndex);
 
     a_config.type = cActorType::DYNAMIC;
-    a_config.position = vec2{ 0, 2.25 };
+    a_config.position = vec2{ 0, 0.5f };
     int boxAActorIndex = world.CreateActor(a_config);
     vertices.clear();
     vertices.push_back({ -0.5f, -0.5f });
@@ -241,7 +247,7 @@ void UpdatePhysics()
         
         if (pauseStep)
         {
-            world.step(1.0f / 50.0f);
+            world.step(1.0f / 60.0f);
             pauseStep = false;
         }
     }

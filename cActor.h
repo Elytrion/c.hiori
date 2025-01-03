@@ -45,10 +45,8 @@ namespace chiori
 		vec2 origin{ vec2::zero }; // the body origin (not center of mass)
 		vec2 position{ vec2::zero }; // center of mass position in world space
 		vec2 deltaPosition{ vec2::zero }; // delta position for the whole time step
-		vec2 deltaPosition0{ vec2::zero }; // delta position at the beginning of each sub-step (for sub-stepping)
 		vec2 localCenter{ vec2::zero }; // location of center of mass relative to the body origin (local space)
 		float rotation{ 0.0f };
-		float rotation0{ 0.0f };
 
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
@@ -60,9 +58,6 @@ namespace chiori
 
 		vec2 linearVelocity{ vec2::zero };
 		float angularVelocity{ 0.0f };
-
-		vec2 linearVelocity0{ vec2::zero };
-		float angularVelocity0{ 0.0f };
 
 		float linearDamping{ 0.0f };
 		float angularDamping{ 0.0f };
@@ -89,6 +84,13 @@ namespace chiori
 		float getMass() const { return mass; }
 		void setMass(float inMass)
 		{
+			if (type == cActorType::STATIC || type == cActorType::KINEMATIC)
+			{
+				mass = 0.0f;
+				invMass = 0.0f;
+				return;
+			}
+
 			if (!fltcmp(mass, inMass))
 				_flags.set(IS_DIRTY);
 			mass = inMass;

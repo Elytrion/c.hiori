@@ -13,17 +13,21 @@ namespace chiori
 
 		n_actor->type = inConfig.type;
 
+		if (inConfig.type != cActorType::DYNAMIC)
+		{
+			n_actor->mass = 0.0f;
+			n_actor->invMass = 0.0f;
+			n_actor->inertia = 0.0f;
+			n_actor->invInertia = 0.0f;
+		}
+
 		n_actor->origin = inConfig.position;
 		n_actor->position = inConfig.position;
 
 		n_actor->linearVelocity = inConfig.linearVelocity;
 		n_actor->angularVelocity = inConfig.angularVelocity;
-		n_actor->linearVelocity0 = inConfig.linearVelocity;
-		n_actor->angularVelocity0 = inConfig.angularVelocity;
 
-		n_actor->rotation0 = inConfig.rotation;
-		n_actor->rotation = n_actor->rotation0;
-
+		n_actor->rotation = inConfig.rotation;
 		n_actor->linearDamping = inConfig.linearDamping;
 		n_actor->angularDamping = inConfig.angularDamping;
 		n_actor->gravityScale = inConfig.gravityScale;
