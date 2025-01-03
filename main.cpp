@@ -61,6 +61,23 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
     CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
 }
 
+void DrawContact(cContact* contact)
+{
+    vec2 pointA, pointB;
+    int& indexA = contact->shapeIndexA;
+    cTransform xf = world.p_actors[world.p_shapes[indexA]->actorIndex]->getTransform();
+    vec2 anchor0 = contact->manifold.points[0].localAnchorA;
+    vec2 anchor1 = contact->manifold.points[1].localAnchorA;
+    pointA = cTransformVec(xf, anchor0);
+    pointB = cTransformVec(xf, anchor1);
+    pointA *= 100;
+    pointB *= 100;
+    pointA += middle;
+    pointB += middle;
+    CP_Graphics_DrawCircle(pointA.x, pointA.y, 3);
+    CP_Graphics_DrawCircle(pointB.x, pointB.y, 3);
+}
+
 cActor* CreateRectActor(float width, float height, vec2& centrePos)
 {
     std::vector<vec2> vertices;
@@ -136,7 +153,7 @@ void BoxScene()
     actors.push_back(floorActorIndex);
 
     a_config.type = cActorType::DYNAMIC;
-    a_config.position = vec2{ 0, 1 };
+    a_config.position = vec2{ 0, 2.25 };
     int boxAActorIndex = world.CreateActor(a_config);
     vertices.clear();
     vertices.push_back({ -0.5f, -0.5f });
@@ -179,23 +196,45 @@ void game_init(void)
     DynamicTree t;
 }
 
+bool pauseStep = false;
+bool isPaused = true;
 void UpdatePhysics()
 {
-    world.update(CP_System_GetDt());
+    if (!isPaused)
+    {
+        world.update(CP_System_GetDt());
+        if (CP_Input_KeyTriggered(KEY_SPACE))
+            isPaused = true;
+    }
+    else
+    {
+        if (CP_Input_KeyTriggered(KEY_SPACE))
+            isPaused = false;
+        
+        if (CP_Input_KeyTriggered(KEY_SLASH))
+            pauseStep = true;
+        
+        if (pauseStep)
+        {
+            world.step(1.0f / 50.0f);
+            pauseStep = false;
+        }
+    }
 
     for (int itr = 0; itr < world.p_actors.size(); itr++)
     {
         cActor* a = world.p_actors[itr];
         cShape* s = world.p_shapes[a->GetShapeIndex()];
         DrawActor(s, a->getTransform());
-        cTransform tfm = a->getTransform();
-        vec2& pos = tfm.pos;
-        if (pos.x >= recommendedWidth / 2) pos.x = recommendedWidth / 2;
-        if (pos.y >= recommendedHeight / 2) pos.y = recommendedHeight / 2;
-        if (pos.x < -recommendedWidth / 2) pos.x = -recommendedWidth / 2;
-        if (pos.y < -recommendedHeight / 2) pos.y = -recommendedHeight / 2;
-        a->setTransform(tfm);
     }
+
+    for (int itr = 0; itr < world.p_contacts.size(); itr++)
+    {
+        cContact* c = world.p_contacts[itr];
+        DrawContact(c);
+    }
+
+    
 }
 
 cActor* selectedActor;
