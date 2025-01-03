@@ -197,7 +197,7 @@ namespace chiori
 		// TODO: let user modify these values if needed
 		SolverContext context;
 		context.dt = inDT;
-		context.iterations = 3;
+		context.iterations = 4;
 		context.extraIterations = 2;
 		context.warmStart = true;
 		context.inv_dt = (inDT > 0.0f) ? 1.0f / inDT : 0.0f;

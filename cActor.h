@@ -33,19 +33,14 @@ namespace chiori
 	public:
 		cActorType type = DYNAMIC;
 
-		enum // Actor settings
+		enum // Actor flags
 		{
-			USE_GRAVITY = (1 << 0)
-		};
-		enum // Internal flags used by the system, should not be touched by the user
-		{
-			IS_DIRTY = (1 << 0)
+			USE_GRAVITY = (1 << 0),
+			IS_DIRTY = (1 << 1)
 		};
 
-		Flag_8 _iflags = IS_DIRTY; // internal flags
 		int shapeIndex = -1;
-
-		Flag_8 _flags = SIMULATED; // actor setting flags
+		Flag_8 _flags = USE_GRAVITY | IS_DIRTY; // actor setting flags
 
 		vec2 origin{ vec2::zero }; // the body origin (not center of mass)
 		vec2 position{ vec2::zero }; // center of mass position in world space
@@ -88,14 +83,14 @@ namespace chiori
 		{
 			origin = inTfm.pos;
 			rotation = inTfm.rot;
-			_iflags.set(IS_DIRTY);
+			_flags.set(IS_DIRTY);
 		}
 
 		float getMass() const { return mass; }
 		void setMass(float inMass)
 		{
 			if (!fltcmp(mass, inMass))
-				_iflags.set(IS_DIRTY);
+				_flags.set(IS_DIRTY);
 			mass = inMass;
 			invMass = mass > 0.0f ? 1.0f / mass : 0.0f;
 		}

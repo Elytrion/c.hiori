@@ -117,18 +117,51 @@ cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
     return newActor;
 }
 
+void BoxScene()
+{
+    // Create a floor
+    ActorConfig a_config;
+    a_config.type = cActorType::STATIC;
+    a_config.position = vec2{ 0, 3 };
+    int floorActorIndex = world.CreateActor(a_config);
+    ShapeConfig s_config;
+    std::vector<vec2> vertices;
+    vertices.push_back({ -5.0f, -0.25f });
+    vertices.push_back({ 5.0f, -0.25f });
+    vertices.push_back({ 5.0f, 0.25f });
+    vertices.push_back({ -5.0f,  0.25f });
+    s_config.vertices = vertices;
+    int floorShapeIndex = world.CreateShape(floorActorIndex, s_config);
+    shapes.push_back(floorShapeIndex);
+    actors.push_back(floorActorIndex);
+
+    a_config.type = cActorType::DYNAMIC;
+    a_config.position = vec2{ 0, 1 };
+    int boxAActorIndex = world.CreateActor(a_config);
+    vertices.clear();
+    vertices.push_back({ -0.5f, -0.5f });
+    vertices.push_back({ 0.5f, -0.5f });
+    vertices.push_back({ 0.5f, 0.5f });
+    vertices.push_back({ -0.5f,  0.5f });
+    s_config.vertices = vertices;
+    int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
+    shapes.push_back(boxAShapeIndex);
+    actors.push_back(boxAActorIndex);
+    
+}
+
 void InitPhysics()
 {
-    
-    std::vector<vec2> verts{ {0, -0.577f}, {0.5f, 0.289f}, {-0.5f, 0.289f} };
-	cActor* poly = CreatePolygonActor(verts, vec2::zero);
-    cTransform xfp = poly->getTransform();
-    xfp.pos = { 0.0f, 2.0f };
-    poly->setTransform(xfp);
+    BoxScene();
+ //   std::vector<vec2> verts{ {0, -0.577f}, {0.5f, 0.289f}, {-0.5f, 0.289f} };
+	//cActor* poly = CreatePolygonActor(verts, vec2::zero);
+ //   cTransform xfp = poly->getTransform();
+ //   xfp.pos = { 0.0f, 2.0f };
+ //   poly->setTransform(xfp);
 
-    verts.clear();
-    verts = { {-1,-1}, {1,-1}, {1,1}, {-1, 1} };
-    cActor* box = CreatePolygonActor(verts, vec2::zero);
+ //   verts.clear();
+ //   verts = { {-1,-1}, {1,-1}, {1,1}, {-1, 1} };
+ //   cActor* box = CreatePolygonActor(verts, vec2::zero);
  
     // // create floor
 	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
