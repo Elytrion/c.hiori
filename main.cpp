@@ -76,6 +76,31 @@ void DrawContact(cContact* contact)
     pointB += middle;
     CP_Graphics_DrawCircle(pointA.x, pointA.y, 3);
     CP_Graphics_DrawCircle(pointB.x, pointB.y, 3);
+
+    vec2 pointA1, pointB1;
+    vec2 normalAnchor0 = anchor0 + contact->manifold.normal;// *contact->manifold.points[0].separation;
+    vec2 normalAnchor1 = anchor1 + contact->manifold.normal;// *contact->manifold.points[1].separation;
+
+    pointA1 = cTransformVec(xf, normalAnchor0);
+    pointB1 = cTransformVec(xf, normalAnchor1);
+    pointA1 *= 100;
+    pointB1 *= 100;
+    pointA1 += middle;
+    pointB1 += middle;
+
+    vec2 lineA = pointA1 - pointA;
+    lineA *= contact->manifold.points[0].separation;
+    pointA1 = pointA + lineA;
+
+    vec2 lineB = pointB1 - pointB;
+    lineB *= contact->manifold.points[1].separation;
+    pointB1 = pointB + lineB;
+
+    CP_Settings_StrokeWeight(2);
+    CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255));
+    CP_Graphics_DrawLine(pointA.x, pointA.y, pointA1.x, pointA1.y);
+    CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
+    CP_Graphics_DrawLine(pointB.x, pointB.y, pointB1.x, pointB1.y);
 }
 
 cActor* CreateRectActor(float width, float height, vec2& centrePos)
