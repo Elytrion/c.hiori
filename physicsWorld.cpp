@@ -37,6 +37,30 @@ namespace chiori
 
 	static void computeActorInertia(cPhysicsWorld* world, cActor* actor)
 	{
+		// Polygon mass, centroid, and inertia.
+		// Let rho be the polygon density in mass per unit area.
+		// Then:
+		// mass = rho * int(dA)
+		// centroid.x = (1/mass) * rho * int(x * dA)
+		// centroid.y = (1/mass) * rho * int(y * dA)
+		// I = rho * int((x*x + y*y) * dA)
+		//
+		// We can compute these integrals by summing all the integrals
+		// for each triangle of the polygon. To evaluate the integral
+		// for a single triangle, we make a change of variables to
+		// the (u,v) coordinates of the triangle:
+		// x = x0 + e1x * u + e2x * v
+		// y = y0 + e1y * u + e2y * v
+		// where 0 <= u && 0 <= v && u + v <= 1.
+		//
+		// We integrate u from [0,1-v] and then v from [0,1].
+		// We also need to use the Jacobian of the transformation:
+		// D = cross(e1, e2)
+		//
+		// Simplification: triangle centroid = (1/3) * (p1 + p2 + p3)
+		//
+		// The rest of the derivation is handled by computer algebra.
+		
 		actor->inertia = 0.0f;
 		actor->invInertia = 0.0f;
 		actor->localCenter = vec2::zero;
@@ -48,17 +72,50 @@ namespace chiori
 		}
 
 		cShape* shape = world->p_shapes[actor->shapeIndex];
-
+		const cPolygon& poly = shape->polygon;
+		
 		float mass = actor->mass;
 		cassert(mass > FLT_EPSILON);
-		float mmoi = mass / 2.0f;
-		vec2 sqrextents = shape->aabb.getExtents().cmult(shape->aabb.getExtents());
-		mmoi = mmoi * (sqrextents.x + sqrextents.y);
-		float d = mass * actor->localCenter.sqrMagnitude();
-		float inertia = (d + mmoi / 100.0f); // TODO: why divide by 100?
+		float area = 0.0f;
+		float I = 0.0f;
+		int count = poly.count;
+		const std::vector<vec2>& vertices = poly.vertices;
+		vec2 center = { 0.0f, 0.0f };
+		// Get a reference point for forming triangles.
+		// Use the first vertex to reduce round-off errors.
+		vec2 r = vertices[0];
+		const float inv3 = 1.0f / 3.0f;
 
-		actor->inertia = inertia;
-		actor->invInertia = 1.0f / inertia;
+		for (int32_t i = 1; i < count - 1; ++i)
+		{
+			// Triangle edges
+			vec2 e1 = (vertices[i] - r);
+			vec2 e2 = (vertices[i + 1] - r);
+
+			float D = cross(e1, e2);
+
+			float triangleArea = 0.5f * D;
+			area += triangleArea;
+
+			// Area weighted centroid, r at origin
+			center += (triangleArea * inv3 * (e1 + e2));
+
+			float ex1 = e1.x, ey1 = e1.y;
+			float ex2 = e2.x, ey2 = e2.y;
+
+			float intx2 = ex1 * ex1 + ex2 * ex1 + ex2 * ex2;
+			float inty2 = ey1 * ey1 + ey2 * ey1 + ey2 * ey2;
+
+			I += (0.25f * inv3 * D) * (intx2 + inty2);
+		}
+		
+		center *= (1.0f / area);
+		I *= (mass / area);
+		float d = center.sqrMagnitude();
+		I += mass * d;
+		
+		actor->inertia = I;
+		actor->invInertia = 1.0f / I;
 	}
 
 	int cPhysicsWorld::CreateShape(int inActorIndex, const ShapeConfig& inConfig)

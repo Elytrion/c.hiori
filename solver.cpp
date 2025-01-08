@@ -280,6 +280,7 @@ namespace chiori
 		for (int i = 0; i < constraintCount; ++i)
 		{
 			ContactConstraint* constraint = constraints + i;
+			
 			cContact* contact = constraint->contact;
 			const cManifold& manifold = contact->manifold;
 			int pointCount = manifold.pointCount;
@@ -324,11 +325,11 @@ namespace chiori
 					cp->tangentImpulse = 0.0f;
 				}
 
-				cp->localA = mp->localAnchorA - actorA->localCenter;
-				cp->localB = mp->localAnchorB - actorB->localCenter;
+				cp->localAnchorA = mp->localAnchorA - actorA->localCenter;
+				cp->localAnchorB = mp->localAnchorB - actorB->localCenter;
 
-				vec2 rA = cp->localA.rotated(qA);
-				vec2 rB = cp->localB.rotated(qB);
+				vec2 rA = cp->localAnchorA.rotated(qA);
+				vec2 rB = cp->localAnchorB.rotated(qB);
 				cp->rA0 = rA;
 				cp->rB0 = rB;
 
@@ -391,8 +392,8 @@ namespace chiori
 			{
 				ContactConstraintPoint* cp = constraint->points + j;
 
-				vec2 rA = cp->localA.rotated(qA);
-				vec2 rB = cp->localB.rotated(qB);
+				vec2 rA = cp->localAnchorA.rotated(qA);
+				vec2 rB = cp->localAnchorB.rotated(qB);
 
 				vec2 P = (cp->normalImpulse * normal) + (cp->tangentImpulse * tangent);
 				wA -= iA * rA.cross(P);

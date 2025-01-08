@@ -195,7 +195,18 @@ void BoxScene()
     int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
     shapes.push_back(boxAShapeIndex);
     actors.push_back(boxAActorIndex);
-    
+
+    a_config.position = vec2{ 0.15f, 2.5f };
+    int boxBActorIndex = world.CreateActor(a_config);
+    vertices.clear();
+    vertices.push_back({ -0.5f, -0.5f });
+    vertices.push_back({ 0.5f, -0.5f });
+    vertices.push_back({ 0.5f, 0.5f });
+    vertices.push_back({ -0.5f,  0.5f });
+    s_config.vertices = vertices;
+    int boxBShapeIndex = world.CreateShape(boxBActorIndex, s_config);
+    shapes.push_back(boxBShapeIndex);
+    actors.push_back(boxBActorIndex);
 }
 
 void InitPhysics()
@@ -368,7 +379,7 @@ void game_update(void)
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
     
     CP_Vector mousePos = CP_Vector{ (float)CP_Input_GetMouseWorldX(), (float)CP_Input_GetMouseWorldY() };
-    HandleInput(mousePos);
+    //HandleInput(mousePos);
     UpdatePhysics();
 
     // Profiling info and frameRate testing

@@ -19,7 +19,7 @@ namespace chiori
 	struct ContactConstraintPoint
 	{
 		vec2 rA0, rB0; // initial anchors in world space
-		vec2 localA, localB; // local anchors
+		vec2 localAnchorA, localAnchorB; // local anchors
 		vec2 localFrictionA, localFrictionB; // local friction anchors
 		float tangentSeparation;
 		float separation;

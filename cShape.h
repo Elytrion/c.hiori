@@ -45,8 +45,6 @@ namespace chiori
 		void setVertices(const std::vector<vec2>& inVertices);
 		std::vector<vec2> getVertices(cTransform inTfm);
 
-		float inertia(float mass, const vec2& scale, const vec2& comOffset = vec2::zero);
-
 		int GetActorIndex() { return actorIndex; }
 
 		bool operator==(const cShape& inRHS) const {
@@ -86,46 +84,5 @@ namespace chiori
 			vertex = vertex + inTfm.pos;
 		}
 		return n_verts;
-	}
-
-	inline float cShape::inertia(float mass, const vec2& scale, const vec2& comOffset) 
-	{
-		//// https://stackoverflow.com/questions/31106438/calculate-moment-of-inertia-given-an-arbitrary-convex-2d-polygon
-		//cassert(mass > FLT_EPSILON);
-		//float area = 0.0f;
-		//vec2 center = vec2::zero;
-		//float mmoi = 0.0f;
-		//int n = vertices.size();
-
-		//for (int i = 0; i < n; i++) // we calculate all the MOI for all the triangles in the convex shape
-		//{
-		//	const vec2& a = (vertices[i] * scale.x);
-		//	const vec2& b = (vertices[(i + 1) % n] * scale.y);
-
-		//	// Compute step values
-		//	float area_step = a.cross(b) / 2.0f;
-		//	vec2 center_step = (a + b) / 3.0f;
-		//	float mmoi_step =
-		//		area_step * (a.dot(a) + b.dot(b) + a.dot(b)) / 6.0f;
-
-		//	// Accumulate values
-		//	center = (center * area + center_step * area_step) / (area + area_step);
-		//	area += area_step;
-		//	mmoi += mmoi_step;
-		//}
-		//// Density is calculated from mass and total area
-		//float density = mass / area;
-		//// Scale mmoi by density and adjust to the center of mass
-		//mmoi *= density;
-		//mmoi -= mass * center.dot(center); // Parallel axis theorem adjustment
-		//return mmoi;
-
-		// sqr inertia tensor for simplicity until i can get ^ to behave
-		cassert(mass > FLT_EPSILON);
-		float mmoi = mass / 2.0f;
-		vec2 sqrextents = aabb.getExtents().cmult(aabb.getExtents());
-		mmoi = mmoi * (sqrextents.x + sqrextents.y);
-		float d = mass * comOffset.sqrMagnitude();
-		return (d + mmoi / 100.0f); // TODO: why divide by 100?
 	}
 }
