@@ -25,11 +25,11 @@ CP_Color randomColors[] = {
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
 
-int recommendedWidth = 1600;
-int recommendedHeight = 900;
+float recommendedWidth = 1600.0f;
+float recommendedHeight = 900.0f;
 bool drawColors = true;
 bool drawFPS = true;
-vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight / 2.0f };
+vec2 middle = vec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
 
 bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
 {
@@ -196,7 +196,7 @@ void BoxScene()
     shapes.push_back(boxAShapeIndex);
     actors.push_back(boxAActorIndex);
 
-    a_config.position = vec2{ 0.15f, 2.5f };
+    a_config.position = vec2{ 0.5f, 2.5f };
     int boxBActorIndex = world.CreateActor(a_config);
     vertices.clear();
     vertices.push_back({ -0.5f, -0.5f });
