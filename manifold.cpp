@@ -12,7 +12,6 @@ namespace chiori
 	#define MAKE_MPT_ID(A, B) ((uint8_t)(A) << 8 | (uint8_t)(B))
 	
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
-	// Taken from Box2D by Erin Catto
 	static cManifold PolygonScalarClipper(const cPolygon* polyA, const cPolygon* polyB, int edgeA, int edgeB, bool flip)
 	{
 		cManifold manifold = {};
@@ -138,7 +137,6 @@ namespace chiori
 	}
 
 	// Find the max separation between poly1 and poly2 using edge normals from poly1.
-	// Taken from Box2D by Erin Catto
 	static float FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
 	{
 		int count1 = poly1->count;
@@ -178,7 +176,6 @@ namespace chiori
 	}
 
 	// SAT + Polygon clipper to determine contact points for solver
-	// Taken from Box2D by Erin Catto
 	static cManifold PolygonSATClipper(const cPolygon* polyA, const cPolygon* polyB)
 	{
 		int edgeA = 0;
@@ -233,21 +230,6 @@ namespace chiori
 		return PolygonScalarClipper(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
-	// Due to speculation, every polygon is rounded
-	// Algorithm:
-	// compute distance
-	// if distance <= 0.1f * s2_linearSlop
-	//   SAT
-	// else
-	//   find closest features from GJK
-	//   expect 2-1 or 1-1 or 1-2 features
-	//   if 2-1 or 1-2
-	//     clip
-	//   else
-	//     vertex-vertex
-	//   end
-	// end
-	// taken from Box2D by Erin Catto
 	cManifold CollideShapes(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, cGJKCache* cache)
 	{
 		cManifold manifold = {};
@@ -271,7 +253,7 @@ namespace chiori
 		cGJKProxy gjkb{ localShapeB.vertices.data(), localShapeB.count };
 		cGJKInput input{ gjka, gjkb, identity, identity }; // xfs are identity as we run everything in shapeA local space
 		cGJKOutput output;
-
+		
 		cGJK(input, output, cache);
 
 		if (output.distance > cspeculativeDistance)

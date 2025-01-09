@@ -216,6 +216,7 @@ namespace chiori
 				cShape* shapeB = static_cast<cShape*>(userDataB);
 				int shapeAIndex = p_shapes.getIndex(shapeA);
 				int shapeBIndex = p_shapes.getIndex(shapeB);
+				std::cout << shapeAIndex << " and " << shapeBIndex << " are a contact pair" << std::endl;
 				if (p_pairs.contains(shapeAIndex, shapeBIndex))
 					return; // no need to create a contact for these shapes since a contact already exists
 				CreateContact(this, shapeA, shapeB);

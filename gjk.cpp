@@ -4,7 +4,6 @@
 
 namespace chiori
 {
-	
 	#pragma region SA-GJK Algorithm
 	static bool compareSigns(float a, float b)
 	{
@@ -310,7 +309,7 @@ namespace chiori
 	#pragma endregion
 
 	void cGJK(const cGJKInput& input, cGJKOutput& output, cGJKCache* cache)
-	{		
+	{				
 		const cGJKProxy& proxyA = input.proxyA;
 		const cGJKProxy& proxyB = input.proxyB;
 		cTransform xfA = input.transformA;
@@ -386,7 +385,7 @@ namespace chiori
 				vec2 offsetA { rA * normal.x, rA * normal.y };
 				vec2 offsetB { rB * normal.x, rB * normal.y };
 				output.pointA += offsetA;
-				output.pointB += offsetB;
+				output.pointB -= offsetB;
 			}
 		}
 	}

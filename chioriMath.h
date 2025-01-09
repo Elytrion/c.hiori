@@ -17,7 +17,7 @@ namespace chiori
 	constexpr float PI = 3.14159265f;		// Pi
 	constexpr float DEG2RAD = PI / 180.0f;	// The value to multiply to a degree value to convert it into radians
 	constexpr float RAD2DEG = 180.0f / PI;	// The value to multiply to a radian value to convert it into degrees
-	inline bool fltcmp(float a, float b) { return (std::abs(a - b) < FLT_EPSILON); }	// float comparison, returns true if a and b are equal within epsilon
+	inline bool fltsame(float a, float b) { return (std::abs(a - b) < FLT_EPSILON); }	// float comparison, returns true if a and b are equal within epsilon
 	struct vec2
 	{
 		float x, y;
@@ -92,7 +92,7 @@ namespace chiori
 
 		// Vec2 comparisons
 		bool operator==(const vec2& inRHS) const {
-			return fltcmp(x, inRHS.x) && fltcmp(y, inRHS.y);
+			return fltsame(x, inRHS.x) && fltsame(y, inRHS.y);
 		}
 		bool operator!=(const vec2& inRHS) const { return !(*this == inRHS); }
 		// Vec2 unique operations
