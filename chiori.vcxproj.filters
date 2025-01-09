@@ -63,6 +63,12 @@
     <Filter Include="Source\Contacts">
       <UniqueIdentifier>{fd717bcf-09af-41ec-90f4-ca25b0e3323f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\Fracture">
+      <UniqueIdentifier>{fd215a2b-09e6-4bf7-8e15-bcfef9fc61a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Fracture">
+      <UniqueIdentifier>{9dbceeb7-b1ee-4232-b325-f09f1f030743}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="physicsWorld.h">
@@ -115,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="chioriAllocator.h">
       <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="fracture.h">
+      <Filter>Headers\Fracture</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
