@@ -39,6 +39,14 @@ bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
     return distance < (radius * radius);
 }
 
+bool IsPointInRadius(vec2 center, float radius, vec2 pos)
+{
+    float distX = pos.x - center.x;
+    float distY = pos.y - center.y;
+    float distance = (distX * distX) + (distY * distY);
+    return distance < (radius * radius);
+}
+
 void DrawActor(cShape*& inShape, const cTransform& inTfm)
 {    
     cTransform xfAlt = inTfm;
@@ -65,48 +73,51 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
 
 void DrawContact(cContact* contact)
 {
-    vec2 pointA, pointB;
-    int& indexA = contact->shapeIndexA;
-    cTransform xf = world.p_actors[world.p_shapes[indexA]->actorIndex]->getTransform();
-    vec2 anchor0 = contact->manifold.points[0].localAnchorA;
-    vec2 anchor1 = contact->manifold.points[1].localAnchorA;
-    anchor0.y *= -1;
-    anchor1.y *= -1;
-    pointA = cTransformVec(xf, anchor0);
-    pointB = cTransformVec(xf, anchor1);
-    pointA *= 100;
-    pointB *= 100;
-    pointA += middle;
-    pointB += middle;
-    CP_Graphics_DrawCircle(pointA.x, pointA.y, 3);
-    CP_Graphics_DrawCircle(pointB.x, pointB.y, 3);
+    int pointCount = contact->manifold.pointCount;
+    vec2 normal = contact->manifold.normal;
+    cTransform xf = world.p_actors[world.p_shapes[contact->shapeIndexA]->actorIndex]->getTransform();
+    for (int j = 0; j < pointCount; ++j)
+    {
+        cManifoldPoint* point = contact->manifold.points + j;
+        vec2 anchor = point->localAnchorA;
+        
+        if (anchor == vec2::zero)
+            continue;
+        
+        anchor.y *= -1;
+        vec2 worldPoint = cTransformVec(xf, anchor);
+        worldPoint *= 100; worldPoint += middle;
+        
+        if (point->separation > 0.005f) // speculative point
+        {
+            CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
+            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 3);
+        }
+        else if (!point->persisted)
+        {
+            CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255));
+            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 6);
+        }
+        else if (point->persisted)
+        {
+            CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
+            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 3);
+        }
 
-    vec2 pointA1, pointB1;
-    vec2 normalAnchor0 = anchor0 + contact->manifold.normal;// *contact->manifold.points[0].separation;
-    vec2 normalAnchor1 = anchor1 + contact->manifold.normal;// *contact->manifold.points[1].separation;
-    normalAnchor0.y *= -1;
-    normalAnchor1.y *= -1;
-    
-    pointA1 = cTransformVec(xf, normalAnchor0);
-    pointB1 = cTransformVec(xf, normalAnchor1);
-    pointA1 *= 100;
-    pointB1 *= 100;
-    pointA1 += middle;
-    pointB1 += middle;
+        vec2 normalAnchor = anchor + contact->manifold.normal;
+        normalAnchor.y *= -1;
+        vec2 normalCap = cTransformVec(xf, normalAnchor);
+        normalCap *= 100;
+        normalCap += middle;
 
-    vec2 lineA = pointA1 - pointA;
-    lineA *= contact->manifold.points[0].separation;
-    pointA1 = pointA + lineA;
+        vec2 line = normalCap - worldPoint;
+        line *= point->separation;
+        normalCap = worldPoint + line;
 
-    vec2 lineB = pointB1 - pointB;
-    lineB *= contact->manifold.points[1].separation;
-    pointB1 = pointB + lineB;
-
-    CP_Settings_StrokeWeight(2);
-    CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255));
-    CP_Graphics_DrawLine(pointA.x, pointA.y, pointA1.x, pointA1.y);
-    CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
-    CP_Graphics_DrawLine(pointB.x, pointB.y, pointB1.x, pointB1.y);
+        CP_Settings_StrokeWeight(3);
+        CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
+        CP_Graphics_DrawLine(worldPoint.x, worldPoint.y, normalCap.x, normalCap.y);
+    }
 }
 
 cActor* CreateRectActor(float width, float height, vec2& centrePos)
@@ -183,20 +194,21 @@ void BoxScene()
     shapes.push_back(floorShapeIndex);
     actors.push_back(floorActorIndex);
 
-    a_config.type = cActorType::DYNAMIC;
-    a_config.position = vec2{ 0, 0.5f };
-    int boxAActorIndex = world.CreateActor(a_config);
-    vertices.clear();
-    vertices.push_back({ -0.5f, -0.5f });
-    vertices.push_back({ 0.5f, -0.5f });
-    vertices.push_back({ 0.5f, 0.5f });
-    vertices.push_back({ -0.5f,  0.5f });
-    s_config.vertices = vertices;
-    int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
-    shapes.push_back(boxAShapeIndex);
-    actors.push_back(boxAActorIndex);
+    //a_config.type = cActorType::DYNAMIC;
+    //a_config.position = vec2{ 0.0f, 0.5f };
+    //int boxAActorIndex = world.CreateActor(a_config);
+    //vertices.clear();
+    //vertices.push_back({ -0.5f, -0.5f });
+    //vertices.push_back({ 0.5f, -0.5f });
+    //vertices.push_back({ 0.5f, 0.5f });
+    //vertices.push_back({ -0.5f,  0.5f });
+    //s_config.vertices = vertices;
+    //int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
+    //shapes.push_back(boxAShapeIndex);
+    //actors.push_back(boxAActorIndex);
 
-    a_config.position = vec2{ 0.5f, 2.5f };
+    a_config.type = cActorType::DYNAMIC;
+    a_config.position = vec2{ 1.5f, 2.5f };
     int boxBActorIndex = world.CreateActor(a_config);
     vertices.clear();
     vertices.push_back({ -0.5f, -0.5f });
@@ -212,18 +224,6 @@ void BoxScene()
 void InitPhysics()
 {
     BoxScene();
- //   std::vector<vec2> verts{ {0, -0.577f}, {0.5f, 0.289f}, {-0.5f, 0.289f} };
-	//cActor* poly = CreatePolygonActor(verts, vec2::zero);
- //   cTransform xfp = poly->getTransform();
- //   xfp.pos = { 0.0f, 2.0f };
- //   poly->setTransform(xfp);
-
- //   verts.clear();
- //   verts = { {-1,-1}, {1,-1}, {1,1}, {-1, 1} };
- //   cActor* box = CreatePolygonActor(verts, vec2::zero);
- 
-    // // create floor
-	//CreateRectActor(recommendedWidth, 10, vec2{ recommendedWidth / 2.0f, recommendedHeight - 10.0f }, true);
 }
 
 
@@ -253,7 +253,7 @@ void UpdatePhysics()
         if (CP_Input_KeyTriggered(KEY_SPACE))
             isPaused = false;
         
-        if (CP_Input_KeyTriggered(KEY_SLASH))
+        if (CP_Input_KeyTriggered(KEY_SLASH) || CP_Input_KeyDown(KEY_PERIOD))
             pauseStep = true;
         
         if (pauseStep)
@@ -269,7 +269,6 @@ void UpdatePhysics()
         cShape* s = world.p_shapes[a->GetShapeIndex()];
         DrawActor(s, a->getTransform());
     }
-
     for (int itr = 0; itr < world.p_contacts.size(); itr++)
     {
         cContact* c = world.p_contacts[itr];
@@ -282,15 +281,20 @@ void UpdatePhysics()
 cActor* selectedActor;
 void HandleInput(CP_Vector mousePosIn)
 {
+    //std::cout << "Is Holding: " << ((isHolding_mouse) ? selectedActor->shapeIndex : -1) << std::endl;
     CP_Vector mousePos = mousePosIn;// CP_Vector_Add(mousePosIn, { middle.x / 2, middle.y / 2 });
+    vec2 worldPos = { mousePos.x, mousePos.y };
+    worldPos -= middle;
+    worldPos /= 100;
+    worldPos.y = -worldPos.y;
+    
     if ((CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding_mouse))
     {
         for (int itr = 0; itr < world.p_actors.size(); itr++)
         {
             cActor* a = world.p_actors[itr];
             cTransform tfm = a->getTransform();
-            vec2 realCenter = (tfm.pos * 100) + middle;
-            if (IsPointInRadius(CP_Vector{ realCenter.x, realCenter.y }, 50, mousePos))
+            if (IsPointInRadius(tfm.pos, 1, worldPos))
             {
                 selectedActor = a;
                 isHolding_mouse = true;
@@ -306,8 +310,7 @@ void HandleInput(CP_Vector mousePosIn)
             {
                 cActor* a = world.p_actors[itr];
                 cTransform tfm = a->getTransform();
-                vec2 realCenter = (tfm.pos * 100) + middle;
-                if (IsPointInRadius(CP_Vector{ realCenter.x, realCenter.y }, 50, mousePos))
+                if (IsPointInRadius(tfm.pos, 1, worldPos))
                 {
                     selectedActor = a;
                     isHolding_keys = true;
@@ -331,7 +334,7 @@ void HandleInput(CP_Vector mousePosIn)
     if (isHolding_mouse && selectedActor)
     {
         cTransform tfm = selectedActor->getTransform();
-        tfm.pos = vec2{ mousePos.x - middle.x, mousePos.y - middle.y } / 100;
+        tfm.pos = { worldPos.x, worldPos.y };
         selectedActor->setTransform(tfm);
 
         if (CP_Input_MouseDown(MOUSE_BUTTON_2))
@@ -379,7 +382,7 @@ void game_update(void)
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
     
     CP_Vector mousePos = CP_Vector{ (float)CP_Input_GetMouseWorldX(), (float)CP_Input_GetMouseWorldY() };
-    //HandleInput(mousePos);
+    HandleInput(mousePos);
     UpdatePhysics();
 
     // Profiling info and frameRate testing

@@ -50,7 +50,7 @@ namespace chiori
 		bodyB->contactList = keyB;
 		bodyB->contactCount += 1;
 
-		world->p_pairs.insert(contact->shapeIndexA, contact->shapeIndexB);
+		world->p_pairs.insert(contact->shapeIndexA, contact->shapeIndexB);		
 	}
 	
 	void DestroyContact(cPhysicsWorld* world, cContact* contact)

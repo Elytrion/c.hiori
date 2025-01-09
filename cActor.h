@@ -77,6 +77,7 @@ namespace chiori
 		void setTransform(const cTransform& inTfm)
 		{
 			origin = inTfm.pos;
+			position = origin;
 			rotation = inTfm.rot;
 			_flags.set(IS_DIRTY);
 		}
