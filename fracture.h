@@ -11,7 +11,6 @@ namespace chiori
 		float brittleness{ 0.5f };              // Brittleness factor
 		vec2 anisotropy{ vec2::zero };			// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
-		float mass{ 1.0f };						// Object mass
 		float k{ 1.0f };						// Scaling factor for fine tuning
 	};
 	
@@ -49,6 +48,8 @@ namespace chiori
 		int contactCount = 0;
 		cTransform xf; // transform of the object in world space
 	};
+	
+	float GetPolygonArea(cFragment& inPolygon);
 
-	std::vector<cFragment> FracturePolygon(const cFractureProxy& proxy, const cFractureMaterial& materialConfig, const cFractureImpact& impactConfig);
+	std::vector<cFragment> FracturePolygon(cFractureProxy& proxy, const cFractureMaterial& materialConfig, const cFractureImpact& impactConfig);
 }
