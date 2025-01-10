@@ -31,6 +31,9 @@
     <ClCompile Include="solver.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="fracture.cpp">
+      <Filter>Source\Fracture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
