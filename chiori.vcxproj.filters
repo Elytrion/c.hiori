@@ -128,5 +128,8 @@
     <ClInclude Include="fracture.h">
       <Filter>Headers\Fracture</Filter>
     </ClInclude>
+    <ClInclude Include="geom.h">
+      <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
