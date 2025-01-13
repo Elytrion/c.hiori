@@ -46,6 +46,7 @@ namespace chiori
 	};
 
 	void PGSSoftSolver(cPhysicsWorld* world, SolverContext* context);
+	void PGSSolver(cPhysicsWorld* world, SolverContext* context);
 
 	void IntegrateVelocities(cPhysicsWorld* world, float h);
 	void IntegratePositions(cPhysicsWorld* world, float h);

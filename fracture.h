@@ -37,7 +37,7 @@ namespace chiori
 		int id;	// used to generate the seed for the CDF to ensure the same centriods everytime
 
 		cFractureProxy(const std::vector<vec2>& inputVertices, int inID, float inMass = 1.0f) 
-			: fragment{ inputVertices }, mass {inMass}, count{inputVertices.size()}, id{inID}
+			: fragment{ inputVertices }, mass {inMass}, count{static_cast<int>(inputVertices.size())}, id{inID}
 		{
 			weights.resize(inputVertices.size(), 0.0f);
 		}

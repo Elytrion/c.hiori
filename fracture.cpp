@@ -175,6 +175,6 @@ namespace chiori
 		
 		std::vector<vec2> centroids = sampleCentroids(proxy, cdf, centriodCount);
 
-		
+		return {};
 	}
 }
