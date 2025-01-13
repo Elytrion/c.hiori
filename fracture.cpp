@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "fracture.h"
+#include <numeric>
 
 namespace chiori
 {
@@ -30,12 +31,98 @@ namespace chiori
 
 	static void computeStrainEnergyField(
 		cFractureProxy& proxy, const cFractureMaterial& materialConfig,
-		const cFractureImpact& impactConfig, float fractureRange)
+		const cFractureImpact& impactConfig, float fractureRange, float density)
 	{
+		// Compute W(x) for each vertex
 		for (int i = 0; i < proxy.count; ++i)
 		{
+			vec2& vertex = proxy.fragment.vertices[i];
+			float totalWeight = 0.0f;
+			
+			// Process each contact point
+			for (int j = 0; j < impactConfig.contactCount; ++j)
+			{
+				const vec2& contactPoint = impactConfig.localContacts[j];
+				float impulseForce = impactConfig.impluseForces[j];
+				
+				float dist = distance(vertex, contactPoint);
+				
+				// If the vertex is outside the fracture range, skip (its W(x) is 0, no strain)
+				if (dist > fractureRange)
+					continue;
+				
+				float W = impulseForce * std::exp(-dist / fractureRange);
+				float anisotropyFactor = 1.0f;
+				if (materialConfig.anisotropyFactor > 0.0f) {
+					vec2 anisotropyDirection = materialConfig.anisotropy.normalized();
+					vec2 impactDirection = (vertex - contactPoint).normalized();
+					float cosTheta = anisotropyDirection.dot(impactDirection);
+					anisotropyFactor = 1 + materialConfig.anisotropyFactor * cosTheta * cosTheta;
+				}
 
+				// Apply material modifiers
+				W /= materialConfig.toughness;
+				W /= density; // Adjust for density
+				W /= materialConfig.brittleness;
+				W *= anisotropyFactor;
+
+				totalWeight += W;
+			}
+			// Store the computed weight for the vertex
+			proxy.weights[i] = totalWeight;
 		}
+
+		// Step 3: Normalize weights
+		float totalWeight = std::accumulate(proxy.weights.begin(), proxy.weights.end(), 0.0f);
+		if (totalWeight > 0.0f)
+		{
+			for (float& weight : proxy.weights) {
+				weight /= totalWeight;
+			}
+		}
+	}
+
+	static int computeCentroidCount(float fractureRange, float objectArea, const cFractureMaterial& materialConfig)
+	{
+		// Step 1: Compute the fracture area (A_fracture)
+		float fractureArea = PI * fractureRange * fractureRange;
+
+		// Step 2: Compute the coverage ratio
+		float coverageRatio = fractureArea / objectArea;
+
+		// Step 3: Scale the number of centroids based on the coverage ratio
+		int numCentroids = static_cast<int>(
+			materialConfig.minPoints +
+			(coverageRatio * (materialConfig.maxPoints - materialConfig.minPoints))
+			);
+
+		// Step 4: Clamp the result within the allowed range
+		numCentroids = c_max(materialConfig.minPoints, c_min(materialConfig.maxPoints, numCentroids));
+
+		return numCentroids;
+	}
+
+	static std::vector<vec2> sampleCentroids(const cFractureProxy& proxy, const std::vector<float>& cdf, int numCentroids)
+	{
+		std::vector<vec2> centroids;
+		centroids.reserve(numCentroids);
+
+		// Seeded random number generator using the proxy ID
+		std::mt19937 rng(proxy.id); // Deterministic RNG
+		std::uniform_real_distribution<float> dist(0.0f, 1.0f); // Random values in [0, 1]
+
+		for (int i = 0; i < numCentroids; ++i) {
+			float r = dist(rng); // Generate a random number
+
+			// Find the index corresponding to r in the CDF using binary search
+			auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
+			size_t index = std::distance(cdf.begin(), it);
+
+			// Add the corresponding vertex position as a centroid
+			centroids.push_back(proxy.fragment.vertices[index]);
+		}
+		
+		return centroids;
 	}
 
 	/// <summary>
@@ -66,7 +153,28 @@ namespace chiori
 		cassert(density >= 0.0f);
 		float rf = computeRf(density, materialConfig);
 
-		computeStrainEnergyField(proxy, materialConfig, impactConfig, rf);
+		int centriodCount = computeCentroidCount(rf, proxy.area, materialConfig);
+		// if there is only 1 centriod, we do not shatter, and skip the expensive calculations below
+		if (centriodCount < 2)
+			return { proxy.fragment };
+
+		computeStrainEnergyField(proxy, materialConfig, impactConfig, rf, density);
+		
+		// Computes the CDF for selection of centriods
+		std::vector<float> cdf(proxy.weights.size(), 0.0f);
+		// Compute the cumulative sum
+		float cumulative = 0.0f;
+		for (size_t i = 0; i < proxy.weights.size(); ++i) {
+			cumulative += proxy.weights[i];
+			cdf[i] = cumulative;
+		}
+		// Ensure the last value is exactly 1.0 (precision correction)
+		if (!cdf.empty()) {
+			cdf.back() = 1.0f;
+		}
+		
+		std::vector<vec2> centroids = sampleCentroids(proxy, cdf, centriodCount);
+
 		
 	}
 }

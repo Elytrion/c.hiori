@@ -12,6 +12,8 @@ namespace chiori
 		vec2 anisotropy{ vec2::zero };			// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
 		float k{ 1.0f };						// Scaling factor for fine tuning
+		float minPoints{ 1 };					// minimum number of fragments (1 means no fragmentation)
+		float maxPoints{ 20 };					// maximum number of fragments
 	};
 	
 	struct cFragment
@@ -27,6 +29,7 @@ namespace chiori
 	{
 		cFragment fragment;
 		std::vector<float> weights;
+		cTransform xf; // transform of the object in world space
 		float area;
 		float mass;
 		int count; // number of vertices
@@ -46,7 +49,6 @@ namespace chiori
 		vec2 normal;
 		float impluseForces[2];
 		int contactCount = 0;
-		cTransform xf; // transform of the object in world space
 	};
 	
 	float GetPolygonArea(cFragment& inPolygon);
