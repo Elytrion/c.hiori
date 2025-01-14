@@ -15,11 +15,11 @@ namespace chiori
 	// This will return all the overlapping pairs for the current frame
 	// All previous pairs will be overwritten, as such, it is the client's
 	// task to track and handle pairs as they require
-	class Broadphase
+	class cBroadphase
 	{
 	public:
-		Broadphase();
-		~Broadphase();
+		cBroadphase();
+		~cBroadphase();
 		
 		int CreateProxy(const AABB& inAABB, void* inUserData);
 		
@@ -33,7 +33,7 @@ namespace chiori
 		
 		void* GetUserData(int proxyID) const;
 
-		const DynamicTree& GetTree() const;
+		const cDynamicTree& GetTree() const;
 
 		unsigned GetProxyCount() const;
 
@@ -44,14 +44,14 @@ namespace chiori
 		void ShiftOrigin(const vec2& inNewOrigin);
 		
 	private:
-		friend class DynamicTree;
+		friend class cDynamicTree;
 
 		void BufferMove(int proxyID);
 		void UnBufferMove(int proxyID);
 
 		bool QueryCallback(int proxyID);
 
-		DynamicTree m_tree;
+		cDynamicTree m_tree;
 
 		unsigned m_proxyCount;
 
@@ -79,32 +79,32 @@ namespace chiori
 		return false;
 	}
 
-	inline void* Broadphase::GetUserData(int proxyId) const
+	inline void* cBroadphase::GetUserData(int proxyId) const
 	{
 		return m_tree.GetUserData(proxyId);
 	}
 
-	inline const AABB& Broadphase::GetFattenedAABB(int proxyId) const
+	inline const AABB& cBroadphase::GetFattenedAABB(int proxyId) const
 	{
 		return m_tree.GetFattenedAABB(proxyId);
 	}
 
-	inline unsigned Broadphase::GetProxyCount() const
+	inline unsigned cBroadphase::GetProxyCount() const
 	{
 		return m_proxyCount;
 	}
 
-	inline void Broadphase::Query(const AABB& inAABB, chiori::QueryCallback callback)
+	inline void cBroadphase::Query(const AABB& inAABB, chiori::QueryCallback callback)
 	{
 		m_tree.Query(inAABB, callback);
 	}
 
-	inline void Broadphase::ShiftOrigin(const vec2& newOrigin)
+	inline void cBroadphase::ShiftOrigin(const vec2& newOrigin)
 	{
 		m_tree.ShiftOrigin(newOrigin);
 	}
 	
-	inline const DynamicTree& Broadphase::GetTree() const
+	inline const cDynamicTree& cBroadphase::GetTree() const
 	{
 		return m_tree;
 	}

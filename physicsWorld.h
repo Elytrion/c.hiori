@@ -14,7 +14,7 @@ namespace chiori
 	public:
 		std::unique_ptr<cAllocator> allocator;
 		float accumulator = 0.0f;
-		Broadphase m_broadphase;
+		cBroadphase m_broadphase;
 
 		template <typename Allocator = cDefaultAllocator>
 		explicit cPhysicsWorld(Allocator alloc = Allocator()) :

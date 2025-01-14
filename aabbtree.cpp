@@ -3,13 +3,13 @@
 
 namespace chiori
 {
-	DynamicTree::DynamicTree()
+	cDynamicTree::cDynamicTree()
 	{
 		m_root = null_node;
 		
 		m_nodeCapacity = commons::CTREE_START_CAPACITY;
 		m_nodeCount = 0;
-		m_nodes = new TreeNode[m_nodeCapacity]();
+		m_nodes = new cTreeNode[m_nodeCapacity]();
 
 		// Set the free list (next points to the next free node)
 		for (int i = 0; i < m_nodeCapacity - 1; ++i)
@@ -25,23 +25,23 @@ namespace chiori
 		m_insertionCount = 0;
 	}
 
-	DynamicTree::~DynamicTree()
+	cDynamicTree::~cDynamicTree()
 	{
 		// since the tree is flattened into an array,
 		// this will clear the entire tree in one shot
 		delete[] m_nodes;
 	}
 
-	int DynamicTree::AllocateNode()
+	int cDynamicTree::AllocateNode()
 	{
 		if (m_freeList == null_node) // we need to expand node pool, free list is empty
 		{
 			cassert(m_nodeCount == m_nodeCapacity);
 
-			TreeNode* oldNodes = m_nodes;
+			cTreeNode* oldNodes = m_nodes;
 			m_nodeCapacity *= 2; // double capacity
-			m_nodes = new TreeNode[m_nodeCapacity]();
-			memcpy(m_nodes, oldNodes, m_nodeCount * sizeof(TreeNode)); // dangerous, make sure it doesnt break or leak!
+			m_nodes = new cTreeNode[m_nodeCapacity]();
+			memcpy(m_nodes, oldNodes, m_nodeCount * sizeof(cTreeNode)); // dangerous, make sure it doesnt break or leak!
 			delete[] oldNodes;
 			// Set the free list (next points to the next free node)
 			for (int i = m_nodeCount; i < m_nodeCapacity - 1; ++i)
@@ -66,7 +66,7 @@ namespace chiori
 		return nodeID;
 	}
 	
-	void DynamicTree::FreeNode(int nodeID)
+	void cDynamicTree::FreeNode(int nodeID)
 	{
 		cassert(0 <= nodeID && nodeID < m_nodeCapacity);
 		cassert(0 < m_nodeCount);
@@ -77,7 +77,7 @@ namespace chiori
 		--m_nodeCount;
 	}
 	
-	int DynamicTree::InsertProxy(const AABB& aabb, void* userData)
+	int cDynamicTree::InsertProxy(const AABB& aabb, void* userData)
 	{
 		int pID = AllocateNode();
 		
@@ -92,7 +92,7 @@ namespace chiori
 		return pID;
 	}
 
-	int DynamicTree::DestroyProxy(int proxyID)
+	int cDynamicTree::DestroyProxy(int proxyID)
 	{
 		cassert(0 <= proxyID && proxyID < m_nodeCapacity);
 		cassert(m_nodes[proxyID].IsLeaf());
@@ -101,7 +101,7 @@ namespace chiori
 		return proxyID;
 	}
 
-	bool DynamicTree::MoveProxy(int proxyID, const AABB& aabb, const vec2& disp)
+	bool cDynamicTree::MoveProxy(int proxyID, const AABB& aabb, const vec2& disp)
 	{
 		cassert(0 <= proxyID && proxyID < m_nodeCapacity);
 
@@ -145,7 +145,7 @@ namespace chiori
 		return true;
 	}
 
-	void DynamicTree::InsertLeaf(int leaf)
+	void cDynamicTree::InsertLeaf(int leaf)
 	{
 		++m_insertionCount;
 		
@@ -270,7 +270,7 @@ namespace chiori
 		}
 	}
 
-	void DynamicTree::RemoveLeaf(int leaf)
+	void cDynamicTree::RemoveLeaf(int leaf)
 	{
 		if (leaf == m_root)
 		{
@@ -327,11 +327,11 @@ namespace chiori
 		}
 	}
 
-	int DynamicTree::Balance(int iA)
+	int cDynamicTree::Balance(int iA)
 	{
 		cassert(iA != null_node);
 
-		TreeNode* A = m_nodes + iA;
+		cTreeNode* A = m_nodes + iA;
 		if (A->IsLeaf() || A->height < 2)
 		{
 			return iA;
@@ -342,8 +342,8 @@ namespace chiori
 		cassert(0 <= iB && iB < m_nodeCapacity);
 		cassert(0 <= iC && iC < m_nodeCapacity);
 
-		TreeNode* B = m_nodes + iB;
-		TreeNode* C = m_nodes + iC;
+		cTreeNode* B = m_nodes + iB;
+		cTreeNode* C = m_nodes + iC;
 
 		int balance = C->height - B->height;
 
@@ -351,8 +351,8 @@ namespace chiori
 		{
 			int iF = C->child1;
 			int iG = C->child2;
-			TreeNode* F = m_nodes + iF;
-			TreeNode* G = m_nodes + iG;
+			cTreeNode* F = m_nodes + iF;
+			cTreeNode* G = m_nodes + iG;
 			cassert(0 <= iF && iF < m_nodeCapacity);
 			cassert(0 <= iG && iG < m_nodeCapacity);
 
@@ -410,8 +410,8 @@ namespace chiori
 		{
 			int iD = B->child1;
 			int iE = B->child2;
-			TreeNode* D = m_nodes + iD;
-			TreeNode* E = m_nodes + iE;
+			cTreeNode* D = m_nodes + iD;
+			cTreeNode* E = m_nodes + iE;
 			cassert(0 <= iD && iD < m_nodeCapacity);
 			cassert(0 <= iE && iE < m_nodeCapacity);
 
@@ -468,7 +468,7 @@ namespace chiori
 		return iA;
 	}
 
-	int DynamicTree::GetHeight() const
+	int cDynamicTree::GetHeight() const
 	{
 		if (m_root == null_node)
 			return 0;
@@ -476,20 +476,20 @@ namespace chiori
 		return m_nodes[m_root].height;
 	}
 
-	float DynamicTree::GetAreaRatio() const
+	float cDynamicTree::GetAreaRatio() const
 	{
 		if (m_root == null_node)
 		{
 			return 0.0f;
 		}
 
-		const TreeNode* root = m_nodes + m_root;
+		const cTreeNode* root = m_nodes + m_root;
 		float rootArea = root->aabb.perimeter();
 
 		float totalArea = 0.0f;
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
-			const TreeNode* node = m_nodes + i;
+			const cTreeNode* node = m_nodes + i;
 			if (node->height < 0)
 			{
 				// Free node in pool
@@ -503,10 +503,10 @@ namespace chiori
 	}
 
 	// Compute the height of a sub-tree.
-	int DynamicTree::ComputeHeight(int nodeId) const
+	int cDynamicTree::ComputeHeight(int nodeId) const
 	{
 		cassert(0 <= nodeId && nodeId < m_nodeCapacity);
-		TreeNode* node = m_nodes + nodeId;
+		cTreeNode* node = m_nodes + nodeId;
 
 		if (node->IsLeaf())
 		{
@@ -518,18 +518,18 @@ namespace chiori
 		return 1 + max(height1, height2);
 	}
 
-	int DynamicTree::ComputeHeight() const
+	int cDynamicTree::ComputeHeight() const
 	{
 		int height = ComputeHeight(m_root);
 		return height;
 	}
 	
-	int DynamicTree::GetMaxBalance() const
+	int cDynamicTree::GetMaxBalance() const
 	{
 		int maxBalance = 0;
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
-			const TreeNode* node = m_nodes + i;
+			const cTreeNode* node = m_nodes + i;
 			if (node->height <= 1)
 			{
 				continue;
@@ -546,7 +546,7 @@ namespace chiori
 		return maxBalance;
 	}
 
-	void DynamicTree::ShiftOrigin(const vec2& newOrigin)
+	void cDynamicTree::ShiftOrigin(const vec2& newOrigin)
 	{
 		// Build array of leaves. Free the rest.
 		for (int i = 0; i < m_nodeCapacity; ++i)
@@ -556,7 +556,7 @@ namespace chiori
 		}
 	}
 
-	void DynamicTree::DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const
+	void cDynamicTree::DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const
 	{
 		if (m_root == null_node)
 		{
@@ -571,7 +571,7 @@ namespace chiori
 			int nodeId = nodeStack.top();
 			nodeStack.pop();
 
-			const TreeNode& node = m_nodes[nodeId];
+			const cTreeNode& node = m_nodes[nodeId];
 
 			drawFunc(node.height, node.aabb);
 

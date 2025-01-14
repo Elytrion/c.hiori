@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "physicsWorld.h"
 #include "gjk.h"
-#include "cprocessing.h" //!!TO REMOVE!!
 #include "manifold.h"
 #include "solver.h"
 
@@ -319,120 +318,6 @@ namespace chiori
 
 		//PGSSoftSolver(this, &context);
 		PGSSolver(this, &context);
-		
-		//for (int itr = 0; itr < p_actors.size(); itr++)
-		//{
-		//	cActor* a = p_actors[itr];
-
-		//	if (a->_iflags.isSet(cActor::IS_DIRTY_DENSITY))
-		//	{
-		//		cShape* s = p_shapes[a->shapeIndex];
-		//		a->setInertia(s->inertia(a->mass, a->tfm.scale, a->soffset));
-		//		a->_iflags.clear(cActor::IS_DIRTY_DENSITY);
-		//	}
-
-		//	if (a->getFlags().isSet(cActor::USE_GRAVITY))
-		//	{
-		//		a->addForce(gravity);
-		//	}
-		//	a->integrate(inDT);
-
-		//	if (!a->_iflags.isSet(cActor::IS_DIRTY_TFM))
-		//		continue;
-		//	
-		//	cShape* s = p_shapes[a->shapeIndex];
-		//	std::vector<vec2> verts = s->getVertices(a->tfm);
-		//	AABB aabb = CreateAABBHull(verts.data(), verts.size());
-		//	m_broadphase.MoveProxy(s->broadphaseIndex, aabb, a->getVelocity(inDT) * inDT);
-		//	
-		//	a->_iflags.clear(cActor::IS_DIRTY_TFM);
-		//	
-		//	for (int itr2 = 0; itr2 < p_actors.size(); itr2++)
-		//	{
-		//		cActor* b = p_actors[itr2];
-
-		//		if (a == b)
-		//			continue;
-
-		//		cTransform tfm_a = a->getTransform();
-		//		cTransform tfm_b = b->getTransform();
-		//		const cShape* shp_a = p_shapes[a->shapeIndex];
-		//		const cShape* shp_b = p_shapes[b->shapeIndex];
-		//		cGJKCache cache;
-		//		cache.count = 0;
-		//		cManifold manifold = CollideShapes(&shp_a->polygon, &shp_b->polygon, tfm_a, tfm_b, &cache);
-		//		
-		//		//cGJKCache cache;
-		//		//cache.count = 0;
-		//		//cGJKProxy gjka{ shp_a->polygon.vertices.data(), shp_a->polygon.count };
-		//		//cGJKProxy gjkb{ shp_b->polygon.vertices.data(), shp_b->polygon.count };
-		//		//cGJKOutput result;
-		//		//cGJKInput input{ gjka, gjkb, tfm_a , tfm_b };
-		//		//cGJK(input, result, &cache);
-		//		//if (result.distance < EPSILON && cache.count > 1)
-		//		//{
-		//		//	cEPA(input, result, &cache);
-		//		//}
-		//		
-		//		if (manifold.normal != vec2::zero)
-		//		{
-		//			CP_Settings_StrokeWeight(2);
-		//			CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
-		//			vec2 lineEnd = tfm_a.pos + manifold.normal * 25;
-		//			CP_Graphics_DrawLine(tfm_a.pos.x, tfm_a.pos.y, lineEnd.x, lineEnd.y);
-		//		}
-		//		
-		//		vec2 pointA, pointB;
-		//		//pointA = manifold.pointA; // cTransformVec(tfm_a, m.points[0].localAnchorA);
-		//		//pointB = manifold.pointB; //cTransformVec(tfm_a, m.points[1].localAnchorA);
-		//		//CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-		//		//CP_Graphics_DrawCircle(pointA.x, pointA.y, 8);
-		//		//CP_Graphics_DrawCircle(pointB.x, pointB.y, 8);
-		//		if (manifold.pointCount > 0)
-		//		{
-		//			// Transform contact points to world space
-		//			pointA = cTransformVec(tfm_a, manifold.points[0].localAnchorA);
-		//			pointA *= 100;
-		//			pointA += middle;
-		//			CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-		//			CP_Graphics_DrawCircle(pointA.x, pointA.y, 8); // Draw the first contact point
-		//		}
-		//		if (manifold.pointCount > 1)
-		//		{
-		//			pointB = cTransformVec(tfm_a, manifold.points[1].localAnchorA);
-		//			pointB *= 100;
-		//			pointB += middle;
-		//			CP_Settings_Fill(CP_Color_Create(127, 255, 127, 255));
-		//			CP_Graphics_DrawCircle(pointB.x, pointB.y, 8); // Draw the second contact point
-		//		}
-
-		//		CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
-		//	}
-		//}
-		
-		//auto drawFunc = [&](int height, const AABB& aabb)
-		//	{
-		//		CP_Settings_StrokeWeight(2);
-		//		CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
-		//		vec2 aabbv[4];
-		//		aabbv[0] = { aabb.min };
-		//		aabbv[1] = { aabb.max.x, aabb.min.y };
-		//		aabbv[2] = { aabb.max };
-		//		aabbv[3] = { aabb.min.x, aabb.max.y };
-		//		for (int i = 0; i < 4; i++)
-		//		{
-		//			int j = (i + 1) % 4;
-		//			vec2 p = aabbv[i];
-		//			vec2 q = aabbv[j];
-		//			p *= 100;
-		//			q *= 100;
-		//			p += {800, 450};
-		//			q += {800, 450};
-		//			CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
-		//		}
-		//		CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
-		//	};
-		//m_broadphase.GetTree().DisplayTree(drawFunc);
 	}
 
 }

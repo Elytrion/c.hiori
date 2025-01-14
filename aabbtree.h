@@ -8,7 +8,7 @@ namespace chiori
 	static constexpr int null_node = -1;
 	using QueryCallback = std::function<bool(unsigned int)>; //bool (*)(unsigned int);
 	
-	struct TreeNode
+	struct cTreeNode
 	{
 		AABB aabb;
 		void* userData; // user data
@@ -27,11 +27,11 @@ namespace chiori
 		}
 	};
 
-	class DynamicTree
+	class cDynamicTree
 	{
 	public:
-		DynamicTree();
-		~DynamicTree();
+		cDynamicTree();
+		~cDynamicTree();
 		
 		int InsertProxy(const AABB& inAABB, void* inUserData);
 		int DestroyProxy(int inProxyID);
@@ -65,7 +65,7 @@ namespace chiori
 		int ComputeHeight(int nodeId) const;
 
 		int m_root;
-		TreeNode* m_nodes;
+		cTreeNode* m_nodes;
 		int m_nodeCount;
 		int m_nodeCapacity;
 		int m_freeList;
@@ -74,7 +74,7 @@ namespace chiori
 		int m_insertionCount;
 	};
 
-	inline void* DynamicTree::GetUserData(int proxyId) const
+	inline void* cDynamicTree::GetUserData(int proxyId) const
 	{
 		if (0 <= proxyId && proxyId < m_nodeCapacity)
 		{
@@ -83,7 +83,7 @@ namespace chiori
 		throw std::out_of_range("Index out of range for tree");
 	}
 
-	inline const AABB& DynamicTree::GetFattenedAABB(int proxyId) const
+	inline const AABB& cDynamicTree::GetFattenedAABB(int proxyId) const
 	{
 		if (0 <= proxyId && proxyId < m_nodeCapacity)
 		{
@@ -92,7 +92,7 @@ namespace chiori
 		throw std::out_of_range("Index out of range for tree");
 	}
 
-	inline void DynamicTree::Query(const AABB& inAABB, QueryCallback callback) const
+	inline void cDynamicTree::Query(const AABB& inAABB, QueryCallback callback) const
 	{
 		std::stack<int> stack;
 		stack.push(m_root);
@@ -104,7 +104,7 @@ namespace chiori
 			if (nodeID == null_node)
 				continue;
 
-			const TreeNode* node = m_nodes + nodeID;
+			const cTreeNode* node = m_nodes + nodeID;
 			
 			if (inAABB.intersects(node->aabb))
 			{

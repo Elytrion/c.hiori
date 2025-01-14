@@ -4,7 +4,7 @@
 
 namespace chiori
 {
-	Broadphase::Broadphase()
+	cBroadphase::cBroadphase()
 	{
 		m_proxyCount = 0;
 
@@ -17,13 +17,13 @@ namespace chiori
 		m_moveBuffer = new int[m_moveCapacity];
 	}
 	
-	Broadphase::~Broadphase()
+	cBroadphase::~cBroadphase()
 	{
 		delete[] m_pairBuffer;
 		delete[] m_moveBuffer;
 	}
 
-	int Broadphase::CreateProxy(const AABB& aabb, void* userData)
+	int cBroadphase::CreateProxy(const AABB& aabb, void* userData)
 	{
 		int proxyId = m_tree.InsertProxy(aabb, userData);
 		++m_proxyCount;
@@ -31,14 +31,14 @@ namespace chiori
 		return proxyId;
 	}
 
-	void Broadphase::DestroyProxy(int proxyId)
+	void cBroadphase::DestroyProxy(int proxyId)
 	{
 		UnBufferMove(proxyId);
 		--m_proxyCount;
 		m_tree.DestroyProxy(proxyId);
 	}
 
-	void Broadphase::MoveProxy(int proxyId, const AABB& aabb, const vec2& displacement)
+	void cBroadphase::MoveProxy(int proxyId, const AABB& aabb, const vec2& displacement)
 	{
 		bool buffer = m_tree.MoveProxy(proxyId, aabb, displacement);
 		if (buffer)
@@ -47,12 +47,12 @@ namespace chiori
 		}
 	}
 
-	void Broadphase::TouchProxy(int proxyId)
+	void cBroadphase::TouchProxy(int proxyId)
 	{
 		BufferMove(proxyId);
 	}
 
-	void Broadphase::BufferMove(int proxyId)
+	void cBroadphase::BufferMove(int proxyId)
 	{
 		if (m_moveCount == m_moveCapacity)
 		{
@@ -67,7 +67,7 @@ namespace chiori
 		++m_moveCount;
 	}
 
-	void Broadphase::UnBufferMove(int proxyId)
+	void cBroadphase::UnBufferMove(int proxyId)
 	{
 		for (int i = 0; i < m_moveCount; ++i)
 		{
@@ -76,7 +76,7 @@ namespace chiori
 		}
 	}
 
-	bool Broadphase::QueryCallback(int proxyId)
+	bool cBroadphase::QueryCallback(int proxyId)
 	{
 		// A proxy cannot form a pair with itself.
 		if (proxyId == m_queryProxyId)
@@ -103,7 +103,7 @@ namespace chiori
 		return true;
 	}
 
-	void Broadphase::UpdatePairs(BroadphaseCallback callback)
+	void cBroadphase::UpdatePairs(BroadphaseCallback callback)
 	{
 		// Reset pair buffer
 		m_pairCount = 0;

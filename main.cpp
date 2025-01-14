@@ -227,7 +227,7 @@ void game_init(void)
 }
 
 bool pauseStep = false;
-bool isPaused = false;
+bool isPaused = true;
 void UpdatePhysics()
 {
     if (!isPaused)
@@ -268,6 +268,32 @@ void UpdatePhysics()
         DrawContact(c);
     }
 
+    auto drawFunc = [&](int height, const AABB& aabb)
+        {
+            CP_Settings_StrokeWeight(2);
+            CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
+            vec2 aabbv[4];
+            aabbv[0] = { aabb.min };
+            aabbv[1] = { aabb.max.x, aabb.min.y };
+            aabbv[2] = { aabb.max };
+            aabbv[3] = { aabb.min.x, aabb.max.y };
+            for (int i = 0; i < 4; i++)
+            {
+                int j = (i + 1) % 4;
+                vec2 p = aabbv[i];
+                vec2 q = aabbv[j];
+                p.y = -p.y;
+                q.y = -q.y;
+                p *= 100;
+                q *= 100;
+                p += middle;
+                q += middle;
+
+                CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
+            }
+            CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
+        };
+    world.m_broadphase.GetTree().DisplayTree(drawFunc);
     
 }
 
@@ -286,6 +312,8 @@ void HandleInput(CP_Vector mousePosIn)
         for (int itr = 0; itr < world.p_actors.size(); itr++)
         {
             cActor* a = world.p_actors[itr];
+            if (a->type == cActorType::STATIC)
+                continue;
             cTransform tfm = a->getTransform();
             if (IsPointInRadius(tfm.pos, 1, worldPos))
             {
@@ -326,6 +354,7 @@ void HandleInput(CP_Vector mousePosIn)
 
     if (isHolding_mouse && selectedActor)
     {
+        selectedActor->linearVelocity = vec2::zero;
         cTransform tfm = selectedActor->getTransform();
         tfm.pos = { worldPos.x, worldPos.y };
         selectedActor->setTransform(tfm);
