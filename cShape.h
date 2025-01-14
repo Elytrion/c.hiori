@@ -40,10 +40,10 @@ namespace chiori
 
 		cShape() {};
 		cShape(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
-		int getVerticesCount() const { return polygon.count; }
+		int getCount() const { return polygon.count; }
 		void setVertices(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
 		const vec2* getBaseVertices() const { return polygon.vertices; }
-		void getVertices(vec2*& inVertices, cTransform xf);
+		void getVertices(vec2* inVertices, cTransform xf) const;
 		cMassData computeMass() const { return polygon.ComputeMass(density); }
 		
 		AABB ComputeAABB(const cTransform& xf)
@@ -57,10 +57,10 @@ namespace chiori
 	};
 	
 	// this function assumes the size of the array passed in is equal to or greater than count
-	inline void cShape::getVertices(vec2*& inVertices, cTransform xf)
+	inline void cShape::getVertices(vec2* inVertices, cTransform xf) const
 	{
 		int count = polygon.count;
-		vec2* verts = polygon.vertices;
+		const vec2* verts = polygon.vertices;
 		for (int i = 0; i < count; ++i)
 		{
 			inVertices[i] = verts[i];

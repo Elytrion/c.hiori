@@ -54,7 +54,8 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
     xfAlt.pos *= 100;
     xfAlt.pos += middle;
     xfAlt.scale = { 100,100 };
-	const std::vector<vec2> vertices = inShape->getVertices(xfAlt);
+    std::vector<vec2> vertices(inShape->getCount());
+    inShape->getVertices(vertices.data(), xfAlt);
     for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
@@ -122,103 +123,107 @@ void DrawContact(cContact* contact)
 
 cActor* CreateRectActor(float width, float height, vec2& centrePos)
 {
-    std::vector<vec2> vertices;
-	vertices.push_back({ -width / 2.0f, -height / 2.0f });
-	vertices.push_back({ width / 2.0f, -height / 2.0f });
-	vertices.push_back({ width / 2.0f, height / 2.0f });
-	vertices.push_back({ -width / 2.0f, height / 2.0f });
+ //   std::vector<vec2> vertices;
+	//vertices.push_back({ -width / 2.0f, -height / 2.0f });
+	//vertices.push_back({ width / 2.0f, -height / 2.0f });
+	//vertices.push_back({ width / 2.0f, height / 2.0f });
+	//vertices.push_back({ -width / 2.0f, height / 2.0f });
 
-    ActorConfig a_config;
-    a_config.position = centrePos;
-    int newActorIndex = world.CreateActor(a_config);
-    ShapeConfig s_config;
-    s_config.vertices = vertices;
-    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
-    cActor* newActor = world.p_actors[newActorIndex];
-    shapes.push_back(newShapeIndex);
-    actors.push_back(newActorIndex);
-    return newActor;
+ //   ActorConfig a_config;
+ //   a_config.position = centrePos;
+ //   int newActorIndex = world.CreateActor(a_config);
+ //   ShapeConfig s_config;
+ //   s_config.vertices = vertices;
+ //   int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+ //   cActor* newActor = world.p_actors[newActorIndex];
+ //   shapes.push_back(newShapeIndex);
+ //   actors.push_back(newActorIndex);
+ //   return newActor;
+    return nullptr;
 }
 
 cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
 {
-    float height = (sqrt(3.0f) / 2.0f) * edgeLength;
+ //   float height = (sqrt(3.0f) / 2.0f) * edgeLength;
 
-    // Equilateral triangle
-	std::vector<vec2> vertices{
-        vec2(0, (2.0f / 3.0f) * height),
-        vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
-        vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
-	};
-    ActorConfig a_config;
-    a_config.position = centrePos;
-    int newActorIndex = world.CreateActor(a_config);
-    ShapeConfig s_config;
-    s_config.vertices = vertices;
-    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
-    cActor* newActor = world.p_actors[newActorIndex];
-    shapes.push_back(newShapeIndex);
-    actors.push_back(newActorIndex);
-    return newActor;
+ //   // Equilateral triangle
+	//std::vector<vec2> vertices{
+ //       vec2(0, (2.0f / 3.0f) * height),
+ //       vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
+ //       vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
+	//};
+ //   ActorConfig a_config;
+ //   a_config.position = centrePos;
+ //   int newActorIndex = world.CreateActor(a_config);
+ //   ShapeConfig s_config;
+ //   s_config.vertices = vertices;
+ //   int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+ //   cActor* newActor = world.p_actors[newActorIndex];
+ //   shapes.push_back(newShapeIndex);
+ //   actors.push_back(newActorIndex);
+ //   return newActor;
+    return nullptr;
 }
 
 cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
 {
-    ActorConfig a_config;
-    a_config.position = centrePos;
-    int newActorIndex = world.CreateActor(a_config);
-    ShapeConfig s_config;
-    s_config.vertices = inVertices;
-    int newShapeIndex = world.CreateShape(newActorIndex, s_config);
-    cActor* newActor = world.p_actors[newActorIndex];
-    shapes.push_back(newShapeIndex);
-    actors.push_back(newActorIndex);
-    return newActor;
+    //ActorConfig a_config;
+    //a_config.position = centrePos;
+    //int newActorIndex = world.CreateActor(a_config);
+    //ShapeConfig s_config;
+    //s_config.vertices = inVertices;
+    //int newShapeIndex = world.CreateShape(newActorIndex, s_config);
+    //cActor* newActor = world.p_actors[newActorIndex];
+    //shapes.push_back(newShapeIndex);
+    //actors.push_back(newActorIndex);
+    //return newActor;
+
+    return nullptr;
 }
 
 void BoxScene()
 {
-    // Create a floor
-    ActorConfig a_config;
-    a_config.type = cActorType::STATIC;
-    a_config.position = vec2{ 0, 0 };
-    int floorActorIndex = world.CreateActor(a_config);
-    ShapeConfig s_config;
-    std::vector<vec2> vertices;
-    vertices.push_back({ -5.0f, -0.25f });
-    vertices.push_back({ 5.0f, -0.25f });
-    vertices.push_back({ 5.0f, 0.25f });
-    vertices.push_back({ -5.0f,  0.25f });
-    s_config.vertices = vertices;
-    int floorShapeIndex = world.CreateShape(floorActorIndex, s_config);
-    shapes.push_back(floorShapeIndex);
-    actors.push_back(floorActorIndex);
+    //// Create a floor
+    //ActorConfig a_config;
+    //a_config.type = cActorType::STATIC;
+    //a_config.position = vec2{ 0, 0 };
+    //int floorActorIndex = world.CreateActor(a_config);
+    //ShapeConfig s_config;
+    //std::vector<vec2> vertices;
+    //vertices.push_back({ -5.0f, -0.25f });
+    //vertices.push_back({ 5.0f, -0.25f });
+    //vertices.push_back({ 5.0f, 0.25f });
+    //vertices.push_back({ -5.0f,  0.25f });
+    //s_config.vertices = vertices;
+    //int floorShapeIndex = world.CreateShape(floorActorIndex, s_config);
+    //shapes.push_back(floorShapeIndex);
+    //actors.push_back(floorActorIndex);
+
+    ////a_config.type = cActorType::DYNAMIC;
+    ////a_config.position = vec2{ 0.0f, 0.5f };
+    ////int boxAActorIndex = world.CreateActor(a_config);
+    ////vertices.clear();
+    ////vertices.push_back({ -0.5f, -0.5f });
+    ////vertices.push_back({ 0.5f, -0.5f });
+    ////vertices.push_back({ 0.5f, 0.5f });
+    ////vertices.push_back({ -0.5f,  0.5f });
+    ////s_config.vertices = vertices;
+    ////int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
+    ////shapes.push_back(boxAShapeIndex);
+    ////actors.push_back(boxAActorIndex);
 
     //a_config.type = cActorType::DYNAMIC;
-    //a_config.position = vec2{ 0.0f, 0.5f };
-    //int boxAActorIndex = world.CreateActor(a_config);
+    //a_config.position = vec2{ 1.5f, 2.5f };
+    //int boxBActorIndex = world.CreateActor(a_config);
     //vertices.clear();
     //vertices.push_back({ -0.5f, -0.5f });
     //vertices.push_back({ 0.5f, -0.5f });
     //vertices.push_back({ 0.5f, 0.5f });
     //vertices.push_back({ -0.5f,  0.5f });
     //s_config.vertices = vertices;
-    //int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
-    //shapes.push_back(boxAShapeIndex);
-    //actors.push_back(boxAActorIndex);
-
-    a_config.type = cActorType::DYNAMIC;
-    a_config.position = vec2{ 1.5f, 2.5f };
-    int boxBActorIndex = world.CreateActor(a_config);
-    vertices.clear();
-    vertices.push_back({ -0.5f, -0.5f });
-    vertices.push_back({ 0.5f, -0.5f });
-    vertices.push_back({ 0.5f, 0.5f });
-    vertices.push_back({ -0.5f,  0.5f });
-    s_config.vertices = vertices;
-    int boxBShapeIndex = world.CreateShape(boxBActorIndex, s_config);
-    shapes.push_back(boxBShapeIndex);
-    actors.push_back(boxBActorIndex);
+    //int boxBShapeIndex = world.CreateShape(boxBActorIndex, s_config);
+    //shapes.push_back(boxBShapeIndex);
+    //actors.push_back(boxBActorIndex);
 }
 
 void InitPhysics()
@@ -266,7 +271,7 @@ void UpdatePhysics()
     for (int itr = 0; itr < world.p_actors.size(); itr++)
     {
         cActor* a = world.p_actors[itr];
-        cShape* s = world.p_shapes[a->GetShapeIndex()];
+        cShape* s = world.p_shapes[a->shapeList];
         DrawActor(s, a->getTransform());
     }
     for (int itr = 0; itr < world.p_contacts.size(); itr++)

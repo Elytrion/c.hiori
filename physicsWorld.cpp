@@ -231,20 +231,23 @@ namespace chiori
 
 			cTransform xf = { actor->origin, actor->rotation };
 
-			cShape* shape = p_shapes[actor->shapeIndex];
-
-			if (actor->_flags.isSet(cActor::IS_DIRTY))
+			int shapeIndex = actor->shapeList;
+			while (shapeIndex != -1)
 			{
-				computeActorInertia(this, actor);
+				cShape* shape = p_shapes[shapeIndex];
+				
+				shape->aabb = CreateAABBHull(shape->polygon.vertices, shape->polygon.count, xf);
+				AABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
+				if (!fatAABB.contains(shape->aabb) || actor->_flags.isSet(cActor::IS_DIRTY)) // moved out of broadphase AABB, significant enough movement to update broadphase
+				{
+					m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
+				}
 			}
 
-			shape->aabb = CreateAABBHull(shape->polygon.vertices, xf);
-
-			AABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
-
-			if (!fatAABB.contains(shape->aabb) || actor->_flags.isSet(cActor::IS_DIRTY)) // moved out of broadphase AABB, significant enough movement to update broadphase
+			// We might need to recalculate the mass and inertia of the actor their values have been modifed
+			if (actor->_flags.isSet(cActor::IS_DIRTY))
 			{
-				m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
+				computeActorMass(this, actor);
 			}
 
 			if (actor->_flags.isSet(cActor::IS_DIRTY))

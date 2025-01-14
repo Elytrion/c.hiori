@@ -141,9 +141,9 @@ namespace chiori
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
-		const vec2* n1s = poly1->normals.data();
-		const vec2* v1s = poly1->vertices.data();
-		const vec2* v2s = poly2->vertices.data();
+		const vec2* n1s = poly1->normals;
+		const vec2* v1s = poly1->vertices;
+		const vec2* v2s = poly2->vertices;
 
 		int bestIndex = 0;
 		float maxSeparation = -FLT_MAX;
@@ -193,7 +193,7 @@ namespace chiori
 
 			// Find the incident edge on polyA
 			int count = polyA->count;
-			const vec2* normals = polyA->normals.data();
+			const vec2* normals = polyA->normals;
 			edgeA = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -213,7 +213,7 @@ namespace chiori
 
 			// Find the incident edge on polyB
 			int count = polyB->count;
-			const vec2* normals = polyB->normals.data();
+			const vec2* normals = polyB->normals;
 			edgeB = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -239,8 +239,6 @@ namespace chiori
 		cTransform xfRel = InvMulTransforms(xfA, xfB); // we convert shapeB to be in shapeA's local space
 		
 		localShapeB.count = shapeB->count;
-		localShapeB.vertices.resize(localShapeB.count);
-		localShapeB.normals.resize(localShapeB.count);
 		for (int i = 0; i < localShapeB.count; ++i)
 		{
 			localShapeB.vertices[i] = cTransformVec(xfRel, shapeB->vertices[i]);
@@ -249,8 +247,8 @@ namespace chiori
 		
 		cTransform identity;
 		identity.SetIdentity();
-		cGJKProxy gjka{ shapeA->vertices.data(), shapeA->count };
-		cGJKProxy gjkb{ localShapeB.vertices.data(), localShapeB.count };
+		cGJKProxy gjka{ shapeA->vertices, shapeA->count };
+		cGJKProxy gjkb{ localShapeB.vertices, localShapeB.count };
 		cGJKInput input{ gjka, gjkb, identity, identity }; // xfs are identity as we run everything in shapeA local space
 		cGJKOutput output;
 		
