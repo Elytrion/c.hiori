@@ -65,12 +65,12 @@ namespace chiori
 		}
 	};
 
-	inline AABB CreateAABBHull(const std::vector<vec2>& inVertices, const cTransform& xf)
+	inline AABB CreateAABBHull(const vec2* inVertices, int count, const cTransform& xf)
 	{
 		vec2 lower = cTransformVec(xf, inVertices[0]);
 		vec2 upper = lower;
 
-		for (int32_t i = 1; i < inVertices.size(); ++i)
+		for (int32_t i = 1; i < count; ++i)
 		{
 			vec2 v = cTransformVec(xf, inVertices[i]);
 			lower = vec2::vmin(lower, v);

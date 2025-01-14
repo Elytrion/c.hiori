@@ -35,124 +35,170 @@ namespace chiori
 		return p_actors.getIndex(n_actor);
 	}
 
-	static void computeActorInertia(cPhysicsWorld* world, cActor* actor)
+	void cPhysicsWorld::RemoveActor(int inActorIndex)
 	{
-		// Polygon mass, centroid, and inertia.
-		// Let rho be the polygon density in mass per unit area.
-		// Then:
-		// mass = rho * int(dA)
-		// centroid.x = (1/mass) * rho * int(x * dA)
-		// centroid.y = (1/mass) * rho * int(y * dA)
-		// I = rho * int((x*x + y*y) * dA)
-		//
-		// We can compute these integrals by summing all the integrals
-		// for each triangle of the polygon. To evaluate the integral
-		// for a single triangle, we make a change of variables to
-		// the (u,v) coordinates of the triangle:
-		// x = x0 + e1x * u + e2x * v
-		// y = y0 + e1y * u + e2y * v
-		// where 0 <= u && 0 <= v && u + v <= 1.
-		//
-		// We integrate u from [0,1-v] and then v from [0,1].
-		// We also need to use the Jacobian of the transformation:
-		// D = cross(e1, e2)
-		//
-		// Simplification: triangle centroid = (1/3) * (p1 + p2 + p3)
-		//
-		// The rest of the derivation is handled by computer algebra.
+		cActor* actor = p_actors[inActorIndex];
 		
-		actor->inertia = 0.0f;
-		actor->invInertia = 0.0f;
-		actor->localCenter = vec2::zero;
-
-		if (actor->type == cActorType::STATIC || actor->type == cActorType::KINEMATIC)
+		// Destroy the attached contacts
+		int edgeKey = actor->contactList;
+		while (edgeKey != -1)
 		{
-			actor->position = actor->origin;
-			return;
+			int contactIndex = edgeKey >> 1;
+			int edgeIndex = edgeKey & 1;
+
+			int twinKey = edgeKey ^ 1;
+			int twinIndex = twinKey & 1;
+
+			cContact* contact = p_contacts[contactIndex];
+			
+			cContactEdge* twin = contact->edges + twinIndex;
+			
+			// Remove contact from other body's doubly linked list
+			if (twin->prevKey != -1)
+			{
+				cContact* prevContact = p_contacts[(twin->prevKey >> 1)];
+				cContactEdge* prevEdge = prevContact->edges + (twin->prevKey & 1);
+				prevEdge->nextKey = twin->nextKey;
+			}
+
+			if (twin->nextKey != -1)
+			{
+				cContact* nextContact = p_contacts[(twin->nextKey >> 1)];
+				cContactEdge* nextEdge = nextContact->edges + (twin->nextKey & 1);
+				nextEdge->prevKey = twin->prevKey;
+			}
+			
+			// Check other body's list head
+			cActor* other = p_actors[twin->bodyIndex];
+			if (other->contactList == twinKey)
+			{
+				other->contactList = twin->nextKey;
+			}
+
+			cassert(other->contactCount > 0);
+			other->contactCount -= 1;
+
+			// Remove pair from set
+			p_pairs.erase(contact->shapeIndexA, contact->shapeIndexB);
+
+			cContactEdge* edge = contact->edges + edgeIndex;
+			edgeKey = edge->nextKey;
+			
+			// Free contact
+			p_contacts.Free(contact);
 		}
 
-		cShape* shape = world->p_shapes[actor->shapeIndex];
-		const cPolygon& poly = shape->polygon;
-		
-		float mass = actor->mass;
-		cassert(mass > FLT_EPSILON);
-		float area = 0.0f;
-		float I = 0.0f;
-		int count = poly.count;
-		const std::vector<vec2>& vertices = poly.vertices;
-		vec2 center = { 0.0f, 0.0f };
-		// Get a reference point for forming triangles.
-		// Use the first vertex to reduce round-off errors.
-		vec2 r = vertices[0];
-		const float inv3 = 1.0f / 3.0f;
-
-		for (int32_t i = 1; i < count - 1; ++i)
+		// Delete the attached shapes. This destroys broad-phase proxies.
+		int shapeIndex = actor->shapeList;
+		while (shapeIndex != -1)
 		{
-			// Triangle edges
-			vec2 e1 = (vertices[i] - r);
-			vec2 e2 = (vertices[i + 1] - r);
+			cShape* shape = p_shapes[shapeIndex];
+			shapeIndex = shape->nextShapeIndex;
+			
+			// The broad-phase proxies only exist if the body does
+			m_broadphase.DestroyProxy(shape->broadphaseIndex);
 
-			float D = cross(e1, e2);
-
-			float triangleArea = 0.5f * D;
-			area += triangleArea;
-
-			// Area weighted centroid, r at origin
-			center += (triangleArea * inv3 * (e1 + e2));
-
-			float ex1 = e1.x, ey1 = e1.y;
-			float ex2 = e2.x, ey2 = e2.y;
-
-			float intx2 = ex1 * ex1 + ex2 * ex1 + ex2 * ex2;
-			float inty2 = ey1 * ey1 + ey2 * ey1 + ey2 * ey2;
-
-			I += (0.25f * inv3 * D) * (intx2 + inty2);
+			p_shapes.Free(shape);
 		}
-		
-		center *= (1.0f / area);
-		I *= (mass / area);
-		float d = center.sqrMagnitude();
-		I += mass * d;
-		
-		actor->inertia = I;
-		actor->invInertia = 1.0f / I;
+		// Free body
+		p_actors.Free(actor);
 	}
 
-	int cPhysicsWorld::CreateShape(int inActorIndex, const ShapeConfig& inConfig)
+	static void computeActorMass(cPhysicsWorld* w, cActor* b)
+	{
+		// Compute mass data from shapes. Each shape has its own density.
+		b->mass = 0.0f;
+		b->invMass = 0.0f;
+		b->inertia = 0.0f;
+		b->invInertia = 0.0f;
+		b->localCenter = vec2::zero;
+
+		// Static and kinematic bodies have zero mass.
+		if (b->type == cActorType::STATIC || b->type == cActorType::KINEMATIC)
+		{
+			b->position = b->origin;
+			return;
+		}
+		
+		// Accumulate mass over all shapes.
+		vec2 localCenter = vec2::zero;
+		int32_t shapeIndex = b->shapeList;
+		while (shapeIndex != -1)
+		{
+			const cShape* s = w->p_shapes[shapeIndex];
+			shapeIndex = s->nextShapeIndex;
+
+			if (s->density == 0.0f)
+			{
+				continue;
+			}
+
+			cMassData massData = s->computeMass();
+
+			b->mass += massData.mass;
+			localCenter += massData.mass * massData.center;
+			b->inertia += massData.I;
+		}
+
+		// Compute center of mass.
+		if (b->mass > 0.0f)
+		{
+			b->invMass = 1.0f / b->mass;
+			localCenter = (b->invMass * localCenter);
+		}
+
+		if (b->inertia > 0.0f)
+		{
+			// Center the inertia about the center of mass.
+			b->inertia -= b->mass * dot(localCenter, localCenter);
+			cassert(b->inertia > 0.0f);
+			b->invInertia = 1.0f / b->inertia;
+		}
+		else
+		{
+			b->inertia = 0.0f;
+			b->invInertia = 0.0f;
+		}
+
+		// Move center of mass.
+		vec2 oldCenter = b->position;
+		b->localCenter = localCenter;
+		b->position = b->localCenter.rotated(b->rotation) + b->origin;
+
+		// Update center of mass velocity.
+		vec2 deltaLinear = cross(b->angularVelocity, (b->position - oldCenter));
+		b->linearVelocity = (b->linearVelocity + deltaLinear);
+	}
+
+	int cPhysicsWorld::CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom)
 	{
 		cShape* n_shape = p_shapes.Alloc();
 		int shapeIndex = p_shapes.getIndex(n_shape);
 		cActor* actor = p_actors[inActorIndex];
 
 		n_shape->actorIndex = inActorIndex;
-		n_shape->setVertices(inConfig.vertices);
+		n_shape->polygon = *inGeom;
 		n_shape->friction = inConfig.friction;
 		n_shape->restitution = inConfig.restitution;
 
 		cTransform xf = { actor->origin, actor->rotation };
-		n_shape->aabb = CreateAABBHull(n_shape->polygon.vertices, xf);
+		n_shape->aabb = n_shape->ComputeAABB(xf);
 		n_shape->broadphaseIndex = m_broadphase.CreateProxy(n_shape->aabb, n_shape);
-		actor->shapeIndex = shapeIndex;
+		
+		// Add to shape linked list
+		n_shape->nextShapeIndex = actor->shapeList;
+		actor->shapeList = shapeIndex;
 
-		computeActorInertia(this, actor);
+		if (n_shape->density)
+		{
+			computeActorMass(this, actor);
+		}
 
 		return shapeIndex;
 	}
-	
-	void cPhysicsWorld::RemoveShape(int inShapeIndex)
-	{
-		cShape* shape = p_shapes[inShapeIndex];
-		m_broadphase.DestroyProxy(shape->broadphaseIndex);
-		p_actors[shape->actorIndex]->shapeIndex = -1;
-		p_shapes.Free(shape);
-	}
 
-	void cPhysicsWorld::RemoveActor(int inActorIndex)
-	{
-		cActor* inActor = p_actors[inActorIndex];
-		RemoveShape(inActor->shapeIndex);
-		p_actors.Free(inActor);
-	}
+
+
 	
 	void cPhysicsWorld::update(float inDT)
 	{

@@ -39,7 +39,6 @@ namespace chiori
 			IS_DIRTY = (1 << 1)
 		};
 
-		int shapeIndex = -1;
 		Flag_8 _flags = USE_GRAVITY | IS_DIRTY; // actor setting flags
 
 		vec2 origin{ vec2::zero }; // the body origin (not center of mass)
@@ -66,6 +65,10 @@ namespace chiori
 
 		int contactList{ -1 };		// the head of the dll (-1 means an invalid head) 
 		int contactCount{ 0 };		// the number of contacts
+
+		int shapeList{ -1 };		// the ll of shapes on the actor
+		
+		void* userData{ nullptr };
 
 		cActor() {};
 
@@ -99,14 +102,26 @@ namespace chiori
 		}
 
 		Flag_8 getFlags() const { return _flags; }
-		void setFlags(Flag_8 inFlags);
-		void setFlags(int inFlags);
+		void setFlags(Flag_8 inFlags)
+		{
+			_flags = inFlags;
+		}
+		void setFlags(int inFlags)
+		{
+			_flags.set(inFlags);
+		}
 
-		int GetShapeIndex() { return shapeIndex; }
 		#pragma endregion
 		
-		void addForce(const vec2& inForce);
-		void addTorque(float inTorque);
+		void addForce(const vec2& inForce)
+		{
+			forces += inForce * invMass;
+		}
+
+		void addTorque(float torque)
+		{
+			torques += torque * invInertia;
+		}
 
 		bool operator==(const cActor& inRHS) const {
 			return this == &inRHS;

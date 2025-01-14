@@ -34,6 +34,9 @@
     <ClCompile Include="fracture.cpp">
       <Filter>Source\Fracture</Filter>
     </ClCompile>
+    <ClCompile Include="geom.cpp">
+      <Filter>Source\Collision Detection</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">

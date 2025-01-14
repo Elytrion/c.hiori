@@ -10,71 +10,62 @@ namespace chiori
 	{
 		float friction{ 0.5f };
 		float restitution{ 0.0f };
-		std::vector<vec2> vertices;
+		float density{ 1.0f };
 	};
 	
 	class cShape
 	{
 	public:
-		int actorIndex = -1;		// the index of the actor that holds this shape
-		int broadphaseIndex = -1;	// the index of this shape in the broadphase structure
-		
-		cPolygon polygon;			// holds the vertices and normals of the shape
 		enum // Shape flags
 		{
 			SCENE_QUERYABLE = (1 << 0), // this shape can be queried (either by raycasts or triggers)
 			IS_TRIGGER = (1 << 1),		// this shape is a trigger and will not participate in collision response
 			IS_STATIC = (1 << 2)		// this shape will not move during simulation time (set for broadphase optimization)
 		};
+
+		int actorIndex{ -1 };		// the index of the actor that holds this shape
+		int nextShapeIndex{ -1 };	// the index of the next shape in the actor's shape linked list
+		int broadphaseIndex{ -1 };	// the index of this shape in the broadphase structure
+		
+		cPolygon polygon;			// holds the vertices and normals of the shape
+		
 		float friction{ 0.5f };
 		float restitution{ 0.1f };
+		float density{ 1.0f };
+		
 		AABB aabb;						// untransformed close fit AABB
 		Flag_8 shapeFlags = SCENE_QUERYABLE;
+		
 		void* userData{ nullptr }; 			// to hold a pointer to any user specific data (user holds ownership of data)
 
 		cShape() {};
-		cShape(const std::vector<vec2>& inVertices) { setVertices(inVertices); }
-		void setVertices(const std::vector<vec2>& inVertices);
-		std::vector<vec2> getVertices(cTransform inTfm);
-
-		int GetActorIndex() { return actorIndex; }
+		cShape(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
+		int getVerticesCount() const { return polygon.count; }
+		void setVertices(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
+		const vec2* getBaseVertices() const { return polygon.vertices; }
+		void getVertices(vec2*& inVertices, cTransform xf);
+		cMassData computeMass() const { return polygon.ComputeMass(density); }
+		
+		AABB ComputeAABB(const cTransform& xf)
+		{
+			return CreateAABBHull(polygon.vertices, polygon.count, xf);
+		}	
 
 		bool operator==(const cShape& inRHS) const {
 			return this == &inRHS;
 		}
 	};
-
-	inline void cShape::setVertices(const std::vector<vec2>& inVertices)
+	
+	// this function assumes the size of the array passed in is equal to or greater than count
+	inline void cShape::getVertices(vec2*& inVertices, cTransform xf)
 	{
-		cassert(inVertices.size() >= 3);
-		// copy over the data
-		std::vector<vec2>& vertices = polygon.vertices;
-		std::vector<vec2>& normals = polygon.normals;
-		int& count = polygon.count;
-		vertices = inVertices;
-		count = static_cast<int>(inVertices.size());
-		// calculate normals
+		int count = polygon.count;
+		vec2* verts = polygon.vertices;
 		for (int i = 0; i < count; ++i)
 		{
-			int i1 = i;
-			int i2 = (i + 1) % count;
-			vec2 edge = vertices[i2] - vertices[i1];
-			cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
-			normals.push_back(edge.scross(1.0f).normalize());
-		}
-	}
-
-	inline std::vector<vec2> cShape::getVertices(cTransform inTfm)
-	{
-		std::vector<vec2> n_verts = polygon.vertices;
-		// Apply position, scale and rotation to base vertices
-		for (auto& vertex : n_verts)
-		{
-			vertex.x = vertex.x * inTfm.scale.x;
-			vertex.y = vertex.y * inTfm.scale.y;
-			vertex = vertex.rotate(inTfm.rot);
-			vertex = vertex + inTfm.pos;
-		}
-		return n_verts;
+			inVertices[i] = verts[i];
+			inVertices[i].rotate(xf.rot);
+			inVertices[i] += xf.pos;
+		} 
 	}
 }

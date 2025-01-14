@@ -8,7 +8,7 @@
 #include "commons.h"
 
 namespace chiori
-{
+{	
 	class cPhysicsWorld
 	{
 	public:
@@ -30,8 +30,7 @@ namespace chiori
 		void step(float inDT);	// simulates one time step of physics, call directly if not using update
 
 		int CreateActor(const ActorConfig& inConfig);
-		int CreateShape(int inActorIndex, const ShapeConfig& inConfig);
-		void RemoveShape(int inShapeIndex);
+		int CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom);
 		void RemoveActor(int inActorIndex);
 
 		cPool<cActor> p_actors;
