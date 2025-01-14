@@ -14,9 +14,6 @@ cPhysicsWorld world; // create an instance of the physics world
 bool isHolding_mouse = false;
 bool isHolding_keys = false;
 
-std::vector<int> actors;
-std::vector<int> shapes;
-
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
     { 128, 128, 0,   255 },
@@ -183,34 +180,22 @@ cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
 
 void BoxScene()
 {
-    //// Create a floor
-    //ActorConfig a_config;
-    //a_config.type = cActorType::STATIC;
-    //a_config.position = vec2{ 0, 0 };
-    //int floorActorIndex = world.CreateActor(a_config);
-    //ShapeConfig s_config;
-    //std::vector<vec2> vertices;
-    //vertices.push_back({ -5.0f, -0.25f });
-    //vertices.push_back({ 5.0f, -0.25f });
-    //vertices.push_back({ 5.0f, 0.25f });
-    //vertices.push_back({ -5.0f,  0.25f });
-    //s_config.vertices = vertices;
-    //int floorShapeIndex = world.CreateShape(floorActorIndex, s_config);
-    //shapes.push_back(floorShapeIndex);
-    //actors.push_back(floorActorIndex);
+    // Create a floor
+    ActorConfig a_config;
+    a_config.type = cActorType::STATIC;
+    a_config.position = vec2{ 0, 0 };
+    int floorActorIndex = world.CreateActor(a_config);
+    
+    ShapeConfig s_config;
+    cPolygon floorShape = GeomMakeBox(5.0f, 0.5f);
+    int floorShapeIndex = world.CreateShape(floorActorIndex, s_config, &floorShape);
 
-    ////a_config.type = cActorType::DYNAMIC;
-    ////a_config.position = vec2{ 0.0f, 0.5f };
-    ////int boxAActorIndex = world.CreateActor(a_config);
-    ////vertices.clear();
-    ////vertices.push_back({ -0.5f, -0.5f });
-    ////vertices.push_back({ 0.5f, -0.5f });
-    ////vertices.push_back({ 0.5f, 0.5f });
-    ////vertices.push_back({ -0.5f,  0.5f });
-    ////s_config.vertices = vertices;
-    ////int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config);
-    ////shapes.push_back(boxAShapeIndex);
-    ////actors.push_back(boxAActorIndex);
+    a_config.type = cActorType::DYNAMIC;
+    a_config.position = vec2{ 0.0f, 1.5f };
+    int boxAActorIndex = world.CreateActor(a_config);
+    cPolygon boxAShape = GeomMakeBox(0.5f, 0.5f);
+    int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
+    
 
     //a_config.type = cActorType::DYNAMIC;
     //a_config.position = vec2{ 1.5f, 2.5f };
@@ -239,12 +224,10 @@ void game_init(void)
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
 	InitPhysics();
-    
-    DynamicTree t;
 }
 
 bool pauseStep = false;
-bool isPaused = true;
+bool isPaused = false;
 void UpdatePhysics()
 {
     if (!isPaused)
@@ -271,8 +254,13 @@ void UpdatePhysics()
     for (int itr = 0; itr < world.p_actors.size(); itr++)
     {
         cActor* a = world.p_actors[itr];
-        cShape* s = world.p_shapes[a->shapeList];
-        DrawActor(s, a->getTransform());
+        int shapeIndex = a->shapeList;
+        while (shapeIndex != -1)
+        {
+            cShape* s = world.p_shapes[shapeIndex];
+            DrawActor(s, a->getTransform());
+            shapeIndex = s->nextShapeIndex;
+        }
     }
     for (int itr = 0; itr < world.p_contacts.size(); itr++)
     {

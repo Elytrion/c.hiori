@@ -242,6 +242,8 @@ namespace chiori
 				{
 					m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
 				}
+
+				shapeIndex = shape->nextShapeIndex;
 			}
 
 			// We might need to recalculate the mass and inertia of the actor their values have been modifed
