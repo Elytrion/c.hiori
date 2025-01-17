@@ -6,6 +6,8 @@
 
 namespace chiori
 {
+	#define MAX_FIXED_UPDATES_PER_FRAME 3 
+
 	int cPhysicsWorld::CreateActor(const ActorConfig& inConfig)
 	{
 		cActor* n_actor = p_actors.Alloc();
@@ -203,10 +205,18 @@ namespace chiori
 	{
 		// Accumulate the time since the last frame
 		accumulator += inDT;
-		
-		while (accumulator >= physicsStepTime) {
+		int steps = 0; // to prevent SOD
+		while (accumulator >= physicsStepTime && steps < MAX_FIXED_UPDATES_PER_FRAME) {
 			step(physicsStepTime); 
 			accumulator -= physicsStepTime;
+			++steps;
+		}
+		if (steps >= MAX_FIXED_UPDATES_PER_FRAME)
+		{
+			// Skip the remaining time in the accumulator to prevent SOD, 
+			// will cause the simulation to bug out at the cost of saving the program from crashing
+			accumulator = 0.0f; 
+			std::cerr << "[cPhysicsWorld] Accumulator Overflowed! Skipping updates to prevent crash!";
 		}
 	}
 

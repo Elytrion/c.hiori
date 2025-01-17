@@ -12,19 +12,19 @@ namespace chiori
 		// local anchors relative to body origin
 		vec2 localAnchorA{ vec2::zero };
 		vec2 localAnchorB{ vec2::zero };
-		float separation{ 0 };
 
 		// Friction anchors
-		vec2 frictionAnchorA;
-		vec2 frictionAnchorB;	
-		vec2 frictionNormalA;
-		vec2 frictionNormalB;
+		vec2 frictionAnchorA{ vec2::zero };
+		vec2 frictionAnchorB{ vec2::zero };
+		vec2 frictionNormalA{ vec2::zero };
+		vec2 frictionNormalB{ vec2::zero };
 
-		float normalImpulse;
-		float tangentImpulse;
+		float separation{ 0 };
+		float normalImpulse{ 0 };
+		float tangentImpulse{ 0 };
 		uint16_t id;
 
-		bool persisted{ false };
+		bool persisted{ false }; // is this a new or persistant manifold
 	};
 
 	struct cManifold
@@ -32,8 +32,8 @@ namespace chiori
 		cManifoldPoint points[2];
 		vec2 normal{ vec2::zero };
 		int pointCount{ 0 };
-		int constraintIndex;
-		bool frictionPersisted;
+		int constraintIndex{ -1 };
+		bool frictionPersisted{ false };
 	};
 
 	cManifold CollideShapes(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, cGJKCache* cache);

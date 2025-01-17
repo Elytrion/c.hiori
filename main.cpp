@@ -115,6 +115,8 @@ void DrawContact(cContact* contact)
         CP_Settings_StrokeWeight(3);
         CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
         CP_Graphics_DrawLine(worldPoint.x, worldPoint.y, normalCap.x, normalCap.y);
+
+        std::cout << "Sep " << contact->shapeIndexA << " " << j << " :" << point->normalImpulse << std::endl;
     }
 }
 
@@ -187,11 +189,12 @@ void BoxScene()
     int floorActorIndex = world.CreateActor(a_config);
     
     ShapeConfig s_config;
-    cPolygon floorShape = GeomMakeBox(5.0f, 0.5f);
+    cPolygon floorShape = GeomMakeBox(5.0f, 0.25f);
     int floorShapeIndex = world.CreateShape(floorActorIndex, s_config, &floorShape);
 
     a_config.type = cActorType::DYNAMIC;
-    a_config.position = vec2{ 0.0f, 1.5f };
+    a_config.position = vec2{ 1.0f, 0.5f };
+    a_config.rotation = 35 * DEG2RAD;
     int boxAActorIndex = world.CreateActor(a_config);
     cPolygon boxAShape = GeomMakeBox(0.5f, 0.5f);
     int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
@@ -228,7 +231,7 @@ void game_init(void)
 
 bool pauseStep = false;
 bool isPaused = true;
-void UpdatePhysics()
+void RunChioriPhysics()
 {
     if (!isPaused)
     {
@@ -405,7 +408,7 @@ void game_update(void)
     
     CP_Vector mousePos = CP_Vector{ (float)CP_Input_GetMouseWorldX(), (float)CP_Input_GetMouseWorldY() };
     HandleInput(mousePos);
-    UpdatePhysics();
+    RunChioriPhysics();
 
     // Profiling info and frameRate testing
     if (drawFPS)

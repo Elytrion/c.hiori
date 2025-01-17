@@ -230,9 +230,23 @@ namespace chiori
 		return PolygonScalarClipper(polyA, polyB, edgeA, edgeB, flip);
 	}
 	
+	// Due to speculation, every polygon is rounded
+	// Algorithm:
+	// compute distance
+	// if distance <= 0.1f * s2_linearSlop
+	//   SAT
+	// else
+	//   find closest features from GJK
+	//   expect 2-1 or 1-1 or 1-2 features
+	//   if 2-1 or 1-2
+	//     clip
+	//   else
+	//     vertex-vertex
+	//   end
+	// end
 	cManifold CollideShapes(const cPolygon* shapeA, const cPolygon* shapeB, const cTransform& xfA, const cTransform& xfB, cGJKCache* cache)
 	{
-		cManifold manifold = {};
+		cManifold manifold;
 		cPolygon localShapeB;
 		float radius = shapeA->radius + shapeB->radius;
 
