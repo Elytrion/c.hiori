@@ -122,32 +122,4 @@ namespace chiori
 
 		}
 	}
-
-	// callback
-	/*
-	bool cBroadPhase::QueryCallback(int proxyId)
-	{
-		// A proxy cannot form a pair with itself.
-		if (proxyId == m_queryProxyId)
-		{
-			return true;
-		}
-
-		// Grow the pair buffer as needed.
-		if (m_pairCount == m_pairCapacity)
-		{
-			b2Pair* oldBuffer = m_pairBuffer;
-			m_pairCapacity *= 2;
-			m_pairBuffer = (b2Pair*)b2Alloc(m_pairCapacity * sizeof(b2Pair));
-			memcpy(m_pairBuffer, oldBuffer, m_pairCount * sizeof(b2Pair));
-			b2Free(oldBuffer);
-		}
-
-		m_pairBuffer[m_pairCount].proxyIdA = b2Min(proxyId, m_queryProxyId);
-		m_pairBuffer[m_pairCount].proxyIdB = b2Max(proxyId, m_queryProxyId);
-		++m_pairCount;
-
-		return true;
-	}
-	*/
 }

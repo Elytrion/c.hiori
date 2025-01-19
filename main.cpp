@@ -47,9 +47,9 @@ bool IsPointInRadius(vec2 center, float radius, vec2 pos)
 void DrawActor(cShape*& inShape, const cTransform& inTfm)
 {    
     cTransform xfAlt = inTfm;
-    xfAlt.pos.y *= -1;
-    xfAlt.pos *= 100;
-    xfAlt.pos += middle;
+    xfAlt.p.y *= -1;
+    xfAlt.p *= 100;
+    xfAlt.p += middle;
     xfAlt.scale = { 100,100 };
     std::vector<vec2> vertices(inShape->getCount());
     inShape->getVertices(vertices.data(), xfAlt);
@@ -63,7 +63,7 @@ void DrawActor(cShape*& inShape, const cTransform& inTfm)
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
-    vec2 middlePos = inTfm.pos * 100;
+    vec2 middlePos = inTfm.p * 100;
     middlePos.y *= -1;
     middlePos += middle;
     CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
@@ -83,7 +83,7 @@ void DrawContact(cContact* contact)
             continue;
         
         anchor.y *= -1;
-        vec2 worldPoint = cTransformVec(xf, anchor);
+        vec2 worldPoint = TransformVec(xf, anchor);
         worldPoint *= 100; worldPoint += middle;
         
         if (point->separation > 0.005f) // speculative point
@@ -104,7 +104,7 @@ void DrawContact(cContact* contact)
 
         vec2 normalAnchor = anchor + contact->manifold.normal;
         normalAnchor.y *= -1;
-        vec2 normalCap = cTransformVec(xf, normalAnchor);
+        vec2 normalCap = TransformVec(xf, normalAnchor);
         normalCap *= 100;
         normalCap += middle;
 
@@ -318,7 +318,7 @@ void HandleInput(CP_Vector mousePosIn)
             if (a->type == cActorType::STATIC)
                 continue;
             cTransform tfm = a->getTransform();
-            if (IsPointInRadius(tfm.pos, 1, worldPos))
+            if (IsPointInRadius(tfm.p, 1, worldPos))
             {
                 selectedActor = a;
                 isHolding_mouse = true;
@@ -334,7 +334,7 @@ void HandleInput(CP_Vector mousePosIn)
             {
                 cActor* a = world.p_actors[itr];
                 cTransform tfm = a->getTransform();
-                if (IsPointInRadius(tfm.pos, 1, worldPos))
+                if (IsPointInRadius(tfm.p, 1, worldPos))
                 {
                     selectedActor = a;
                     isHolding_keys = true;
@@ -359,7 +359,7 @@ void HandleInput(CP_Vector mousePosIn)
     {
         selectedActor->linearVelocity = vec2::zero;
         cTransform tfm = selectedActor->getTransform();
-        tfm.pos = { worldPos.x, worldPos.y };
+        tfm.p = { worldPos.x, worldPos.y };
         selectedActor->setTransform(tfm);
 
         if (CP_Input_MouseDown(MOUSE_BUTTON_2))
@@ -378,23 +378,23 @@ void HandleInput(CP_Vector mousePosIn)
     if (isHolding_keys && selectedActor)
     {
         cTransform tfm = selectedActor->getTransform();
-        vec2& pos = tfm.pos;
+        vec2& pos = tfm.p;
 
         if (CP_Input_KeyDown(KEY_RIGHT))
         {
-            tfm.pos += vec2::right * 0.1f;
+            tfm.p += vec2::right * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_LEFT))
         {
-            tfm.pos += vec2::left * 0.1f;
+            tfm.p += vec2::left * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_UP))
         {
-            tfm.pos += vec2::down * 0.1f;
+            tfm.p += vec2::down * 0.1f;
         }
         else if (CP_Input_KeyDown(KEY_DOWN))
         {
-            tfm.pos += vec2::up * 0.1f;
+            tfm.p += vec2::up * 0.1f;
         }
         selectedActor->setTransform(tfm);
     }

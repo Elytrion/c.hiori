@@ -67,8 +67,8 @@ namespace chiori
 	cPolygon GeomMakeOffsetBox(float hx, float hy, vec2 center, float angleRadians)
 	{
 		cTransform xf;
-		xf.pos = center;
-		xf.rot = angleRadians;
+		xf.p = center;
+		xf.q.set(angleRadians);
 
 		cPolygon poly;
 		poly.count = 4;
@@ -76,10 +76,10 @@ namespace chiori
 		poly.vertices[1] = cTransformVec(xf, { hx, -hy });
 		poly.vertices[2] = cTransformVec(xf, { hx, hy });
 		poly.vertices[3] = cTransformVec(xf, { -hx, hy });
-		poly.normals[0] = vec2::down.rotated(xf.rot);
-		poly.normals[1] = vec2::right.rotated(xf.rot);
-		poly.normals[2] = vec2::up.rotated(xf.rot);
-		poly.normals[3] = vec2::left.rotated(xf.rot);
+		poly.normals[0] = vec2::down.rotated(xf.q);
+		poly.normals[1] = vec2::right.rotated(xf.q);
+		poly.normals[2] = vec2::up.rotated(xf.q);
+		poly.normals[3] = vec2::left.rotated(xf.q);
 		poly.radius = 0.0f;
 		return poly;
 	}

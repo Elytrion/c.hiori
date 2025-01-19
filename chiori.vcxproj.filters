@@ -19,9 +19,6 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source\Commons</Filter>
     </ClCompile>
-    <ClCompile Include="cActor.cpp">
-      <Filter>Source\Components</Filter>
-    </ClCompile>
     <ClCompile Include="manifold.cpp">
       <Filter>Source\Contacts</Filter>
     </ClCompile>

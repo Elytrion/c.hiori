@@ -82,7 +82,6 @@ namespace chiori
 		//lower = (lower - r);
 		//upper = (upper - r);
 
-
 		return { lower, upper };
 	}
 }

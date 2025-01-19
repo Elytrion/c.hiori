@@ -66,8 +66,8 @@ namespace chiori
 			inVertices[i] = verts[i];
 			inVertices[i].x *= xf.scale.x;
 			inVertices[i].y *= xf.scale.y;
-			inVertices[i].rotate(xf.rot);
-			inVertices[i] += xf.pos;
+			inVertices[i].rotate(xf.q);
+			inVertices[i] += xf.p;
 		} 
 	}
 }

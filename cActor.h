@@ -45,7 +45,7 @@ namespace chiori
 		vec2 position{ vec2::zero }; // center of mass position in world space
 		vec2 deltaPosition{ vec2::zero }; // delta position for the whole time step
 		vec2 localCenter{ vec2::zero }; // location of center of mass relative to the body origin (local space)
-		float rotation{ 0.0f };
+		cRot rot{ cRot::iden };
 
 		vec2 forces{ vec2::zero };
 		float torques{ 0.0f };
@@ -75,13 +75,13 @@ namespace chiori
 		#pragma region Get/Setters
 		cTransform getTransform() const
 		{
-			return { origin, rotation };
+			return { origin, rot };
 		}
 		void setTransform(const cTransform& inTfm)
 		{
-			origin = inTfm.pos;
+			origin = inTfm.p;
 			position = origin;
-			rotation = inTfm.rot;
+			rot = inTfm.q;
 			_flags.set(IS_DIRTY);
 		}
 

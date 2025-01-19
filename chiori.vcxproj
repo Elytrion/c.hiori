@@ -204,7 +204,6 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
   <ItemGroup>
     <ClCompile Include="aabbtree.cpp" />
     <ClCompile Include="broadphase.cpp" />
-    <ClCompile Include="cActor.cpp" />
     <ClCompile Include="contact.cpp" />
     <ClCompile Include="fracture.cpp" />
     <ClCompile Include="geom.cpp" />

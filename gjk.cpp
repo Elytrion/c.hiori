@@ -12,7 +12,7 @@ namespace chiori
 	
 	int GetSupportIndex(const cGJKProxy& proxy, const cTransform& xf, const vec2& dir)
 	{
-		vec2 localDir = dir.rotated(-xf.rot);
+		vec2 localDir = dir.rotated(-xf.q);
 		return proxy.getSupport(localDir);
 	}
 	
@@ -91,7 +91,7 @@ namespace chiori
 			// If the cache is empty or invalid ...
 			if (s_size == 0)
 			{				
-				vec2 dir = transformA.pos - transformB.pos;
+				vec2 dir = transformA.p - transformB.p;
 				m1.indexA = GetSupportIndex(proxyA, transformA, -dir);
 				m1.indexB = GetSupportIndex(proxyB, transformB, dir);
 				vec2 localVertA = proxyA.GetVertex(m1.indexA);
