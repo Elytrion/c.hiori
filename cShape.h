@@ -39,11 +39,11 @@ namespace chiori
 		void* userData{ nullptr }; 			// to hold a pointer to any user specific data (user holds ownership of data)
 
 		cShape() {};
-		cShape(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
+		cShape(const cVec2* inVertices, int count) { polygon.Set(inVertices, count); }
 		int getCount() const { return polygon.count; }
-		void setVertices(const vec2* inVertices, int count) { polygon.Set(inVertices, count); }
-		const vec2* getBaseVertices() const { return polygon.vertices; }
-		void getVertices(vec2* inVertices, cTransform xf) const;
+		void setVertices(const cVec2* inVertices, int count) { polygon.Set(inVertices, count); }
+		const cVec2* getBaseVertices() const { return polygon.vertices; }
+		void getVertices(cVec2* inVertices, cTransform xf) const;
 		cMassData computeMass() const { return polygon.ComputeMass(density); }
 		
 		AABB ComputeAABB(const cTransform& xf)
@@ -57,10 +57,10 @@ namespace chiori
 	};
 	
 	// this function assumes the size of the array passed in is equal to or greater than count
-	inline void cShape::getVertices(vec2* inVertices, cTransform xf) const
+	inline void cShape::getVertices(cVec2* inVertices, cTransform xf) const
 	{
 		int count = polygon.count;
-		const vec2* verts = polygon.vertices;
+		const cVec2* verts = polygon.vertices;
 		for (int i = 0; i < count; ++i)
 		{
 			inVertices[i] = verts[i];

@@ -7,10 +7,10 @@ namespace chiori
 	{
 		struct IntegratorInput
 		{
-			vec2* pos;
-			vec2* prePos;
-			vec2* vel;
-			vec2 forces;
+			cVec2* pos;
+			cVec2* prePos;
+			cVec2* vel;
+			cVec2 forces;
 			float* rot;
 			float* prevRot;
 			float* rotVel;
@@ -36,7 +36,7 @@ namespace chiori
 		inline void ImplictEuler(IntegratorInput i)
 		{
 			// Update velocity using the force and mass (Newton's second law)
-			vec2 newVel = *i.vel + (i.forces / i.mass) * i.dt;
+			cVec2 newVel = *i.vel + (i.forces / i.mass) * i.dt;
 			// Update position using the new velocity
 			*i.pos += newVel * i.dt;
 			// Update rotation using angular velocity

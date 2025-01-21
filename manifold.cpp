@@ -43,17 +43,17 @@ namespace chiori
 			i22 = edgeB + 1 < polyB->count ? edgeB + 1 : 0;
 		}
 
-		vec2 normal = poly1->normals[i11];
+		cVec2 normal = poly1->normals[i11];
 
 		// Reference edge vertices
-		vec2 v11 = poly1->vertices[i11];
-		vec2 v12 = poly1->vertices[i12];
+		cVec2 v11 = poly1->vertices[i11];
+		cVec2 v12 = poly1->vertices[i12];
 
 		// Incident edge vertices
-		vec2 v21 = poly2->vertices[i21];
-		vec2 v22 = poly2->vertices[i22];
+		cVec2 v21 = poly2->vertices[i21];
+		cVec2 v22 = poly2->vertices[i22];
 
-		vec2 tangent = {-normal.y, normal.x};
+		cVec2 tangent = {-normal.y, normal.x};
 
 		float lower1 = 0.0f;
 		float upper1 = (v12 - v11).dot(tangent);
@@ -62,7 +62,7 @@ namespace chiori
 		float upper2 = (v21 - v11).dot(tangent);
 		float lower2 = (v22-  v11).dot(tangent);
 
-		vec2 vLower;
+		cVec2 vLower;
 		if (lower2 < lower1 && upper2 - lower2 > FLT_EPSILON)
 		{
 			vLower = vlerp(v22, v21, (lower1 - lower2) / (upper2 - lower2));
@@ -72,7 +72,7 @@ namespace chiori
 			vLower = v22;
 		}
 
-		vec2 vUpper;
+		cVec2 vUpper;
 		if (upper2 > upper1 && upper2 - lower2 > FLT_EPSILON)
 		{
 			vUpper = vlerp(v22, v21, (upper1 - lower2) / (upper2 - lower2));
@@ -86,8 +86,8 @@ namespace chiori
 		float separationUpper = (vUpper - v11).dot(normal);
 		float r1 = polyA->radius;
 		float r2 = polyB->radius;
-		vec2 radiiNormalLower = normal * (0.5f * (r1 - r2 - separationLower));
-		vec2 radiiNormalUpper = normal * (0.5f * (r1 - r2 - separationUpper));
+		cVec2 radiiNormalLower = normal * (0.5f * (r1 - r2 - separationLower));
+		cVec2 radiiNormalUpper = normal * (0.5f * (r1 - r2 - separationUpper));
 		// Put contact points at midpoint, accounting for radii
 		vLower += radiiNormalLower;
 		vUpper += radiiNormalUpper;
@@ -141,17 +141,17 @@ namespace chiori
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
-		const vec2* n1s = poly1->normals;
-		const vec2* v1s = poly1->vertices;
-		const vec2* v2s = poly2->vertices;
+		const cVec2* n1s = poly1->normals;
+		const cVec2* v1s = poly1->vertices;
+		const cVec2* v2s = poly2->vertices;
 
 		int bestIndex = 0;
 		float maxSeparation = -FLT_MAX;
 		for (int i = 0; i < count1; ++i)
 		{
 			// Get poly1 normal in frame2.
-			vec2 n = n1s[i];
-			vec2 v1 = v1s[i];
+			cVec2 n = n1s[i];
+			cVec2 v1 = v1s[i];
 
 			// Find the deepest point for normal i.
 			float si = FLT_MAX;
@@ -189,11 +189,11 @@ namespace chiori
 		if (separationB > separationA)
 		{
 			flip = true;
-			vec2 searchDirection = polyB->normals[edgeB];
+			cVec2 searchDirection = polyB->normals[edgeB];
 
 			// Find the incident edge on polyA
 			int count = polyA->count;
-			const vec2* normals = polyA->normals;
+			const cVec2* normals = polyA->normals;
 			edgeA = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -209,11 +209,11 @@ namespace chiori
 		else
 		{
 			flip = false;
-			vec2 searchDirection = polyA->normals[edgeA];
+			cVec2 searchDirection = polyA->normals[edgeA];
 
 			// Find the incident edge on polyB
 			int count = polyB->count;
-			const vec2* normals = polyB->normals;
+			const cVec2* normals = polyB->normals;
 			edgeB = 0;
 			float minDot = FLT_MAX;
 			for (int i = 0; i < count; ++i)
@@ -294,13 +294,13 @@ namespace chiori
 		if (cache->count == 1)
 		{
 			// vertex-vertex collision
-			vec2 pA = output.pointA;
-			vec2 pB = output.pointB;
+			cVec2 pA = output.pointA;
+			cVec2 pB = output.pointB;
 
 			float distance = output.distance;
-			vec2 normal = (pB-pA).normalized();
-			vec2 radiiNormal = normal * 0.5f * (shapeA->radius - localShapeB.radius - distance);
-			vec2 contactPointA = pB + radiiNormal;
+			cVec2 normal = (pB-pA).normalized();
+			cVec2 radiiNormal = normal * 0.5f * (shapeA->radius - localShapeB.radius - distance);
+			cVec2 contactPointA = pB + radiiNormal;
 
 			manifold.normal = normal.rotated(xfA.q);
 			cManifoldPoint* cp = manifold.points + 0;
@@ -330,7 +330,7 @@ namespace chiori
 
 			// Find reference edge that most aligns with vector between closest points.
 			// This works for capsules and polygons
-			vec2 axis = output.pointA - output.pointB;
+			cVec2 axis = output.pointA - output.pointB;
 			float dot1 = axis.dot(localShapeB.normals[b1]);
 			float dot2 = axis.dot(localShapeB.normals[s2x]);
 			edgeB = dot1 > dot2 ? b1 : s2x;
@@ -352,7 +352,7 @@ namespace chiori
 		{
 			// Find reference edge that most aligns with vector between closest points.
 			// This works for capsules and polygons
-			vec2 axis = (output.pointB - output.pointA);
+			cVec2 axis = (output.pointB - output.pointA);
 			float dot1 = axis.dot(shapeA->normals[a1]);
 			float dot2 = axis.dot(shapeA->normals[a2]);
 			edgeA = dot1 > dot2 ? a1 : a2;

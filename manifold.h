@@ -10,14 +10,14 @@ namespace chiori
 	struct cManifoldPoint
 	{
 		// local anchors relative to body origin
-		vec2 localAnchorA{ vec2::zero };
-		vec2 localAnchorB{ vec2::zero };
+		cVec2 localAnchorA{ cVec2::zero };
+		cVec2 localAnchorB{ cVec2::zero };
 
 		// Friction anchors
-		vec2 frictionAnchorA{ vec2::zero };
-		vec2 frictionAnchorB{ vec2::zero };
-		vec2 frictionNormalA{ vec2::zero };
-		vec2 frictionNormalB{ vec2::zero };
+		cVec2 frictionAnchorA{ cVec2::zero };
+		cVec2 frictionAnchorB{ cVec2::zero };
+		cVec2 frictionNormalA{ cVec2::zero };
+		cVec2 frictionNormalB{ cVec2::zero };
 
 		float separation{ 0 };
 		float normalImpulse{ 0 };
@@ -30,7 +30,7 @@ namespace chiori
 	struct cManifold
 	{
 		cManifoldPoint points[2];
-		vec2 normal{ vec2::zero };
+		cVec2 normal{ cVec2::zero };
 		int pointCount{ 0 };
 		int constraintIndex{ -1 };
 		bool frictionPersisted{ false };

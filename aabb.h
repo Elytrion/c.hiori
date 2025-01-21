@@ -6,15 +6,15 @@ namespace chiori
 {
 	struct AABB
 	{
-		vec2 min{ vec2::zero };
-		vec2 max{ vec2::zero };
+		cVec2 min{ cVec2::zero };
+		cVec2 max{ cVec2::zero };
 		
-		vec2 getCenter() const
+		cVec2 getCenter() const
 		{
 			return 0.5f * (max + min);
 		}
 
-		vec2 getExtents() const
+		cVec2 getExtents() const
 		{
 			return 0.5f * (max - min);
 		}
@@ -26,17 +26,17 @@ namespace chiori
 
 		void merge(const AABB& inAABB)
 		{
-			min = vec2::vmin(min, inAABB.min);
-			max = vec2::vmax(max, inAABB.max);
+			min = cVec2::vmin(min, inAABB.min);
+			max = cVec2::vmax(max, inAABB.max);
 		}
 
 		void merge(const AABB& inAABB1, const AABB& inAABB2)
 		{
-			min = vec2::vmin(inAABB1.min, inAABB2.min);
-			max = vec2::vmax(inAABB1.max, inAABB2.max);
+			min = cVec2::vmin(inAABB1.min, inAABB2.min);
+			max = cVec2::vmax(inAABB1.max, inAABB2.max);
 		}
 
-		bool contains(const vec2& inPoint) const
+		bool contains(const cVec2& inPoint) const
 		{
 			return (
 				inPoint.x >= min.x &&
@@ -58,27 +58,27 @@ namespace chiori
 			return (xAxisColliding && yAxisColliding);
 		}
 
-		void shift(const vec2& inOffset)
+		void shift(const cVec2& inOffset)
 		{
 			min += inOffset;
 			max += inOffset;
 		}
 	};
 
-	inline AABB CreateAABBHull(const vec2* inVertices, int count, const cTransform& xf)
+	inline AABB CreateAABBHull(const cVec2* inVertices, int count, const cTransform& xf)
 	{
-		vec2 lower = cTransformVec(xf, inVertices[0]);
-		vec2 upper = lower;
+		cVec2 lower = cTransformVec(xf, inVertices[0]);
+		cVec2 upper = lower;
 
 		for (int32_t i = 1; i < count; ++i)
 		{
-			vec2 v = cTransformVec(xf, inVertices[i]);
-			lower = vec2::vmin(lower, v);
-			upper = vec2::vmax(upper, v);
+			cVec2 v = cTransformVec(xf, inVertices[i]);
+			lower = cVec2::vmin(lower, v);
+			upper = cVec2::vmax(upper, v);
 		}
 
 		// TODO: for curved shapes
-		//vec2 r = { radius, radius };
+		//cVec2 r = { radius, radius };
 		//lower = (lower - r);
 		//upper = (upper - r);
 

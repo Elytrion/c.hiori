@@ -3,7 +3,7 @@
 
 namespace chiori
 {
-	void cPolygon::Set(const vec2* inPoints, int inCount)
+	void cPolygon::Set(const cVec2* inPoints, int inCount)
 	{
 		cassert(inCount > 2 && inCount <= MAX_POLYGON_VERTICES);
 		count = inCount;
@@ -16,22 +16,22 @@ namespace chiori
 		for (int i = 0; i < count; ++i)
 		{
 			int j = (i + 1) % count;
-			vec2 edge = vertices[j] - vertices[i];
+			cVec2 edge = vertices[j] - vertices[i];
 			cassert(edge.sqrMagnitude() > EPSILON * EPSILON);
 			normals[i] = cross(edge, 1.0f);
 			normals[i].normalize();
 		}
 	}
 
-	cPolygon::cPolygon(const vec2* inPoints, int inCount)
+	cPolygon::cPolygon(const cVec2* inPoints, int inCount)
 	{
 		Set(inPoints, inCount);
 	}
 
-	cPolygon GeomMakeRegularPolygon(const vec2* points, int count) {
+	cPolygon GeomMakeRegularPolygon(const cVec2* points, int count) {
 		cassert(count >= 3 && count <= MAX_POLYGON_VERTICES);
 
-		vec2 vertices[MAX_POLYGON_VERTICES];
+		cVec2 vertices[MAX_POLYGON_VERTICES];
 		float angleStep = 2 * PI / count;
 
 		for (int i = 0; i < count; ++i) {
@@ -43,7 +43,7 @@ namespace chiori
 	}
 
 	cPolygon GeomMakeBox(float hx, float hy) {
-		vec2 halfExtents = { hx / 2, hy / 2 };
+		cVec2 halfExtents = { hx / 2, hy / 2 };
 		cPolygon poly;
 		
 		poly.count = 4;
@@ -64,7 +64,7 @@ namespace chiori
 		return GeomMakeBox(h, h);
 	}
 
-	cPolygon GeomMakeOffsetBox(float hx, float hy, vec2 center, float angleRadians)
+	cPolygon GeomMakeOffsetBox(float hx, float hy, cVec2 center, float angleRadians)
 	{
 		cTransform xf;
 		xf.p = center;
@@ -76,10 +76,10 @@ namespace chiori
 		poly.vertices[1] = cTransformVec(xf, { hx, -hy });
 		poly.vertices[2] = cTransformVec(xf, { hx, hy });
 		poly.vertices[3] = cTransformVec(xf, { -hx, hy });
-		poly.normals[0] = vec2::down.rotated(xf.q);
-		poly.normals[1] = vec2::right.rotated(xf.q);
-		poly.normals[2] = vec2::up.rotated(xf.q);
-		poly.normals[3] = vec2::left.rotated(xf.q);
+		poly.normals[0] = cVec2::down.rotated(xf.q);
+		poly.normals[1] = cVec2::right.rotated(xf.q);
+		poly.normals[2] = cVec2::up.rotated(xf.q);
+		poly.normals[3] = cVec2::left.rotated(xf.q);
 		poly.radius = 0.0f;
 		return poly;
 	}
@@ -112,7 +112,7 @@ namespace chiori
 
 		cassert(count > 0);
 
-		vec2 c_vertices[MAX_POLYGON_VERTICES];
+		cVec2 c_vertices[MAX_POLYGON_VERTICES];
 
 		if (radius > 0.0f)
 		{
@@ -121,11 +121,11 @@ namespace chiori
 			for (int i = 0; i < count; ++i)
 			{
 				int j = i == 0 ? count - 1 : i - 1;
-				vec2 n1 = normals[j];
-				vec2 n2 = normals[i];
+				cVec2 n1 = normals[j];
+				cVec2 n2 = normals[i];
 
-				vec2 mid = (n1 + n2).normalized();
-				vec2 t1 = { -n1.y, n1.x };
+				cVec2 mid = (n1 + n2).normalized();
+				cVec2 t1 = { -n1.y, n1.x };
 				float sinHalfAngle = cross(mid, t1);
 
 				float offset = radius;
@@ -145,21 +145,21 @@ namespace chiori
 			}
 		}
 
-		vec2 center = { 0.0f, 0.0f };
+		cVec2 center = { 0.0f, 0.0f };
 		float area = 0.0f;
 		float I = 0.0f;
 
 		// Get a reference point for forming triangles.
 		// Use the first vertex to reduce round-off errors.
-		vec2 r = vertices[0];
+		cVec2 r = vertices[0];
 
 		const float inv3 = 1.0f / 3.0f;
 
 		for (int32_t i = 1; i < count - 1; ++i)
 		{
 			// Triangle edges
-			vec2 e1 = (vertices[i] - r);
-			vec2 e2 = (vertices[i + 1] - r);
+			cVec2 e1 = (vertices[i] - r);
+			cVec2 e2 = (vertices[i + 1] - r);
 
 			float D = cross(e1, e2);
 

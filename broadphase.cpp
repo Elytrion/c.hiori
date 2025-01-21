@@ -38,7 +38,7 @@ namespace chiori
 		m_tree.DestroyProxy(proxyId);
 	}
 
-	void cBroadphase::MoveProxy(int proxyId, const AABB& aabb, const vec2& displacement)
+	void cBroadphase::MoveProxy(int proxyId, const AABB& aabb, const cVec2& displacement)
 	{
 		bool buffer = m_tree.MoveProxy(proxyId, aabb, displacement);
 		if (buffer)

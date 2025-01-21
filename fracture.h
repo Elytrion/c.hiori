@@ -9,7 +9,7 @@ namespace chiori
 		float toughness{ 0.5f };				// Toughness of the material
 		float elasticity{ 10.0f };             // Young's Modulus (elasticity)
 		float brittleness{ 0.5f };              // Brittleness factor
-		vec2 anisotropy{ vec2::zero };			// Anisotropy direction
+		cVec2 anisotropy{ cVec2::zero };			// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
 		float k{ 1.0f };						// Scaling factor for fine tuning
 		float minPoints{ 1 };					// minimum number of fragments (1 means no fragmentation)
@@ -18,10 +18,10 @@ namespace chiori
 	
 	struct cFragment
 	{
-		std::vector<vec2> vertices;
-		vec2 centriod;
+		std::vector<cVec2> vertices;
+		cVec2 centriod;
 		
-		cFragment(const std::vector<vec2>& inputVertices) :
+		cFragment(const std::vector<cVec2>& inputVertices) :
 			vertices{ inputVertices } {}
 	};
 
@@ -36,7 +36,7 @@ namespace chiori
 
 		int id;	// used to generate the seed for the CDF to ensure the same centriods everytime
 
-		cFractureProxy(const std::vector<vec2>& inputVertices, int inID, float inMass = 1.0f) 
+		cFractureProxy(const std::vector<cVec2>& inputVertices, int inID, float inMass = 1.0f) 
 			: fragment{ inputVertices }, mass {inMass}, count{static_cast<int>(inputVertices.size())}, id{inID}
 		{
 			weights.resize(inputVertices.size(), 0.0f);
@@ -45,8 +45,8 @@ namespace chiori
 
 	struct cFractureImpact
 	{
-		vec2 localContacts[2];
-		vec2 normal;
+		cVec2 localContacts[2];
+		cVec2 normal;
 		float impluseForces[2];
 		int contactCount = 0;
 	};

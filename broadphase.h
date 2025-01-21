@@ -25,7 +25,7 @@ namespace chiori
 		
 		void DestroyProxy(int proxyID);
 
-		void MoveProxy(int proxyID, const AABB& inAABB, const vec2& inDisplacement);
+		void MoveProxy(int proxyID, const AABB& inAABB, const cVec2& inDisplacement);
 		
 		void TouchProxy(int proxyID);
 		
@@ -41,7 +41,7 @@ namespace chiori
 
 		void Query(const AABB& inAABB, QueryCallback callback);
 
-		void ShiftOrigin(const vec2& inNewOrigin);
+		void ShiftOrigin(const cVec2& inNewOrigin);
 		
 	private:
 		friend class cDynamicTree;
@@ -99,7 +99,7 @@ namespace chiori
 		m_tree.Query(inAABB, callback);
 	}
 
-	inline void cBroadphase::ShiftOrigin(const vec2& newOrigin)
+	inline void cBroadphase::ShiftOrigin(const cVec2& newOrigin)
 	{
 		m_tree.ShiftOrigin(newOrigin);
 	}

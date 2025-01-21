@@ -35,7 +35,7 @@ namespace chiori
 		
 		int InsertProxy(const AABB& inAABB, void* inUserData);
 		int DestroyProxy(int inProxyID);
-		bool MoveProxy(int inProxyID, const AABB& inAABB, const vec2& inDisplacement);
+		bool MoveProxy(int inProxyID, const AABB& inAABB, const cVec2& inDisplacement);
 
 		void* GetUserData(int inProxyID) const;
 		
@@ -47,7 +47,7 @@ namespace chiori
 		int GetMaxBalance() const;
 		float GetAreaRatio() const;
 		// The shift formula is: position -= newOrigin
-		void ShiftOrigin(const vec2& newOrigin);
+		void ShiftOrigin(const cVec2& newOrigin);
 
 		// for testing
 		void DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const;

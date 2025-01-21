@@ -27,13 +27,13 @@ namespace chiori
 			float iB = bodyB->invInertia;
 			int pointCount = constraint->pointCount;
 
-			vec2 vA = bodyA->linearVelocity;
+			cVec2 vA = bodyA->linearVelocity;
 			float wA = bodyA->angularVelocity;
-			vec2 vB = bodyB->linearVelocity;
+			cVec2 vB = bodyB->linearVelocity;
 			float wB = bodyB->angularVelocity;
 
-			vec2 normal = constraint->normal;
-			vec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 			float friction = constraint->friction;
 
 			for (int j = 0; j < pointCount; ++j)
@@ -56,12 +56,12 @@ namespace chiori
 				}
 
 				// static anchors
-				vec2 rA = cp->rA0;
-				vec2 rB = cp->rB0;
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
 				// Relative velocity at contact
-				vec2 vrB = vB + cross(wB, rB);
-				vec2 vrA = vA + cross(wA, rA);
+				cVec2 vrB = vB + cross(wB, rB);
+				cVec2 vrA = vA + cross(wA, rA);
 				float vn = (vrB - vrA).dot(normal);
 
 				// Compute normal impulse
@@ -73,7 +73,7 @@ namespace chiori
 				cp->normalImpulse = newImpulse;
 
 				// Apply contact impulse
-				vec2 P = (impulse * normal);
+				cVec2 P = (impulse * normal);
 				vA = vA - (mA * P);
 				wA -= iA * cross(rA, P);
 
@@ -86,13 +86,13 @@ namespace chiori
 				ContactConstraintPoint* cp = constraint->points + j;
 
 				// static anchors
-				vec2 rA = cp->rA0;
-				vec2 rB = cp->rB0;
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
 				// Relative velocity at contact
-				vec2 vrB = vB + cross(wB, rB);
-				vec2 vrA = vA + cross(wA, rA);
-				vec2 dv = (vrB - vrA);
+				cVec2 vrB = vB + cross(wB, rB);
+				cVec2 vrA = vA + cross(wA, rA);
+				cVec2 dv = (vrB - vrA);
 
 				// Compute tangent force
 				float vt = dv.dot(tangent);
@@ -105,7 +105,7 @@ namespace chiori
 				cp->tangentImpulse = newImpulse;
 
 				// Apply contact impulse
-				vec2 P = (lambda * tangent);
+				cVec2 P = (lambda * tangent);
 
 				vA = vA - (mA * P);
 				wA -= iA * cross(rA, P);
@@ -195,7 +195,7 @@ namespace chiori
 	{
 		auto& actors = world->p_actors;
 		int actorCapacity = static_cast<int>(actors.capacity());
-		vec2 gravity = world->gravity;
+		cVec2 gravity = world->gravity;
 
 		int i = actorCapacity - 1;
 		for (; i >= 0; --i)
@@ -210,13 +210,13 @@ namespace chiori
 			float invMass = actor->invMass;
 			float invI = actor->invInertia;
 
-			vec2 v = actor->linearVelocity;
+			cVec2 v = actor->linearVelocity;
 			float w = actor->angularVelocity;
 
-			vec2 f = actor->forces;
+			cVec2 f = actor->forces;
 			if (actor->_flags.isSet(cActor::USE_GRAVITY))
 				f += actor->mass * actor->gravityScale * gravity;
-			vec2 dv = (h * invMass) * f;
+			cVec2 dv = (h * invMass) * f;
 			v += dv;
 
 			w += h * actor->torques * invI;
@@ -234,7 +234,7 @@ namespace chiori
 	{
 		auto& actors = world->p_actors;
 		int actorCapacity = static_cast<int>(actors.capacity());
-		vec2 gravity = world->gravity;
+		cVec2 gravity = world->gravity;
 
 		int i = actorCapacity - 1;
 		for (; i >= 0; --i)
@@ -255,7 +255,7 @@ namespace chiori
 	{
 		auto& actors = world->p_actors;
 		int actorCapacity = static_cast<int>(actors.capacity());
-		vec2 gravity = world->gravity;
+		cVec2 gravity = world->gravity;
 
 		int i = actorCapacity - 1;
 		for (; i >= 0; --i)
@@ -268,7 +268,7 @@ namespace chiori
 				continue;
 
 			actor->position += actor->deltaPosition;
-			actor->deltaPosition = vec2::zero;
+			actor->deltaPosition = cVec2::zero;
 		}
 	}
 	
@@ -306,8 +306,8 @@ namespace chiori
 			cRot qA = actorA->rot;
 			cRot qB = actorB->rot;
 
-			vec2 normal = constraint->normal;
-			vec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 
 			for (int j = 0; j < pointCount; ++j)
 			{
@@ -328,8 +328,8 @@ namespace chiori
 				cp->localAnchorA = mp->localAnchorA - actorA->localCenter;
 				cp->localAnchorB = mp->localAnchorB - actorB->localCenter;
 
-				vec2 rA = cp->localAnchorA.rotated(qA);
-				vec2 rB = cp->localAnchorB.rotated(qB);
+				cVec2 rA = cp->localAnchorA.rotated(qA);
+				cVec2 rB = cp->localAnchorB.rotated(qB);
 				cp->rA0 = rA;
 				cp->rB0 = rB;
 
@@ -377,25 +377,25 @@ namespace chiori
 			float mB = actorB->invMass;
 			float iB = actorB->invInertia;
 
-			vec2 vA = actorA->linearVelocity;
+			cVec2 vA = actorA->linearVelocity;
 			float wA = actorA->angularVelocity;
-			vec2 vB = actorB->linearVelocity;
+			cVec2 vB = actorB->linearVelocity;
 			float wB = actorB->angularVelocity;
 
 			cRot qA = actorA->rot;
 			cRot qB = actorB->rot;
 
-			vec2 normal = constraint->normal;
-			vec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 
 			for (int j = 0; j < pointCount; ++j)
 			{
 				ContactConstraintPoint* cp = constraint->points + j;
 
-				vec2 rA = cp->localAnchorA.rotated(qA);
-				vec2 rB = cp->localAnchorB.rotated(qB);
+				cVec2 rA = cp->localAnchorA.rotated(qA);
+				cVec2 rB = cp->localAnchorB.rotated(qB);
 
-				vec2 P = (cp->normalImpulse * normal) + (cp->tangentImpulse * tangent);
+				cVec2 P = (cp->normalImpulse * normal) + (cp->tangentImpulse * tangent);
 				wA -= iA * rA.cross(P);
 				vA = vA + (-mA * P);
 				wB += iB * rB.cross(P);
@@ -443,13 +443,13 @@ namespace chiori
 			float iB = bodyB->invInertia;
 			int pointCount = constraint->pointCount;
 
-			vec2 vA = bodyA->linearVelocity;
+			cVec2 vA = bodyA->linearVelocity;
 			float wA = bodyA->angularVelocity;
-			vec2 vB = bodyB->linearVelocity;
+			cVec2 vB = bodyB->linearVelocity;
 			float wB = bodyB->angularVelocity;
 
-			vec2 normal = constraint->normal;
-			vec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 			float friction = constraint->friction;
 
 			for (int j = 0; j < pointCount; ++j)
@@ -468,12 +468,12 @@ namespace chiori
 				}
 
 				// static anchors
-				vec2 rA = cp->rA0;
-				vec2 rB = cp->rB0;
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
 				// Relative velocity at contact
-				vec2 vrB = vB + cross(wB, rB);
-				vec2 vrA = vA + cross(wA, rA);
+				cVec2 vrB = vB + cross(wB, rB);
+				cVec2 vrA = vA + cross(wA, rA);
 				float vn = (vrB - vrA).dot(normal);
 
 				// Compute normal impulse
@@ -485,7 +485,7 @@ namespace chiori
 				cp->normalImpulse = newImpulse;
 
 				// Apply contact impulse
-				vec2 P = (impulse * normal);
+				cVec2 P = (impulse * normal);
 				vA = (vA - mA * P);
 				wA -= iA * cross(rA, P);
 
@@ -498,13 +498,13 @@ namespace chiori
 				ContactConstraintPoint* cp = constraint->points + j;
 
 				// static anchors
-				vec2 rA = cp->rA0;
-				vec2 rB = cp->rB0;
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
 				// Relative velocity at contact
-				vec2 vrB = (vB + cross(wB, rB));
-				vec2 vrA = (vA + cross(wA, rA));
-				vec2 dv = (vrB - vrA);
+				cVec2 vrB = (vB + cross(wB, rB));
+				cVec2 vrA = (vA + cross(wA, rA));
+				cVec2 dv = (vrB - vrA);
 
 				// Compute tangent force
 				float vt = dot(dv, tangent);
@@ -517,7 +517,7 @@ namespace chiori
 				cp->tangentImpulse = newImpulse;
 
 				// Apply contact impulse
-				vec2 P = (lambda * tangent);
+				cVec2 P = (lambda * tangent);
 
 				vA = (vA - mA * P);
 				wA -= iA * cross(rA, P);
@@ -565,8 +565,8 @@ namespace chiori
 			cRot qA = bodyA->rot;
 			cRot qB = bodyB->rot;
 
-			vec2 normal = constraint->normal;
-			vec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 
 			for (int j = 0; j < pointCount; ++j)
 			{
@@ -587,8 +587,8 @@ namespace chiori
 				cp->localAnchorA = (mp->localAnchorA - bodyA->localCenter);
 				cp->localAnchorB = (mp->localAnchorB - bodyB->localCenter);
 
-				vec2 rA = (cp->localAnchorA.rotated(qA));
-				vec2 rB = (qB, cp->localAnchorB.rotated(qB));
+				cVec2 rA = (cp->localAnchorA.rotated(qA));
+				cVec2 rB = (qB, cp->localAnchorB.rotated(qB));
 				cp->rA0 = rA;
 				cp->rB0 = rB;
 

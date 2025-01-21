@@ -18,9 +18,9 @@ namespace chiori
 
 	struct ContactConstraintPoint
 	{
-		vec2 rA0, rB0; // initial anchors in world space
-		vec2 localAnchorA, localAnchorB; // local anchors
-		vec2 localFrictionA, localFrictionB; // local friction anchors
+		cVec2 rA0, rB0; // initial anchors in world space
+		cVec2 localAnchorA, localAnchorB; // local anchors
+		cVec2 localFrictionA, localFrictionB; // local friction anchors
 		float tangentSeparation;
 		float separation;
 		float adjustedSeparation;
@@ -40,7 +40,7 @@ namespace chiori
 		int indexA;
 		int indexB;
 		ContactConstraintPoint points[2];
-		vec2 normal;
+		cVec2 normal;
 		float friction;
 		int pointCount;
 	};
@@ -51,6 +51,7 @@ namespace chiori
 	void IntegrateVelocities(cPhysicsWorld* world, float h);
 	void IntegratePositions(cPhysicsWorld* world, float h);
 	void SolvePositions(cPhysicsWorld* world);
+
 	void PrepareSoftContacts(cPhysicsWorld* world, SolverContext* context, ContactConstraint* constraints, int constraintCount, float h, float hertz);
 	void WarmStartContacts(cPhysicsWorld* world, ContactConstraint* constraints, int constraintCount);
 	void StoreContactImpluses(ContactConstraint* constraints, int constraintCount);

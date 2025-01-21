@@ -81,7 +81,7 @@ namespace chiori
 	{
 		int pID = AllocateNode();
 		
-		vec2 fat{ commons::AABB_FATTEN_FACTOR, commons::AABB_FATTEN_FACTOR };
+		cVec2 fat{ commons::AABB_FATTEN_FACTOR, commons::AABB_FATTEN_FACTOR };
 		m_nodes[pID].aabb.min = aabb.min - fat;
 		m_nodes[pID].aabb.max = aabb.max + fat;
 		m_nodes[pID].userData = userData;
@@ -101,7 +101,7 @@ namespace chiori
 		return proxyID;
 	}
 
-	bool cDynamicTree::MoveProxy(int proxyID, const AABB& aabb, const vec2& disp)
+	bool cDynamicTree::MoveProxy(int proxyID, const AABB& aabb, const cVec2& disp)
 	{
 		cassert(0 <= proxyID && proxyID < m_nodeCapacity);
 
@@ -114,12 +114,12 @@ namespace chiori
 
 		RemoveLeaf(proxyID);
 		
-		vec2 fat{ commons::AABB_FATTEN_FACTOR, commons::AABB_FATTEN_FACTOR };
+		cVec2 fat{ commons::AABB_FATTEN_FACTOR, commons::AABB_FATTEN_FACTOR };
 		AABB b = aabb;
 		b.min = b.min - fat;
 		b.max = b.max + fat;
 
-		vec2 pdisp = disp * 2.0f;
+		cVec2 pdisp = disp * 2.0f;
 
 		if (pdisp.x < 0.0f)
 		{
@@ -546,7 +546,7 @@ namespace chiori
 		return maxBalance;
 	}
 
-	void cDynamicTree::ShiftOrigin(const vec2& newOrigin)
+	void cDynamicTree::ShiftOrigin(const cVec2& newOrigin)
 	{
 		// Build array of leaves. Free the rest.
 		for (int i = 0; i < m_nodeCapacity; ++i)

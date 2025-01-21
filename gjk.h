@@ -10,13 +10,13 @@ namespace chiori
     */
     struct cGJKProxy
     {
-        cGJKProxy(const vec2* vertices, int count, float radius = 0.0f) 
+        cGJKProxy(const cVec2* vertices, int count, float radius = 0.0f) 
             : m_vertices{ vertices }, m_count{ count }, m_radius{ radius } {}
 
-        int getSupport(const vec2& d) const;            // get the index of the support vertex
-        const vec2& GetVertex(int index) const;         // get a specified vertex
+        int getSupport(const cVec2& d) const;            // get the index of the support vertex
+        const cVec2& GetVertex(int index) const;         // get a specified vertex
 
-		const vec2* m_vertices; // the vertices of the shape
+		const cVec2* m_vertices; // the vertices of the shape
         int m_count;            // the number of vertices
         float m_radius;         // the radius of the shape (TODO)
     };
@@ -41,11 +41,11 @@ namespace chiori
     */
     struct cGJKOutput
     {
-        vec2 pointA;		// closest point on shapeA to shapeB (EPA will return the furthest point on shape A into shape B in the direction of the nomal)
-        vec2 pointB;		// closest point on shapeB to shapeA (EPA will return the furthest point on shape B into shape A in the direction of the nomal)
+        cVec2 pointA;		// closest point on shapeA to shapeB (EPA will return the furthest point on shape A into shape B in the direction of the nomal)
+        cVec2 pointB;		// closest point on shapeB to shapeA (EPA will return the furthest point on shape B into shape A in the direction of the nomal)
         float distance;     // distance between two shapes (if distance is roughly <= 0 (within LEPSILON tolerance) it is an overlapping collision)
         int iterations;     // the number of iterations the GJK ran for, used for determining efficiency
-        vec2 normal;        // normal of the collision, left as 0,0 if no EPA is run
+        cVec2 normal;        // normal of the collision, left as 0,0 if no EPA is run
     };
 
     /*
@@ -59,12 +59,12 @@ namespace chiori
         unsigned indexB[3]; // supporting on shape B (target)
     };
 
-    inline const vec2& cGJKProxy::GetVertex(int index) const
+    inline const cVec2& cGJKProxy::GetVertex(int index) const
     {
         cassert(0 <= index && index < m_count);
         return m_vertices[index];
     }
-    inline int cGJKProxy::getSupport(const vec2& d) const
+    inline int cGJKProxy::getSupport(const cVec2& d) const
     {
         int bestIndex = 0;
         float bestValue = dot(m_vertices[0], d);

@@ -14,8 +14,8 @@ namespace chiori
 		float area = 0.0f;
 
 		for (int i = 0; i < n; ++i) {
-			const vec2& current = vertices[i];
-			const vec2& next = vertices[(i + 1) % n]; // Wrap around to the first vertex
+			const cVec2& current = vertices[i];
+			const cVec2& next = vertices[(i + 1) % n]; // Wrap around to the first vertex
 			area += (current.x * next.y - current.y * next.x);
 		}
 		return std::abs(area) / 2.0f;
@@ -36,13 +36,13 @@ namespace chiori
 		// Compute W(x) for each vertex
 		for (int i = 0; i < proxy.count; ++i)
 		{
-			vec2& vertex = proxy.fragment.vertices[i];
+			cVec2& vertex = proxy.fragment.vertices[i];
 			float totalWeight = 0.0f;
 			
 			// Process each contact point
 			for (int j = 0; j < impactConfig.contactCount; ++j)
 			{
-				const vec2& contactPoint = impactConfig.localContacts[j];
+				const cVec2& contactPoint = impactConfig.localContacts[j];
 				float impulseForce = impactConfig.impluseForces[j];
 				
 				float dist = distance(vertex, contactPoint);
@@ -54,8 +54,8 @@ namespace chiori
 				float W = impulseForce * std::exp(-dist / fractureRange);
 				float anisotropyFactor = 1.0f;
 				if (materialConfig.anisotropyFactor > 0.0f) {
-					vec2 anisotropyDirection = materialConfig.anisotropy.normalized();
-					vec2 impactDirection = (vertex - contactPoint).normalized();
+					cVec2 anisotropyDirection = materialConfig.anisotropy.normalized();
+					cVec2 impactDirection = (vertex - contactPoint).normalized();
 					float cosTheta = anisotropyDirection.dot(impactDirection);
 					anisotropyFactor = 1 + materialConfig.anisotropyFactor * cosTheta * cosTheta;
 				}
@@ -102,9 +102,9 @@ namespace chiori
 		return numCentroids;
 	}
 
-	static std::vector<vec2> sampleCentroids(const cFractureProxy& proxy, const std::vector<float>& cdf, int numCentroids)
+	static std::vector<cVec2> sampleCentroids(const cFractureProxy& proxy, const std::vector<float>& cdf, int numCentroids)
 	{
-		std::vector<vec2> centroids;
+		std::vector<cVec2> centroids;
 		centroids.reserve(numCentroids);
 
 		// Seeded random number generator using the proxy ID
@@ -173,7 +173,7 @@ namespace chiori
 			cdf.back() = 1.0f;
 		}
 		
-		std::vector<vec2> centroids = sampleCentroids(proxy, cdf, centriodCount);
+		std::vector<cVec2> centroids = sampleCentroids(proxy, cdf, centriodCount);
 
 		return {};
 	}

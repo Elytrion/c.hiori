@@ -25,7 +25,7 @@ namespace chiori
 		~cPhysicsWorld() = default;
 		
 		float physicsStepTime = 0.0167f;
-		vec2 gravity = { 0.0f, -9.81f };
+		cVec2 gravity = { 0.0f, -9.81f };
 		void update(float inDT);	// converts update into fixed updates
 		void step(float inDT);	// simulates one time step of physics, call directly if not using update
 

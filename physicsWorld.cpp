@@ -28,7 +28,7 @@ namespace chiori
 		n_actor->linearVelocity = inConfig.linearVelocity;
 		n_actor->angularVelocity = inConfig.angularVelocity;
 
-		n_actor->rot = inConfig.rotation;
+		n_actor->rot = { inConfig.angle };
 		n_actor->linearDamping = inConfig.linearDamping;
 		n_actor->angularDamping = inConfig.angularDamping;
 		n_actor->gravityScale = inConfig.gravityScale;
@@ -112,7 +112,7 @@ namespace chiori
 		b->invMass = 0.0f;
 		b->inertia = 0.0f;
 		b->invInertia = 0.0f;
-		b->localCenter = vec2::zero;
+		b->localCenter = cVec2::zero;
 
 		// Static and kinematic bodies have zero mass.
 		if (b->type == cActorType::STATIC || b->type == cActorType::KINEMATIC)
@@ -122,7 +122,7 @@ namespace chiori
 		}
 		
 		// Accumulate mass over all shapes.
-		vec2 localCenter = vec2::zero;
+		cVec2 localCenter = cVec2::zero;
 		int32_t shapeIndex = b->shapeList;
 		while (shapeIndex != -1)
 		{
@@ -162,12 +162,12 @@ namespace chiori
 		}
 
 		// Move center of mass.
-		vec2 oldCenter = b->position;
+		cVec2 oldCenter = b->position;
 		b->localCenter = localCenter;
 		b->position = b->localCenter.rotated(b->rot) + b->origin;
 
 		// Update center of mass velocity.
-		vec2 deltaLinear = cross(b->angularVelocity, (b->position - oldCenter));
+		cVec2 deltaLinear = cross(b->angularVelocity, (b->position - oldCenter));
 		b->linearVelocity = (b->linearVelocity + deltaLinear);
 	}
 
@@ -235,7 +235,7 @@ namespace chiori
 				continue;
 
 			actor->origin = actor->position - actor->localCenter.rotated(actor->rot);
-			actor->forces = vec2::zero;
+			actor->forces = cVec2::zero;
 			actor->torques = 0.0f;
 
 			cTransform xf = { actor->origin, actor->rot };
@@ -249,7 +249,7 @@ namespace chiori
 				AABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
 				if (!fatAABB.contains(shape->aabb) || actor->_flags.isSet(cActor::IS_DIRTY)) // moved out of broadphase AABB, significant enough movement to update broadphase
 				{
-					m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, vec2::zero);
+					m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, cVec2::zero);
 				}
 
 				shapeIndex = shape->nextShapeIndex;

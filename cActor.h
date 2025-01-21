@@ -17,10 +17,10 @@ namespace chiori
 	struct ActorConfig
 	{
 		cActorType type = DYNAMIC;	
-		vec2 position{ vec2::zero };
-		cRot rotation{ 0.0f };
+		cVec2 position{ cVec2::zero };
+		float angle{ 0.0f };
 
-		vec2 linearVelocity{ vec2::zero };
+		cVec2 linearVelocity{ cVec2::zero };
 		float angularVelocity{ 0.0f };
 		float linearDamping{ 0.0f };
 		float angularDamping{ 0.0f };
@@ -41,13 +41,13 @@ namespace chiori
 
 		Flag_8 _flags = USE_GRAVITY | IS_DIRTY; // actor setting flags
 
-		vec2 origin{ vec2::zero }; // the body origin (not center of mass)
-		vec2 position{ vec2::zero }; // center of mass position in world space
-		vec2 deltaPosition{ vec2::zero }; // delta position for the whole time step
-		vec2 localCenter{ vec2::zero }; // location of center of mass relative to the body origin (local space)
+		cVec2 origin{ cVec2::zero }; // the body origin (not center of mass)
+		cVec2 position{ cVec2::zero }; // center of mass position in world space
+		cVec2 deltaPosition{ cVec2::zero }; // delta position for the whole time step
+		cVec2 localCenter{ cVec2::zero }; // location of center of mass relative to the body origin (local space)
 		cRot rot{ cRot::iden };
 
-		vec2 forces{ vec2::zero };
+		cVec2 forces{ cVec2::zero };
 		float torques{ 0.0f };
 
 		float mass{ 1.0f };
@@ -55,7 +55,7 @@ namespace chiori
 		float inertia{ 1.0f };
 		float invInertia{ 1.0f };
 
-		vec2 linearVelocity{ vec2::zero };
+		cVec2 linearVelocity{ cVec2::zero };
 		float angularVelocity{ 0.0f };
 
 		float linearDamping{ 0.0f };
@@ -113,7 +113,7 @@ namespace chiori
 
 		#pragma endregion
 		
-		void addForce(const vec2& inForce)
+		void addForce(const cVec2& inForce)
 		{
 			forces += inForce * invMass;
 		}
