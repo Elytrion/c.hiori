@@ -284,7 +284,7 @@ namespace chiori
 				manifold.normal.rotate(xfA.q);
 				for (int i = 0; i < manifold.pointCount; ++i)
 				{
-					manifold.points[i].localAnchorB = cInvTransformVec(xfA, manifold.points[i].localAnchorA);
+					manifold.points[i].localAnchorB = cInvTransformVec(xfRel, manifold.points[i].localAnchorA);
 				}
 			}
 
