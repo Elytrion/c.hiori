@@ -52,6 +52,18 @@ namespace chiori
 			float invm = (m > 0) ? 1.0f / m : 0.0f;
 			return cRot{ s * invm, c * invm };
 		}
+		cRot& intergrate(float omegah) // integrate this rotation with the given angular velocity (omega) multiplied by time step (h) in place
+		{
+			s = s + omegah * c;
+			c = c - omegah * s;
+			this->normalize();
+			return *this;
+		}
+		cRot intergrated(float omegah)
+		{
+			cRot r = { s + omegah * c, c - omegah * s };
+			return r.normalized();
+		}
 
 		bool operator==(const cRot& inRHS) const {
 			return fltsame(s, inRHS.s) && fltsame(c, inRHS.c);
@@ -277,6 +289,7 @@ namespace chiori
 		cTransform C;
 		C.q = A.q * B.q;
 		C.p = A.p + B.p.rotated(A.q);
+		return C;
 	}
 	// Inverse multiply two transforms
 	inline cTransform cInvMulTransforms(const cTransform& A, const cTransform& B)
@@ -284,5 +297,6 @@ namespace chiori
 		cTransform C;
 		C.q = A.q / B.q;
 		C.p = A.p - B.p.rotated(-A.q);
+		return C;
 	}
 }

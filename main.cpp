@@ -83,7 +83,7 @@ void DrawContact(cContact* contact)
             continue;
         
         anchor.y *= -1;
-        vec2 worldPoint = TransformVec(xf, anchor);
+        vec2 worldPoint = cTransformVec(xf, anchor);
         worldPoint *= 100; worldPoint += middle;
         
         if (point->separation > 0.005f) // speculative point
@@ -104,7 +104,7 @@ void DrawContact(cContact* contact)
 
         vec2 normalAnchor = anchor + contact->manifold.normal;
         normalAnchor.y *= -1;
-        vec2 normalCap = TransformVec(xf, normalAnchor);
+        vec2 normalCap = cTransformVec(xf, normalAnchor);
         normalCap *= 100;
         normalCap += middle;
 
@@ -115,69 +115,7 @@ void DrawContact(cContact* contact)
         CP_Settings_StrokeWeight(3);
         CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
         CP_Graphics_DrawLine(worldPoint.x, worldPoint.y, normalCap.x, normalCap.y);
-
-        std::cout << "Sep " << contact->shapeIndexA << " " << j << " :" << point->normalImpulse << std::endl;
     }
-}
-
-cActor* CreateRectActor(float width, float height, vec2& centrePos)
-{
- //   std::vector<vec2> vertices;
-	//vertices.push_back({ -width / 2.0f, -height / 2.0f });
-	//vertices.push_back({ width / 2.0f, -height / 2.0f });
-	//vertices.push_back({ width / 2.0f, height / 2.0f });
-	//vertices.push_back({ -width / 2.0f, height / 2.0f });
-
- //   ActorConfig a_config;
- //   a_config.position = centrePos;
- //   int newActorIndex = world.CreateActor(a_config);
- //   ShapeConfig s_config;
- //   s_config.vertices = vertices;
- //   int newShapeIndex = world.CreateShape(newActorIndex, s_config);
- //   cActor* newActor = world.p_actors[newActorIndex];
- //   shapes.push_back(newShapeIndex);
- //   actors.push_back(newActorIndex);
- //   return newActor;
-    return nullptr;
-}
-
-cActor* CreateTriangleActor(float edgeLength, vec2& centrePos)
-{
- //   float height = (sqrt(3.0f) / 2.0f) * edgeLength;
-
- //   // Equilateral triangle
-	//std::vector<vec2> vertices{
- //       vec2(0, (2.0f / 3.0f) * height),
- //       vec2(-edgeLength / 2.0f,  -(1.0f / 3.0f) * height),
- //       vec2(edgeLength / 2.0f, -(1.0f / 3.0f) * height)
-	//};
- //   ActorConfig a_config;
- //   a_config.position = centrePos;
- //   int newActorIndex = world.CreateActor(a_config);
- //   ShapeConfig s_config;
- //   s_config.vertices = vertices;
- //   int newShapeIndex = world.CreateShape(newActorIndex, s_config);
- //   cActor* newActor = world.p_actors[newActorIndex];
- //   shapes.push_back(newShapeIndex);
- //   actors.push_back(newActorIndex);
- //   return newActor;
-    return nullptr;
-}
-
-cActor* CreatePolygonActor(std::vector<vec2>& inVertices, const vec2& centrePos)
-{
-    //ActorConfig a_config;
-    //a_config.position = centrePos;
-    //int newActorIndex = world.CreateActor(a_config);
-    //ShapeConfig s_config;
-    //s_config.vertices = inVertices;
-    //int newShapeIndex = world.CreateShape(newActorIndex, s_config);
-    //cActor* newActor = world.p_actors[newActorIndex];
-    //shapes.push_back(newShapeIndex);
-    //actors.push_back(newActorIndex);
-    //return newActor;
-
-    return nullptr;
 }
 
 void BoxScene()
@@ -194,24 +132,10 @@ void BoxScene()
 
     a_config.type = cActorType::DYNAMIC;
     a_config.position = vec2{ 1.0f, 0.5f };
-    a_config.rotation = 35 * DEG2RAD;
+    a_config.rotation =  35 * DEG2RAD;
     int boxAActorIndex = world.CreateActor(a_config);
     cPolygon boxAShape = GeomMakeBox(0.5f, 0.5f);
     int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
-    
-
-    //a_config.type = cActorType::DYNAMIC;
-    //a_config.position = vec2{ 1.5f, 2.5f };
-    //int boxBActorIndex = world.CreateActor(a_config);
-    //vertices.clear();
-    //vertices.push_back({ -0.5f, -0.5f });
-    //vertices.push_back({ 0.5f, -0.5f });
-    //vertices.push_back({ 0.5f, 0.5f });
-    //vertices.push_back({ -0.5f,  0.5f });
-    //s_config.vertices = vertices;
-    //int boxBShapeIndex = world.CreateShape(boxBActorIndex, s_config);
-    //shapes.push_back(boxBShapeIndex);
-    //actors.push_back(boxBActorIndex);
 }
 
 void InitPhysics()
@@ -362,12 +286,12 @@ void HandleInput(CP_Vector mousePosIn)
         tfm.p = { worldPos.x, worldPos.y };
         selectedActor->setTransform(tfm);
 
-        if (CP_Input_MouseDown(MOUSE_BUTTON_2))
-        {
-            cTransform tfm = selectedActor->getTransform();
-            tfm.rot += (35 * DEG2RAD) * CP_System_GetDt();
-            selectedActor->setTransform(tfm);
-        }
+        //if (CP_Input_MouseDown(MOUSE_BUTTON_2))
+        //{
+        //    cTransform tfm = selectedActor->getTransform();
+        //    tfm.q += (35 * DEG2RAD) * CP_System_GetDt();
+        //    selectedActor->setTransform(tfm);
+        //}
 
         if (CP_Input_KeyTriggered(KEY_K))
         {

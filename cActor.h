@@ -18,7 +18,7 @@ namespace chiori
 	{
 		cActorType type = DYNAMIC;	
 		vec2 position{ vec2::zero };
-		float rotation{ 0.0f };
+		cRot rotation{ 0.0f };
 
 		vec2 linearVelocity{ vec2::zero };
 		float angularVelocity{ 0.0f };

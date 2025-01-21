@@ -247,7 +247,7 @@ namespace chiori
 				continue;
 
 			actor->deltaPosition = actor->deltaPosition + h * actor->linearVelocity;
-			actor->rotation = normalizeRot(actor->rotation + h * actor->angularVelocity);
+			actor->rot = actor->rot.intergrated(h * actor->angularVelocity);
 		}
 	}
 
@@ -303,8 +303,8 @@ namespace chiori
 			// Stiffer for dynamic vs static
 			float contactHertz = (mA == 0.0f || mB == 0.0f) ? 2.0f * hertz : hertz;
 
-			float qA = actorA->rotation;
-			float qB = actorB->rotation;
+			cRot qA = actorA->rot;
+			cRot qB = actorB->rot;
 
 			vec2 normal = constraint->normal;
 			vec2 tangent = { normal.y, -normal.x };
@@ -382,8 +382,8 @@ namespace chiori
 			vec2 vB = actorB->linearVelocity;
 			float wB = actorB->angularVelocity;
 
-			float qA = actorA->rotation;
-			float qB = actorB->rotation;
+			cRot qA = actorA->rot;
+			cRot qB = actorB->rot;
 
 			vec2 normal = constraint->normal;
 			vec2 tangent = { normal.y, -normal.x };
@@ -562,8 +562,8 @@ namespace chiori
 			float mB = bodyB->invMass;
 			float iB = bodyB->invInertia;
 
-			float qA = bodyA->rotation;
-			float qB = bodyB->rotation;
+			cRot qA = bodyA->rot;
+			cRot qB = bodyB->rot;
 
 			vec2 normal = constraint->normal;
 			vec2 tangent = { normal.y, -normal.x };

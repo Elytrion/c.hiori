@@ -28,7 +28,7 @@ namespace chiori
 		n_actor->linearVelocity = inConfig.linearVelocity;
 		n_actor->angularVelocity = inConfig.angularVelocity;
 
-		n_actor->rotation = inConfig.rotation;
+		n_actor->rot = inConfig.rotation;
 		n_actor->linearDamping = inConfig.linearDamping;
 		n_actor->angularDamping = inConfig.angularDamping;
 		n_actor->gravityScale = inConfig.gravityScale;
@@ -164,7 +164,7 @@ namespace chiori
 		// Move center of mass.
 		vec2 oldCenter = b->position;
 		b->localCenter = localCenter;
-		b->position = b->localCenter.rotated(b->rotation) + b->origin;
+		b->position = b->localCenter.rotated(b->rot) + b->origin;
 
 		// Update center of mass velocity.
 		vec2 deltaLinear = cross(b->angularVelocity, (b->position - oldCenter));
@@ -182,7 +182,7 @@ namespace chiori
 		n_shape->friction = inConfig.friction;
 		n_shape->restitution = inConfig.restitution;
 
-		cTransform xf = { actor->origin, actor->rotation };
+		cTransform xf = { actor->origin, actor->rot };
 		n_shape->aabb = n_shape->ComputeAABB(xf);
 		n_shape->broadphaseIndex = m_broadphase.CreateProxy(n_shape->aabb, n_shape);
 		
@@ -234,11 +234,11 @@ namespace chiori
 			if (actor->type == cActorType::STATIC)
 				continue;
 
-			actor->origin = actor->position - actor->localCenter.rotated(actor->rotation);
+			actor->origin = actor->position - actor->localCenter.rotated(actor->rot);
 			actor->forces = vec2::zero;
 			actor->torques = 0.0f;
 
-			cTransform xf = { actor->origin, actor->rotation };
+			cTransform xf = { actor->origin, actor->rot };
 
 			int shapeIndex = actor->shapeList;
 			while (shapeIndex != -1)

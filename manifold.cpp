@@ -250,13 +250,13 @@ namespace chiori
 		cPolygon localShapeB;
 		float radius = shapeA->radius + shapeB->radius;
 
-		cTransform xfRel = InvMulTransforms(xfA, xfB); // we convert shapeB to be in shapeA's local space
+		cTransform xfRel = cInvMulTransforms(xfA, xfB); // we convert shapeB to be in shapeA's local space
 		
 		localShapeB.count = shapeB->count;
 		for (int i = 0; i < localShapeB.count; ++i)
 		{
 			localShapeB.vertices[i] = cTransformVec(xfRel, shapeB->vertices[i]);
-			localShapeB.normals[i] = shapeB->normals[i].rotated(xfRel.rot);
+			localShapeB.normals[i] = shapeB->normals[i].rotated(xfRel.q);
 		}
 		
 		cTransform identity;
@@ -281,7 +281,7 @@ namespace chiori
 			//manifold = getOverlapManifold(shapeA, &localShapeB, identity, identity, output.normal);
 			if (manifold.pointCount > 0)
 			{
-				manifold.normal.rotate(xfA.rot);
+				manifold.normal.rotate(xfA.q);
 				for (int i = 0; i < manifold.pointCount; ++i)
 				{
 					manifold.points[i].localAnchorB = cInvTransformVec(xfA, manifold.points[i].localAnchorA);
@@ -302,7 +302,7 @@ namespace chiori
 			vec2 radiiNormal = normal * 0.5f * (shapeA->radius - localShapeB.radius - distance);
 			vec2 contactPointA = pB + radiiNormal;
 
-			manifold.normal = normal.rotated(xfA.rot);
+			manifold.normal = normal.rotated(xfA.q);
 			cManifoldPoint* cp = manifold.points + 0;
 			cp->localAnchorA = contactPointA;
 			cp->localAnchorB = cInvTransformVec(xfRel, contactPointA);
@@ -374,7 +374,7 @@ namespace chiori
 		manifold = PolygonScalarClipper(shapeA, &localShapeB, edgeA, edgeB, flip);
 		if (manifold.pointCount > 0)
 		{
-			manifold.normal.rotate(xfA.rot);
+			manifold.normal.rotate(xfA.q);
 			for (int i = 0; i < manifold.pointCount; ++i)
 			{
 				manifold.points[i].localAnchorB = cInvTransformVec(xfRel, manifold.points[i].localAnchorA);
