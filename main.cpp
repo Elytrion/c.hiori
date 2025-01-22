@@ -138,9 +138,38 @@ void BoxScene()
     int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
 }
 
+void RampScene()
+{
+    // Create a floor
+    ActorConfig a_config;
+    a_config.type = cActorType::STATIC;
+    int staticID = world.CreateActor(a_config);
+
+    ShapeConfig s_config;
+    s_config.friction = 0.2f;
+    cPolygon floorShape = GeomMakeBox(10.0f, 0.25f);
+    int floorShapeIndex = world.CreateShape(staticID, s_config, &floorShape);
+
+    cPolygon ramp = GeomMakeOffsetBox(13.0f, 0.25f, { -4.0f, 22.0f }, -0.25f);
+    world.CreateShape(staticID, s_config, &ramp);
+
+    ramp = GeomMakeOffsetBox(0.25f, 1.0f, { 10.5f, 19.0f }, 0.0f);
+    world.CreateShape(staticID, s_config, &ramp);
+
+    ramp = GeomMakeOffsetBox(13.0f, 0.25f, { 4.0f, 14.0f }, 0.25f);
+    world.CreateShape(staticID, s_config, &ramp);
+
+    ramp = GeomMakeOffsetBox(0.25f, 1.0f, { -10.5f, 11.0f }, 0.0f);
+    world.CreateShape(staticID, s_config, &ramp);
+
+    ramp = GeomMakeOffsetBox(13.0f, 0.25f, { -4.0f, 6.0f }, -0.25f);
+    world.CreateShape(staticID, s_config, &ramp);
+}
+
 void InitPhysics()
 {
-    BoxScene();
+    //BoxScene();
+    RampScene();
 }
 
 
