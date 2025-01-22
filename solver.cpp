@@ -609,8 +609,9 @@ namespace chiori
 			}
 		}
 	}
-
-	// This is the solver in box2d_lite
+	
+	// This is the standard solver typically used by many engines, 
+	// not particularly stable, but effective for most cases.
 	void PGSSolver(cPhysicsWorld* world, SolverContext* context)
 	{
 		auto& contacts = world->p_contacts;
