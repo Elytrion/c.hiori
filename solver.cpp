@@ -426,248 +426,247 @@ namespace chiori
 	}
 
 
-	// testing
-	//static void PGSBaumgarteContactSolver(cPhysicsWorld* world, ContactConstraint* constraints, int constraintCount, float inv_h)
-	//{
-	//	auto& actors = world->p_actors;
+	static void PGSBaumgarteContactSolver(cPhysicsWorld* world, ContactConstraint* constraints, int constraintCount, float inv_h)
+	{
+		auto& actors = world->p_actors;
 
-	//	for (int i = 0; i < constraintCount; ++i)
-	//	{
-	//		ContactConstraint* constraint = constraints + i;
-	//		
-	//		cActor* bodyA = actors[constraint->indexA];
-	//		cActor* bodyB = actors[constraint->indexB];
+		for (int i = 0; i < constraintCount; ++i)
+		{
+			ContactConstraint* constraint = constraints + i;
+			
+			cActor* bodyA = actors[constraint->indexA];
+			cActor* bodyB = actors[constraint->indexB];
 
-	//		float mA = bodyA->invMass;
-	//		float iA = bodyA->invInertia;
-	//		float mB = bodyB->invMass;
-	//		float iB = bodyB->invInertia;
-	//		int pointCount = constraint->pointCount;
+			float mA = bodyA->invMass;
+			float iA = bodyA->invInertia;
+			float mB = bodyB->invMass;
+			float iB = bodyB->invInertia;
+			int pointCount = constraint->pointCount;
 
-	//		cVec2 vA = bodyA->linearVelocity;
-	//		float wA = bodyA->angularVelocity;
-	//		cVec2 vB = bodyB->linearVelocity;
-	//		float wB = bodyB->angularVelocity;
+			cVec2 vA = bodyA->linearVelocity;
+			float wA = bodyA->angularVelocity;
+			cVec2 vB = bodyB->linearVelocity;
+			float wB = bodyB->angularVelocity;
 
-	//		cVec2 normal = constraint->normal;
-	//		cVec2 tangent = { normal.y, -normal.x };
-	//		float friction = constraint->friction;
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
+			float friction = constraint->friction;
 
-	//		for (int j = 0; j < pointCount; ++j)
-	//		{
-	//			ContactConstraintPoint* cp = constraint->points + j;
+			for (int j = 0; j < pointCount; ++j)
+			{
+				ContactConstraintPoint* cp = constraint->points + j;
 
-	//			float bias = 0.0f;
-	//			if (cp->separation > 0.0f)
-	//			{
-	//				// Speculative
-	//				bias = cp->separation * inv_h;
-	//			}
-	//			else
-	//			{
-	//				bias = c_max(0.2f * inv_h * c_min(0.0f, cp->separation + 0.005f), -MaxBaumgarteVelocity);
-	//			}
+				float bias = 0.0f;
+				if (cp->separation > 0.0f)
+				{
+					// Speculative
+					bias = cp->separation * inv_h;
+				}
+				else
+				{
+					bias = c_max(0.2f * inv_h * c_min(0.0f, cp->separation + 0.005f), -MaxBaumgarteVelocity);
+				}
 
-	//			// static anchors
-	//			cVec2 rA = cp->rA0;
-	//			cVec2 rB = cp->rB0;
+				// static anchors
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
-	//			// Relative velocity at contact
-	//			cVec2 vrB = vB + cross(wB, rB);
-	//			cVec2 vrA = vA + cross(wA, rA);
-	//			float vn = (vrB - vrA).dot(normal);
+				// Relative velocity at contact
+				cVec2 vrB = vB + cross(wB, rB);
+				cVec2 vrA = vA + cross(wA, rA);
+				float vn = (vrB - vrA).dot(normal);
 
-	//			// Compute normal impulse
-	//			float impulse = -cp->normalMass * (vn + bias);
+				// Compute normal impulse
+				float impulse = -cp->normalMass * (vn + bias);
 
-	//			// Clamp the accumulated impulse
-	//			float newImpulse = c_max(cp->normalImpulse + impulse, 0.0f);
-	//			impulse = newImpulse - cp->normalImpulse;
-	//			cp->normalImpulse = newImpulse;
+				// Clamp the accumulated impulse
+				float newImpulse = c_max(cp->normalImpulse + impulse, 0.0f);
+				impulse = newImpulse - cp->normalImpulse;
+				cp->normalImpulse = newImpulse;
 
-	//			// Apply contact impulse
-	//			cVec2 P = (impulse * normal);
-	//			vA = (vA - mA * P);
-	//			wA -= iA * cross(rA, P);
+				// Apply contact impulse
+				cVec2 P = (impulse * normal);
+				vA = (vA - mA * P);
+				wA -= iA * cross(rA, P);
 
-	//			vB = (vB + mB * P);
-	//			wB += iB * cross(rB, P);
-	//		}
+				vB = (vB + mB * P);
+				wB += iB * cross(rB, P);
+			}
 
-	//		for (int j = 0; j < pointCount; ++j)
-	//		{
-	//			ContactConstraintPoint* cp = constraint->points + j;
+			for (int j = 0; j < pointCount; ++j)
+			{
+				ContactConstraintPoint* cp = constraint->points + j;
 
-	//			// static anchors
-	//			cVec2 rA = cp->rA0;
-	//			cVec2 rB = cp->rB0;
+				// static anchors
+				cVec2 rA = cp->rA0;
+				cVec2 rB = cp->rB0;
 
-	//			// Relative velocity at contact
-	//			cVec2 vrB = (vB + cross(wB, rB));
-	//			cVec2 vrA = (vA + cross(wA, rA));
-	//			cVec2 dv = (vrB - vrA);
+				// Relative velocity at contact
+				cVec2 vrB = (vB + cross(wB, rB));
+				cVec2 vrA = (vA + cross(wA, rA));
+				cVec2 dv = (vrB - vrA);
 
-	//			// Compute tangent force
-	//			float vt = dot(dv, tangent);
-	//			float lambda = cp->tangentMass * (-vt);
+				// Compute tangent force
+				float vt = dot(dv, tangent);
+				float lambda = cp->tangentMass * (-vt);
 
-	//			// Clamp the accumulated force
-	//			float maxFriction = friction * cp->normalImpulse;
-	//			float newImpulse = c_clamp(cp->tangentImpulse + lambda, -maxFriction, maxFriction);
-	//			lambda = newImpulse - cp->tangentImpulse;
-	//			cp->tangentImpulse = newImpulse;
+				// Clamp the accumulated force
+				float maxFriction = friction * cp->normalImpulse;
+				float newImpulse = c_clamp(cp->tangentImpulse + lambda, -maxFriction, maxFriction);
+				lambda = newImpulse - cp->tangentImpulse;
+				cp->tangentImpulse = newImpulse;
 
-	//			// Apply contact impulse
-	//			cVec2 P = (lambda * tangent);
+				// Apply contact impulse
+				cVec2 P = (lambda * tangent);
 
-	//			vA = (vA - mA * P);
-	//			wA -= iA * cross(rA, P);
+				vA = (vA - mA * P);
+				wA -= iA * cross(rA, P);
 
-	//			vB = (vB + mB * P);
-	//			wB += iB * cross(rB, P);
-	//		}
+				vB = (vB + mB * P);
+				wB += iB * cross(rB, P);
+			}
 
-	//		bodyA->linearVelocity = vA;
-	//		bodyA->angularVelocity = wA;
-	//		bodyB->linearVelocity = vB;
-	//		bodyB->angularVelocity = wB;
-	//	}
-	//}
+			bodyA->linearVelocity = vA;
+			bodyA->angularVelocity = wA;
+			bodyB->linearVelocity = vB;
+			bodyB->angularVelocity = wB;
+		}
+	}
 
-	//static void PrepareContacts(cPhysicsWorld* world, ContactConstraint* constraints, int constraintCount, bool warmStart)
-	//{
-	//	auto& actors = world->p_actors;
+	static void PrepareContacts(cPhysicsWorld* world, ContactConstraint* constraints, int constraintCount, bool warmStart)
+	{
+		auto& actors = world->p_actors;
 
-	//	for (int i = 0; i < constraintCount; ++i)
-	//	{
-	//		ContactConstraint* constraint = constraints + i;
+		for (int i = 0; i < constraintCount; ++i)
+		{
+			ContactConstraint* constraint = constraints + i;
 
-	//		cContact* contact = constraint->contact;
-	//		const cManifold* manifold = &contact->manifold;
-	//		int pointCount = manifold->pointCount;
-	//		cassert(0 < pointCount && pointCount <= 2);
-	//		int indexA = contact->edges[0].bodyIndex;
-	//		int indexB = contact->edges[1].bodyIndex;
+			cContact* contact = constraint->contact;
+			const cManifold* manifold = &contact->manifold;
+			int pointCount = manifold->pointCount;
+			cassert(0 < pointCount && pointCount <= 2);
+			int indexA = contact->edges[0].bodyIndex;
+			int indexB = contact->edges[1].bodyIndex;
 
-	//		constraint->indexA = indexA;
-	//		constraint->indexB = indexB;
-	//		constraint->normal = manifold->normal;
-	//		constraint->friction = contact->friction;
-	//		constraint->pointCount = pointCount;
+			constraint->indexA = indexA;
+			constraint->indexB = indexB;
+			constraint->normal = manifold->normal;
+			constraint->friction = contact->friction;
+			constraint->pointCount = pointCount;
 
-	//		cActor* bodyA = actors[constraint->indexA];
-	//		cActor* bodyB = actors[constraint->indexB];
+			cActor* bodyA = actors[constraint->indexA];
+			cActor* bodyB = actors[constraint->indexB];
 
-	//		float mA = bodyA->invMass;
-	//		float iA = bodyA->invInertia;
-	//		float mB = bodyB->invMass;
-	//		float iB = bodyB->invInertia;
+			float mA = bodyA->invMass;
+			float iA = bodyA->invInertia;
+			float mB = bodyB->invMass;
+			float iB = bodyB->invInertia;
 
-	//		cRot qA = bodyA->rot;
-	//		cRot qB = bodyB->rot;
+			cRot qA = bodyA->rot;
+			cRot qB = bodyB->rot;
 
-	//		cVec2 normal = constraint->normal;
-	//		cVec2 tangent = { normal.y, -normal.x };
+			cVec2 normal = constraint->normal;
+			cVec2 tangent = { normal.y, -normal.x };
 
-	//		for (int j = 0; j < pointCount; ++j)
-	//		{
-	//			const cManifoldPoint* mp = manifold->points + j;
-	//			ContactConstraintPoint* cp = constraint->points + j;
+			for (int j = 0; j < pointCount; ++j)
+			{
+				const cManifoldPoint* mp = manifold->points + j;
+				ContactConstraintPoint* cp = constraint->points + j;
 
-	//			if (warmStart)
-	//			{
-	//				cp->normalImpulse = mp->normalImpulse;
-	//				cp->tangentImpulse = mp->tangentImpulse;
-	//			}
-	//			else
-	//			{
-	//				cp->normalImpulse = 0.0f;
-	//				cp->tangentImpulse = 0.0f;
-	//			}
+				if (warmStart)
+				{
+					cp->normalImpulse = mp->normalImpulse;
+					cp->tangentImpulse = mp->tangentImpulse;
+				}
+				else
+				{
+					cp->normalImpulse = 0.0f;
+					cp->tangentImpulse = 0.0f;
+				}
 
-	//			cp->localAnchorA = (mp->localAnchorA - bodyA->localCenter);
-	//			cp->localAnchorB = (mp->localAnchorB - bodyB->localCenter);
+				cp->localAnchorA = (mp->localAnchorA - bodyA->localCenter);
+				cp->localAnchorB = (mp->localAnchorB - bodyB->localCenter);
 
-	//			cVec2 rA = (cp->localAnchorA.rotated(qA));
-	//			cVec2 rB = (qB, cp->localAnchorB.rotated(qB));
-	//			cp->rA0 = rA;
-	//			cp->rB0 = rB;
+				cVec2 rA = (cp->localAnchorA.rotated(qA));
+				cVec2 rB = (qB, cp->localAnchorB.rotated(qB));
+				cp->rA0 = rA;
+				cp->rB0 = rB;
 
-	//			cp->separation = mp->separation;
-	//			cp->adjustedSeparation = mp->separation - dot((rB - rA), normal);
+				cp->separation = mp->separation;
+				cp->adjustedSeparation = mp->separation - dot((rB - rA), normal);
 
-	//			cp->biasCoefficient = mp->separation > 0.0f ? 1.0f : 0.0f;
+				cp->biasCoefficient = mp->separation > 0.0f ? 1.0f : 0.0f;
 
-	//			float rtA = cross(rA, tangent);
-	//			float rtB = cross(rB, tangent);
-	//			float kTangent = mA + mB + iA * rtA * rtA + iB * rtB * rtB;
-	//			cp->tangentMass = kTangent > 0.0f ? 1.0f / kTangent : 0.0f;
+				float rtA = cross(rA, tangent);
+				float rtB = cross(rB, tangent);
+				float kTangent = mA + mB + iA * rtA * rtA + iB * rtB * rtB;
+				cp->tangentMass = kTangent > 0.0f ? 1.0f / kTangent : 0.0f;
 
-	//			float rnA = cross(rA, normal);
-	//			float rnB = cross(rB, normal);
-	//			float kNormal = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
-	//			cp->normalMass = kNormal > 0.0f ? 1.0f / kNormal : 0.0f;
-	//		}
-	//	}
-	//}
+				float rnA = cross(rA, normal);
+				float rnB = cross(rB, normal);
+				float kNormal = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
+				cp->normalMass = kNormal > 0.0f ? 1.0f / kNormal : 0.0f;
+			}
+		}
+	}
 
-	//// This is the solver in box2d_lite
-	//void PGSSolver(cPhysicsWorld* world, SolverContext* context)
-	//{
-	//	auto& contacts = world->p_contacts;
-	//	int contactCapacity = static_cast<int>(contacts.capacity());
-	//	
-	//	ContactConstraint* constraints = static_cast<ContactConstraint*>(world->allocator->allocate(sizeof(ContactConstraint) * contactCapacity));
-	//	int constraintCount = 0;
+	// This is the solver in box2d_lite
+	void PGSSolver(cPhysicsWorld* world, SolverContext* context)
+	{
+		auto& contacts = world->p_contacts;
+		int contactCapacity = static_cast<int>(contacts.capacity());
+		
+		ContactConstraint* constraints = static_cast<ContactConstraint*>(world->allocator->allocate(sizeof(ContactConstraint) * contactCapacity));
+		int constraintCount = 0;
 
-	//	for (int i = 0; i < contactCapacity; ++i)
-	//	{
-	//		if (!world->p_contacts.isValid(i))
-	//			continue;
-	//		
-	//		cContact* contact = contacts[i];
+		for (int i = 0; i < contactCapacity; ++i)
+		{
+			if (!world->p_contacts.isValid(i))
+				continue;
+			
+			cContact* contact = contacts[i];
 
-	//		if (contact->manifold.pointCount == 0)
-	//		{
-	//			continue;
-	//		}
+			if (contact->manifold.pointCount == 0)
+			{
+				continue;
+			}
 
-	//		constraints[constraintCount].contact = contact;
-	//		constraints[constraintCount].contact->manifold.constraintIndex = constraintCount;
-	//		constraintCount += 1;
-	//	}
+			constraints[constraintCount].contact = contact;
+			constraints[constraintCount].contact->manifold.constraintIndex = constraintCount;
+			constraintCount += 1;
+		}
 
-	//	int iterations = context->iterations;
-	//	float h = context->dt;
-	//	float inv_h = context->inv_dt;
+		int iterations = context->iterations;
+		float h = context->dt;
+		float inv_h = context->inv_dt;
 
-	//	// Loops: body 2, constraint 2 + iterations
+		// Loops: body 2, constraint 2 + iterations
 
-	//	// body loop
-	//	IntegrateVelocities(world, h);
+		// body loop
+		IntegrateVelocities(world, h);
 
-	//	// constraint loop
-	//	PrepareContacts(world, constraints, constraintCount, context->warmStart);
+		// constraint loop
+		PrepareContacts(world, constraints, constraintCount, context->warmStart);
 
-	//	if (context->warmStart)
-	//	{
-	//		WarmStartContacts(world, constraints, constraintCount);
-	//	}
-	//	
-	//	for (int iter = 0; iter < iterations; ++iter)
-	//	{
-	//		PGSBaumgarteContactSolver(world, constraints, constraintCount, inv_h);
-	//	}
+		if (context->warmStart)
+		{
+			WarmStartContacts(world, constraints, constraintCount);
+		}
+		
+		for (int iter = 0; iter < iterations; ++iter)
+		{
+			PGSBaumgarteContactSolver(world, constraints, constraintCount, inv_h);
+		}
 
-	//	// body loop
-	//	// Update positions from velocity
-	//	IntegratePositions(world, h);
-	//	SolvePositions(world);
+		// body loop
+		// Update positions from velocity
+		IntegratePositions(world, h);
+		SolvePositions(world);
 
-	//	// constraint loop
-	//	StoreContactImpluses(constraints, constraintCount);
-	//	
-	//	// free the constraints
-	//	world->allocator->deallocate(constraints, sizeof(ContactConstraint) * contactCapacity);
-	//}
+		// constraint loop
+		StoreContactImpluses(constraints, constraintCount);
+		
+		// free the constraints
+		world->allocator->deallocate(constraints, sizeof(ContactConstraint) * contactCapacity);
+	}
 }
