@@ -179,10 +179,12 @@ namespace chiori
 
 		n_shape->actorIndex = inActorIndex;
 		n_shape->polygon = *inGeom;
+		n_shape->density = inConfig.density;
 		n_shape->friction = inConfig.friction;
 		n_shape->restitution = inConfig.restitution;
 
-		cTransform xf = { actor->origin, actor->rot };
+		cTransform xf = actor->getTransform();
+		
 		n_shape->aabb = n_shape->ComputeAABB(xf);
 		n_shape->broadphaseIndex = m_broadphase.CreateProxy(n_shape->aabb, n_shape);
 		

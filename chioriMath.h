@@ -284,8 +284,9 @@ namespace chiori
 		cVec2 p{ cVec2::zero };
 		cRot q{ cRot::iden };
 		cVec2 scale{ cVec2::one };
-	};
 
+	};
+	
 	// Transform a vector (e.g local to world)
 	inline cVec2 cTransformVec(const cTransform& xf, const cVec2& v)
 	{

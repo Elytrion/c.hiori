@@ -46,5 +46,5 @@ namespace chiori
 	cPolygon GeomMakeRegularPolygon(const cVec2* points, int count);
 	cPolygon GeomMakeSquare(float h);
 	cPolygon GeomMakeBox(float hx, float hy);
-	cPolygon GeomMakeOffsetBox(float hx, float hy, cVec2 center, float angle);
+	cPolygon GeomMakeOffsetBox(float hx, float hy, cVec2 center, float angle = 0.0f);
 }

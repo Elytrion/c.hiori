@@ -27,6 +27,7 @@ float recommendedHeight = 900.0f;
 bool drawColors = true;
 bool drawFPS = true;
 cVec2 middle = cVec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
+float scaleValue = 50.0f;
 
 bool IsPointInRadius(CP_Vector center, float radius, CP_Vector pos)
 {
@@ -46,24 +47,29 @@ bool IsPointInRadius(cVec2 center, float radius, cVec2 pos)
 
 void DrawActor(cShape*& inShape, const cTransform& inTfm)
 {    
-    cTransform xfAlt = inTfm;
-    xfAlt.p.y *= -1;
-    xfAlt.p *= 100;
-    xfAlt.p += middle;
-    xfAlt.scale = { 100,100 };
     std::vector<cVec2> vertices(inShape->getCount());
-    inShape->getVertices(vertices.data(), xfAlt);
+    inShape->getVertices(vertices.data(), inTfm);
     for (int i = 0; i < vertices.size(); i++)
     {
         CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
         cVec2 vert = vertices[i];
         cVec2 nxtVert = vertices[(i + 1) % vertices.size()];
+
+        vert.y *= -1;
+        vert *= scaleValue;
+        vert += middle;
+
+        nxtVert.y *= -1;
+        nxtVert *= scaleValue;
+        nxtVert += middle;
+        
         CP_Graphics_DrawCircle(vert.x, vert.y, 2);
         CP_Settings_StrokeWeight(1);
         CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
         CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
     }
-    cVec2 middlePos = inTfm.p * 100;
+    
+    cVec2 middlePos = inTfm.p * scaleValue;
     middlePos.y *= -1;
     middlePos += middle;
     CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
@@ -84,7 +90,7 @@ void DrawContact(cContact* contact)
         
         anchor.y *= -1;
         cVec2 worldPoint = cTransformVec(xf, anchor);
-        worldPoint *= 100; worldPoint += middle;
+        worldPoint *= scaleValue; worldPoint += middle;
         
         if (point->separation > 0.005f) // speculative point
         {
@@ -105,7 +111,7 @@ void DrawContact(cContact* contact)
         cVec2 normalAnchor = anchor + contact->manifold.normal;
         normalAnchor.y *= -1;
         cVec2 normalCap = cTransformVec(xf, normalAnchor);
-        normalCap *= 100;
+        normalCap *= scaleValue;
         normalCap += middle;
 
         cVec2 line = normalCap - worldPoint;
@@ -136,8 +142,6 @@ void BoxScene()
     int boxAActorIndex = world.CreateActor(a_config);
     cPolygon boxAShape = GeomMakeBox(0.5f, 0.5f);
     int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
-    cPolygon boxBShape = GeomMakeOffsetBox(0.5f, 0.5f, { 0.5f, 0.5f }, 0.0f);
-    int boxBActorIndex = world.CreateShape(boxAActorIndex, s_config, &boxBShape);
 }
 
 void RampScene()
@@ -147,31 +151,50 @@ void RampScene()
     a_config.type = cActorType::STATIC;
     int staticID = world.CreateActor(a_config);
 
+    a_config.position = { 0.0f, 10.0f };
+    a_config.angle = -0.25f;
+    int staticID2 = world.CreateActor(a_config);
+
     ShapeConfig s_config;
     s_config.friction = 0.2f;
-    cPolygon floorShape = GeomMakeBox(40.0f, 0.25f);
+    cPolygon floorShape = GeomMakeBox(15.0f, 0.25f);
     int floorShapeIndex = world.CreateShape(staticID, s_config, &floorShape);
 
-    cPolygon ramp = GeomMakeOffsetBox(13.0f, 0.25f, { -4.0f, 22.0f }, -0.25f);
+    cPolygon ramp = GeomMakeOffsetBox(6.0f, 0.25f, { -3.0f, 12.0f }, -0.25f);
+    world.CreateShape(staticID, s_config, &ramp);
+    
+    ramp = GeomMakeOffsetBox(0.1f, 0.75f, { 4.5f, 10.3f });
     world.CreateShape(staticID, s_config, &ramp);
 
-    ramp = GeomMakeOffsetBox(0.25f, 1.0f, { 10.5f, 19.0f }, 0.0f);
+    ramp = GeomMakeOffsetBox(6.0f, 0.25f, { -1.0f, 7.0f }, 0.25f);
     world.CreateShape(staticID, s_config, &ramp);
 
-    ramp = GeomMakeOffsetBox(13.0f, 0.25f, { 4.0f, 14.0f }, 0.25f);
+    ramp = GeomMakeOffsetBox(0.1f, 0.75f, { -8.3f, 5.5f });
+    world.CreateShape(staticID, s_config, &ramp);
+    
+    ramp = GeomMakeOffsetBox(6.0f, 0.25f, { -3.0f, 2.0f }, -0.25f);
     world.CreateShape(staticID, s_config, &ramp);
 
-    ramp = GeomMakeOffsetBox(0.25f, 1.0f, { -10.5f, 11.0f }, 0.0f);
-    world.CreateShape(staticID, s_config, &ramp);
+    cPolygon box = GeomMakeBox(0.3f, 0.3f);
+    s_config.density = 25.0f;
+    float friction[5] = { 0.75f, 0.5f, 0.35f, 0.1f, 0.0f };
 
-    ramp = GeomMakeOffsetBox(13.0f, 0.25f, { -4.0f, 6.0f }, -0.25f);
-    world.CreateShape(staticID, s_config, &ramp);
+    for (int i = 0; i < 5; ++i)
+    {
+        ActorConfig box_config;
+        box_config.type = cActorType::DYNAMIC;
+        box_config.position = { -8.0f + 2.0f * i, 14.0f };
+        int bodyId = world.CreateActor(box_config);
+
+        s_config.friction = friction[i];
+        world.CreateShape(bodyId, s_config, &box);
+    }
 }
 
 void InitPhysics()
 {
-    BoxScene();
-    //RampScene();
+    //BoxScene();
+    RampScene();
 }
 
 
@@ -220,8 +243,11 @@ void RunChioriPhysics()
             shapeIndex = s->nextShapeIndex;
         }
     }
-    for (int itr = 0; itr < world.p_contacts.size(); itr++)
+    for (int itr = 0; itr < world.p_contacts.capacity(); itr++)
     {
+        if (!world.p_contacts.isValid(itr))
+            continue;
+        
         cContact* c = world.p_contacts[itr];
         DrawContact(c);
     }
@@ -242,8 +268,8 @@ void RunChioriPhysics()
                 cVec2 q = aabbv[j];
                 p.y = -p.y;
                 q.y = -q.y;
-                p *= 100;
-                q *= 100;
+                p *= scaleValue;
+                q *= scaleValue;
                 p += middle;
                 q += middle;
 
@@ -251,7 +277,7 @@ void RunChioriPhysics()
             }
             CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
         };
-    world.m_broadphase.GetTree().DisplayTree(drawFunc);
+    //world.m_broadphase.GetTree().DisplayTree(drawFunc);
     
 }
 
@@ -262,7 +288,7 @@ void HandleInput(CP_Vector mousePosIn)
     CP_Vector mousePos = mousePosIn;// CP_Vector_Add(mousePosIn, { middle.x / 2, middle.y / 2 });
     cVec2 worldPos = { mousePos.x, mousePos.y };
     worldPos -= middle;
-    worldPos /= 100;
+    worldPos /= scaleValue;
     worldPos.y = -worldPos.y;
     
     if ((CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding_mouse))
