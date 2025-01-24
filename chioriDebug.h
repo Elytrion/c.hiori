@@ -32,15 +32,15 @@ namespace chiori
 	class cDebugDraw
 	{
 	public:
-		bool drawShapes;
-		bool drawAABBs;
-		bool drawTreeAABBs;
-		bool drawMass;
-		bool drawContactPoints;
-		bool drawContactNormals;
-		bool drawContactImpulses;
-		bool drawFrictionImpulses;
-		bool drawCenterOfMasses;
+		bool drawShapes{ true };
+		bool drawAABBs{ false };
+		bool drawTreeAABBs{ false };
+		bool drawMass{ true };
+		bool drawContactPoints{ false };
+		bool drawContactNormals{ false };
+		bool drawContactImpulses{ false };
+		bool drawFrictionImpulses{ false };
+		bool drawCenterOfMasses{ false };
 		void* context;
 	
 		void (*DrawPolygon) (const cVec2* vertices, int vertextCount, cDebugColor color, void* context);

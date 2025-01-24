@@ -208,6 +208,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClCompile Include="fracture.cpp" />
     <ClCompile Include="geom.cpp" />
     <ClCompile Include="gjk.cpp" />
+    <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
@@ -239,6 +240,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="fracture.h" />
     <ClInclude Include="geom.h" />
     <ClInclude Include="gjk.h" />
+    <ClInclude Include="graphics.h" />
     <ClInclude Include="integrators.h" />
     <ClInclude Include="manifold.h" />
     <ClInclude Include="pch.h" />

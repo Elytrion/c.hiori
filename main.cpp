@@ -8,6 +8,7 @@
 #include "physicsWorld.h"
 #include "aabbtree.h"
 #include "gjk.h"
+#include "graphics.h"
 
 using namespace chiori;
 cPhysicsWorld world; // create an instance of the physics world
@@ -198,13 +199,14 @@ void InitPhysics()
 }
 
 
-
+DebugGraphics drawer;
 void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
 	InitPhysics();
+    drawer.Create();
 }
 
 bool pauseStep = false;
@@ -231,53 +233,55 @@ void RunChioriPhysics()
             pauseStep = false;
         }
     }
+    
+    world.DebugDraw(drawer->context);
 
-    for (int itr = 0; itr < world.p_actors.size(); itr++)
-    {
-        cActor* a = world.p_actors[itr];
-        int shapeIndex = a->shapeList;
-        while (shapeIndex != -1)
-        {
-            cShape* s = world.p_shapes[shapeIndex];
-            DrawActor(s, a->getTransform());
-            shapeIndex = s->nextShapeIndex;
-        }
-    }
-    for (int itr = 0; itr < world.p_contacts.capacity(); itr++)
-    {
-        if (!world.p_contacts.isValid(itr))
-            continue;
-        
-        cContact* c = world.p_contacts[itr];
-        DrawContact(c);
-    }
+    //for (int itr = 0; itr < world.p_actors.size(); itr++)
+    //{
+    //    cActor* a = world.p_actors[itr];
+    //    int shapeIndex = a->shapeList;
+    //    while (shapeIndex != -1)
+    //    {
+    //        cShape* s = world.p_shapes[shapeIndex];
+    //        DrawActor(s, a->getTransform());
+    //        shapeIndex = s->nextShapeIndex;
+    //    }
+    //}
+    //for (int itr = 0; itr < world.p_contacts.capacity(); itr++)
+    //{
+    //    if (!world.p_contacts.isValid(itr))
+    //        continue;
+    //    
+    //    cContact* c = world.p_contacts[itr];
+    //    DrawContact(c);
+    //}
 
-    auto drawFunc = [&](int height, const AABB& aabb)
-        {
-            CP_Settings_StrokeWeight(2);
-            CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
-            cVec2 aabbv[4];
-            aabbv[0] = { aabb.min };
-            aabbv[1] = { aabb.max.x, aabb.min.y };
-            aabbv[2] = { aabb.max };
-            aabbv[3] = { aabb.min.x, aabb.max.y };
-            for (int i = 0; i < 4; i++)
-            {
-                int j = (i + 1) % 4;
-                cVec2 p = aabbv[i];
-                cVec2 q = aabbv[j];
-                p.y = -p.y;
-                q.y = -q.y;
-                p *= scaleValue;
-                q *= scaleValue;
-                p += middle;
-                q += middle;
+    //auto drawFunc = [&](int height, const AABB& aabb)
+    //    {
+    //        CP_Settings_StrokeWeight(2);
+    //        CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
+    //        cVec2 aabbv[4];
+    //        aabbv[0] = { aabb.min };
+    //        aabbv[1] = { aabb.max.x, aabb.min.y };
+    //        aabbv[2] = { aabb.max };
+    //        aabbv[3] = { aabb.min.x, aabb.max.y };
+    //        for (int i = 0; i < 4; i++)
+    //        {
+    //            int j = (i + 1) % 4;
+    //            cVec2 p = aabbv[i];
+    //            cVec2 q = aabbv[j];
+    //            p.y = -p.y;
+    //            q.y = -q.y;
+    //            p *= scaleValue;
+    //            q *= scaleValue;
+    //            p += middle;
+    //            q += middle;
 
-                CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
-            }
-            CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
-        };
-    world.m_broadphase.GetTree().DisplayTree(drawFunc);
+    //            CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
+    //        }
+    //        CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
+    //    };
+    //world.m_broadphase.GetTree().DisplayTree(drawFunc);
     
 }
 
@@ -392,7 +396,7 @@ void game_update(void)
     RunChioriPhysics();
 
     // Profiling info and frameRate testing
-    if (drawFPS)
+    if (true)
     {
         CP_Settings_TextSize(20);
         CP_Settings_BlendMode(CP_BLEND_ALPHA);

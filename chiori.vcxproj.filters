@@ -34,6 +34,9 @@
     <ClCompile Include="geom.cpp">
       <Filter>Source\Collision Detection</Filter>
     </ClCompile>
+    <ClCompile Include="graphics.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -128,8 +131,11 @@
     <ClInclude Include="geom.h">
       <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
-    <ClInclude Include="chioriDebug.h">
+    <ClInclude Include="graphics.h">
       <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="chioriDebug.h">
+      <Filter>Headers\Commons</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
