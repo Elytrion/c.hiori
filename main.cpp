@@ -277,7 +277,7 @@ void RunChioriPhysics()
             }
             CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
         };
-    //world.m_broadphase.GetTree().DisplayTree(drawFunc);
+    world.m_broadphase.GetTree().DisplayTree(drawFunc);
     
 }
 

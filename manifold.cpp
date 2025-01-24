@@ -7,8 +7,7 @@
 
 namespace chiori
 {
-	#define clinearSlop 0.005f
-	#define cspeculativeDistance (4.0f * clinearSlop)
+
 	#define MAKE_MPT_ID(A, B) ((uint8_t)(A) << 8 | (uint8_t)(B))
 	
 	// Polygon clipper used by GJK and SAT to compute contact points when there are potentially two contact points.
@@ -268,13 +267,13 @@ namespace chiori
 		
 		cGJK(input, output, cache);
 
-		if (output.distance > cspeculativeDistance)
+		if (output.distance > commons::SPEC_DIST)
 		{
 			// no contact
 			return manifold;
 		}
 
-		if (output.distance < 0.1f * clinearSlop)
+		if (output.distance < 0.1f * commons::LINEAR_SLOP)
 		{
 			//cEPA(input, output, &cache);
 			manifold = PolygonSATClipper(shapeA, &localShapeB);

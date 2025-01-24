@@ -3,6 +3,7 @@
 #include "gjk.h"
 #include "manifold.h"
 #include "solver.h"
+#include "chioriDebug.h"
 
 namespace chiori
 {
@@ -330,6 +331,219 @@ namespace chiori
 
 		PGSSoftSolver(this, &context);
 		//PGSSolver(this, &context);
+	}
+
+
+	static void DebugDrawShape(cDebugDraw* draw, cShape* shape, cTransform xf, cDebugColor color)
+	{
+		const cPolygon& poly = shape->polygon;
+		int count = poly.count;
+		cassert(count <= MAX_POLYGON_VERTICES);
+		cVec2 verts[MAX_POLYGON_VERTICES];
+		
+		for (int i = 0; i < count; ++i)
+		{
+			verts[i] = cTransformVec(xf, poly.vertices[i]);
+		}
+
+		draw->DrawPolygon(verts, count, color, draw->context);
+	}
+
+	void cPhysicsWorld::DebugDraw(cDebugDraw* draw)
+	{
+		if (draw->drawShapes)
+		{
+			int count = p_actors.capacity();
+			for (int i = 0; i < count; ++i)
+			{
+				if (!p_actors.isValid(i))
+					continue;
+
+				cActor* actor = p_actors[i];
+
+				cTransform xf = actor->getTransform();
+				int shapeIndex = actor->shapeList;
+				while (shapeIndex != NULL_INDEX)
+				{
+					cShape* shape = p_shapes[shapeIndex];
+					if (actor->type == cActorType::DYNAMIC && actor->mass <= 0.0f)
+					{
+						// Error body!
+						DebugDrawShape(draw, shape, xf, cDebugColor::Red);
+					}
+					else if (actor->type == cActorType::STATIC)
+					{
+						DebugDrawShape(draw, shape, xf, { 0.5f, 0.9f, 0.5f, 1.0f });
+					}
+					else if (actor->type == cActorType::KINEMATIC)
+					{
+						DebugDrawShape(draw, shape, xf, { 0.5f, 0.5f, 0.9f, 1.0f });
+					}
+					else
+					{
+						DebugDrawShape(draw, shape, xf, cDebugColor::Yellow);
+					}
+
+					shapeIndex = shape->nextShapeIndex;
+				}
+
+			}
+		}
+		
+		if (draw->drawAABBs)
+		{
+			cDebugColor AABBcolor = { 0.9f, 0.3f, 0.9f, 1.0f };
+
+			int count = p_actors.capacity();
+			for (int i = 0; i < count; ++i)
+			{
+				if (!p_actors.isValid(i))
+					continue;
+
+				cActor* actor = p_actors[i];
+
+				char buffer[32];
+				snprintf(buffer, 32, "%d", i);
+				draw->DrawString(actor->position, buffer, AABBcolor, draw->context);
+
+				int shapeIndex = actor->shapeList;
+				while (shapeIndex != NULL_INDEX)
+				{
+					cShape* shape = p_shapes[shapeIndex];
+					AABB aabb = shape->aabb;
+					
+					cVec2 verts[4] = {
+						{aabb.min.x, aabb.min.y},
+						{aabb.max.x, aabb.min.y},
+						{aabb.max.x, aabb.max.y},
+						{aabb.min.x, aabb.max.y}
+					};
+
+					draw->DrawPolygon(verts, 4, AABBcolor, draw->context);
+
+					shapeIndex = shape->nextShapeIndex;
+				}
+			}
+		}
+
+		if (draw->drawTreeAABBs)
+		{
+			cDebugColor treeColor = cDebugColor::Magenta;
+			auto drawFunc = [&](int height, const AABB& aabb)
+				{
+					cVec2 center = aabb.getCenter();
+					
+					char buffer[32];
+					snprintf(buffer, 32, "%d", height);
+					draw->DrawString(center, buffer, treeColor, draw->context);
+					
+					cVec2 verts[4] = {
+						{aabb.min.x, aabb.min.y},
+						{aabb.max.x, aabb.min.y},
+						{aabb.max.x, aabb.max.y},
+						{aabb.min.x, aabb.max.y}
+					};
+
+					draw->DrawPolygon(verts, 4, treeColor, draw->context);
+				};
+			m_broadphase.GetTree().DisplayTree(drawFunc);
+		}
+
+		if (draw->drawMass)
+		{
+			cVec2 offset = { 0,0 };
+			int count = p_actors.capacity();
+			for (int i = 0; i < count; ++i)
+			{
+				if (!p_actors.isValid(i))
+					continue;
+
+				cActor* actor = p_actors[i];
+				cTransform xf = actor->getTransform();
+				draw->DrawTransform(xf, draw->context);
+
+				cVec2 p = cTransformVec(xf, offset);
+				
+				char buffer[32];
+				snprintf(buffer, 32, "%.2g", actor->mass);
+				draw->DrawString(p, buffer, cDebugColor::White, draw->context);
+			}
+		}
+
+		if (draw->drawContactPoints)
+		{
+			const float impulseScale = 1.0f;
+			const float axisScale = 0.3f;
+			cDebugColor speculativeColor = { 0.3f, 0.3f, 0.3f, 1.0f };
+			cDebugColor addColor = { 0.3f, 0.95f, 0.3f, 1.0f };
+			cDebugColor persistColor = { 0.3f, 0.3f, 0.95f, 1.0f };
+			cDebugColor normalColor = { 0.9f, 0.9f, 0.9f, 1.0f };
+			cDebugColor impulseColor = { 0.9f, 0.9f, 0.3f, 1.0f };
+			cDebugColor frictionColor = { 0.9f, 0.9f, 0.3f, 1.0f };
+
+			int contactCapacity = p_contacts.capacity();
+			for (int i = 0; i < contactCapacity; ++i)
+			{
+				if (!p_contacts.isValid(i))
+					continue;
+
+				cContact* contact = p_contacts[i];
+				
+				int pointCount = contact->manifold.pointCount;
+				cVec2 normal = contact->manifold.normal;
+				char buffer[32];
+
+				cActor* actorA = p_actors[contact->edges[0].bodyIndex];
+				cTransform xfA = actorA->getTransform();
+				
+				for (int j = 0; j < pointCount; ++j)
+				{
+					cManifoldPoint* point = contact->manifold.points + j;
+					cVec2 worldPoint = cTransformVec(xfA, point->localAnchorA);
+
+					if (point->separation > commons::LINEAR_SLOP)
+					{
+						// draw speculative point
+						draw->DrawPoint(worldPoint, 5.0f, speculativeColor, draw->context);
+					}
+					else if (!point->persisted)
+					{
+						// draw new point
+						draw->DrawPoint(worldPoint, 10.0f, addColor, draw->context);
+					}
+					else if (point->persisted)
+					{
+						// draw persistent contact point (has existed > 1 frame)
+						draw->DrawPoint(worldPoint, 5.0f, persistColor, draw->context);
+					}
+
+					if (draw->drawContactImpulses)
+					{
+						cVec2 p1 = worldPoint;
+						cVec2 p2 = p1 + (impulseScale * point->normalImpulse) * normal;
+						draw->DrawLine(p1, p2, impulseColor, draw->context);
+						snprintf(buffer, 32, "%.2f", point->normalImpulse);
+						draw->DrawString(p1, buffer, impulseColor, draw->context);
+					}
+					else if (draw->drawContactNormals)
+					{
+						cVec2 p1 = worldPoint;
+						cVec2 p2 = p1 + axisScale * normal;
+						draw->DrawLine(p1, p2, normalColor, draw->context);
+					}
+
+					if (draw->drawFrictionImpulses)
+					{
+						cVec2 tangent = { normal.y, -normal.x };
+						cVec2 p1 = worldPoint;
+						cVec2 p2 = p1 + (impulseScale * point->tangentImpulse) * tangent;
+						draw->DrawLine(p1, p2, frictionColor, draw->context);
+						snprintf(buffer, 32, "%.2f", point->tangentImpulse);
+						draw->DrawString(p1, buffer, frictionColor, draw->context);
+					}
+				}
+			}
+		}
 	}
 
 }

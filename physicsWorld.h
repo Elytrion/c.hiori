@@ -9,6 +9,8 @@
 
 namespace chiori
 {	
+	class cDebugDraw; // forward declaration
+
 	class cPhysicsWorld
 	{
 	public:
@@ -32,6 +34,8 @@ namespace chiori
 		int CreateActor(const ActorConfig& inConfig);
 		int CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom);
 		void RemoveActor(int inActorIndex);
+
+		void DebugDraw(cDebugDraw* draw);
 
 		cPool<cActor> p_actors;
 		cPool<cShape> p_shapes;

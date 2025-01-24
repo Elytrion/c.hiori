@@ -464,7 +464,7 @@ namespace chiori
 				}
 				else
 				{
-					bias = c_max(0.2f * inv_h * c_min(0.0f, cp->separation + 0.005f), -MaxBaumgarteVelocity);
+					bias = c_max(0.2f * inv_h * c_min(0.0f, cp->separation + commons::LINEAR_SLOP), -MaxBaumgarteVelocity);
 				}
 
 				// static anchors

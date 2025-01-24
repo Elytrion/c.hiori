@@ -57,9 +57,6 @@
     <Filter Include="Headers\Components">
       <UniqueIdentifier>{75df9e38-48c1-429c-8d36-e5182f1bfbfe}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Components">
-      <UniqueIdentifier>{56ce437f-058d-449b-8372-16f3ccad792d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Headers\Contacts">
       <UniqueIdentifier>{f94fb8e9-832f-4113-b081-1a853d43070b}</UniqueIdentifier>
     </Filter>
@@ -130,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="geom.h">
       <Filter>Headers\Collision Detection</Filter>
+    </ClInclude>
+    <ClInclude Include="chioriDebug.h">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,9 +4,7 @@
 #include "physicsWorld.h"
 
 namespace chiori
-{
-	static constexpr int NULL_INDEX = -1;
-	
+{	
 	void CreateContact(cPhysicsWorld* world, cShape* shapeA, cShape* shapeB)
 	{
 		cContact* contact = world->p_contacts.Alloc();
