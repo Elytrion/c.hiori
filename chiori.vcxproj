@@ -223,6 +223,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     </ClCompile>
     <ClCompile Include="physicsWorld.cpp" />
     <ClCompile Include="solver.cpp" />
+    <ClCompile Include="uimanager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
@@ -246,6 +247,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="pch.h" />
     <ClInclude Include="physicsWorld.h" />
     <ClInclude Include="solver.h" />
+    <ClInclude Include="uimanager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

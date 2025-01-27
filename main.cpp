@@ -2,20 +2,20 @@
 #include <cstdio>
 #include <cstdbool>
 #include "pch.h"
-#include "chioriMath.h"
-#include "cActor.h"
 #include "cprocessing.h"
-#include "physicsWorld.h"
-#include "aabbtree.h"
-#include "gjk.h"
 #include "graphics.h"
+#include "uimanager.h"
+#include "physicsWorld.h"
 
 using namespace chiori;
+
+
 cPhysicsWorld world; // create an instance of the physics world
 DebugGraphics drawer; // create a graphics instance to draw the world and UI
+UIManager ui_manager{ &drawer }; // create a ui manager to handle UI input events
+
 bool isHolding_mouse = false;
 bool isHolding_keys = false;
-
 CP_Color randomColors[] = {
     { 128, 0,   0,   255 },
     { 128, 128, 0,   255 },
@@ -23,7 +23,6 @@ CP_Color randomColors[] = {
     { 0,   128, 128, 255 },
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
-
 float recommendedWidth = 1600.0f;
 float recommendedHeight = 900.0f;
 bool drawColors = true;
@@ -45,26 +44,6 @@ bool IsPointInRadius(cVec2 center, float radius, cVec2 pos)
     float distY = pos.y - center.y;
     float distance = (distX * distX) + (distY * distY);
     return distance < (radius * radius);
-}
-
-void BoxScene()
-{
-    // Create a floor
-    ActorConfig a_config;
-    a_config.type = cActorType::STATIC;
-    a_config.position = cVec2{ 0, 0 };
-    int floorActorIndex = world.CreateActor(a_config);
-    
-    ShapeConfig s_config;
-    cPolygon floorShape = GeomMakeBox(5.0f, 0.25f);
-    int floorShapeIndex = world.CreateShape(floorActorIndex, s_config, &floorShape);
-
-    a_config.type = cActorType::DYNAMIC;
-    a_config.position = cVec2{ 1.0f, 0.5f };
-    a_config.angle = 0;
-    int boxAActorIndex = world.CreateActor(a_config);
-    cPolygon boxAShape = GeomMakeBox(0.5f, 0.5f);
-    int boxAShapeIndex = world.CreateShape(boxAActorIndex, s_config, &boxAShape);
 }
 
 void RampScene()
@@ -115,7 +94,8 @@ void RampScene()
 
 
     {
-        drawer.ChangeZoom(45.0f);
+        scaleValue = 45.0f;
+        drawer.ChangeZoom(scaleValue);
 		drawer.SetCamera({ 0.0f, 7.0f });
     }
 }
@@ -129,7 +109,26 @@ void InitPhysics()
     drawer.Create();
 }
 
-
+void InitUI()
+{
+    UIComponentConfig testBtnConfig
+    {
+        50.0f, 50.0f,
+        80.0f, 30.0f,
+        0.9f, 0.9f, 0.9f, 1.0f,
+        "Click Me",
+        5.0f, 20.0f,
+        1.0f, 0.0f, 0.0f, 1.0f
+    };
+    // Event for the button
+    UIEventTrigger clickEvent;
+    clickEvent.type = UIEventType::OnMouseTriggered;
+    clickEvent.mouse = MOUSE_BUTTON_1; // Left mouse button
+    clickEvent.callback = []() {
+        printf("Hello World\n");
+        };
+    ui_manager.AddRectUIButton(testBtnConfig, { clickEvent });
+}
 
 void game_init(void)
 {
@@ -137,6 +136,7 @@ void game_init(void)
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
 	InitPhysics();
+    InitUI();
 }
 
 bool pauseStep = false;
@@ -166,18 +166,17 @@ void RunChioriPhysics()
 }
 
 cActor* selectedActor;
-float zoomVal = 50.0f;
 void HandleInput(CP_Vector mousePosIn)
 {
     if (CP_Input_KeyDown(KEY_LEFT_BRACKET))
     {
-        zoomVal = c_clamp(zoomVal - 0.5f, 1.0f, 1000.0f);
-        drawer.ChangeZoom(zoomVal);
+        scaleValue = c_clamp(scaleValue - 0.5f, 1.0f, 1000.0f);
+        drawer.ChangeZoom(scaleValue);
     }
     else if (CP_Input_KeyDown(KEY_RIGHT_BRACKET))
     {
-        zoomVal = c_clamp(zoomVal + 0.5f, 1.0f, 1000.0f);
-        drawer.ChangeZoom(zoomVal);
+        scaleValue = c_clamp(scaleValue + 0.5f, 1.0f, 1000.0f);
+        drawer.ChangeZoom(scaleValue);
     }
 
     cVec2 moveDelta = cVec2::zero;
@@ -273,7 +272,7 @@ void game_update(void)
     HandleInput(mousePos);
     RunChioriPhysics();
 
-
+    ui_manager.Update();
     drawer.DrawFrame(&world);
 
     // Profiling info and frameRate testing

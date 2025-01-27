@@ -35,7 +35,10 @@
       <Filter>Source\Collision Detection</Filter>
     </ClCompile>
     <ClCompile Include="graphics.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="uimanager.cpp">
+      <Filter>Source\GUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,6 +74,12 @@
     </Filter>
     <Filter Include="Source\Fracture">
       <UniqueIdentifier>{9dbceeb7-b1ee-4232-b325-f09f1f030743}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\GUI">
+      <UniqueIdentifier>{c2211733-5e71-45ef-8a99-9cc582a3a5a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\GUI">
+      <UniqueIdentifier>{196fad33-31dd-4542-b0bb-47f98962074f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -131,11 +140,14 @@
     <ClInclude Include="geom.h">
       <Filter>Headers\Collision Detection</Filter>
     </ClInclude>
-    <ClInclude Include="graphics.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="chioriDebug.h">
       <Filter>Headers\Commons</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics.h">
+      <Filter>Headers\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="uimanager.h">
+      <Filter>Headers\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

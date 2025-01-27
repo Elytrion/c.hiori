@@ -234,6 +234,7 @@ void DebugGraphics::DrawUIText(cVec2 position, const std::string& str, cDebugCol
 	newElement.position[1] = position.y;
 	strncpy_s(newElement.textBuffer, str.c_str(), 63);
 	newElement.textBuffer[63] = '\0';
+	newElement.color = ConvertColor(color);
 	uiElements.push_back(newElement);
 }
 
@@ -243,6 +244,9 @@ void DebugGraphics::DrawUI()
 	{
 		const UIElement& uie = uiElements[i];
 		CP_Settings_Fill(uie.color);
+		CP_Settings_Stroke(uie.color);
+		CP_Settings_StrokeWeight(1);
+		
 		switch (uie.type)
 		{
 		case UIElement::ElementType::RECT:
