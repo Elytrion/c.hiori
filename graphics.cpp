@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "graphics.h"
+#include "physicsWorld.h"
 
 
 
@@ -56,6 +57,11 @@ void DebugGraphics::ResetCamera()
 void DebugGraphics::PanCamera(cVec2 moveDelta)
 {
 	cameraCenter += moveDelta / zoomScale; // Adjust for current zoom
+}
+
+void DebugGraphics::SetCamera(chiori::cVec2 screenPos)
+{
+	cameraCenter = screenPos;
 }
 
 void DebugGraphics::ChangeZoom(float zoom)
@@ -195,4 +201,74 @@ void DebugGraphics::DrawTransform(cTransform xf)
 	CP_Settings_Fill(CP_Color_Create(255, 255, 255, 255));
 	CP_Graphics_DrawCircle(screenOrigin.x, screenOrigin.y, 4);
 }
+
+
+void DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
+{
+	UIElement newElement;
+	newElement.type = UIElement::ElementType::RECT;
+	newElement.position[0] = position.x;
+	newElement.position[1] = position.y;
+	newElement.size[0] = size.x;
+	newElement.size[1] = size.y;
+	newElement.color = ConvertColor(color);
+	uiElements.push_back(newElement);
+}
+
+void DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
+{
+	UIElement newElement;
+	newElement.type = UIElement::ElementType::CIRCLE;
+	newElement.position[0] = center.x;
+	newElement.position[1] = center.y;
+	newElement.size[0] = radius;
+	newElement.color = ConvertColor(color);
+	uiElements.push_back(newElement);
+}
+
+void DebugGraphics::DrawUIText(cVec2 position, const std::string& str, cDebugColor color)
+{
+	UIElement newElement;
+	newElement.type = UIElement::ElementType::TEXT;
+	newElement.position[0] = position.x;
+	newElement.position[1] = position.y;
+	strncpy_s(newElement.textBuffer, str.c_str(), 63);
+	newElement.textBuffer[63] = '\0';
+	uiElements.push_back(newElement);
+}
+
+void DebugGraphics::DrawUI()
+{
+	for (int i = 0; i < uiElements.size(); ++i)
+	{
+		const UIElement& uie = uiElements[i];
+		CP_Settings_Fill(uie.color);
+		switch (uie.type)
+		{
+		case UIElement::ElementType::RECT:
+			CP_Graphics_DrawRect(uie.position[0], uie.position[1], uie.size[0], uie.size[1]);
+			break;
+		case UIElement::ElementType::CIRCLE:
+			CP_Graphics_DrawCircle(uie.position[0], uie.position[1], uie.size[0]);
+			break;
+		case UIElement::ElementType::TEXT:
+			CP_Font_DrawText(uie.textBuffer, uie.position[0], uie.position[1]);
+			break;
+		}
+	}
+}
+
+void DebugGraphics::DrawFrame(void* world)
+{
+	if (world)
+	{
+		cPhysicsWorld* pworld = static_cast<cPhysicsWorld*>(world);
+
+		pworld->DebugDraw(&draw);
+	}
+
+	DrawUI();
+}
+
+
 

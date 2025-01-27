@@ -12,6 +12,7 @@
 
 using namespace chiori;
 cPhysicsWorld world; // create an instance of the physics world
+DebugGraphics drawer; // create a graphics instance to draw the world and UI
 bool isHolding_mouse = false;
 bool isHolding_keys = false;
 
@@ -44,85 +45,6 @@ bool IsPointInRadius(cVec2 center, float radius, cVec2 pos)
     float distY = pos.y - center.y;
     float distance = (distX * distX) + (distY * distY);
     return distance < (radius * radius);
-}
-
-void DrawActor(cShape*& inShape, const cTransform& inTfm)
-{    
-    std::vector<cVec2> vertices(inShape->getCount());
-    inShape->getVertices(vertices.data(), inTfm);
-    for (int i = 0; i < vertices.size(); i++)
-    {
-        CP_Settings_Fill(CP_Color_Create(255, 127, 127, 255));
-        cVec2 vert = vertices[i];
-        cVec2 nxtVert = vertices[(i + 1) % vertices.size()];
-
-        vert.y *= -1;
-        vert *= scaleValue;
-        vert += middle;
-
-        nxtVert.y *= -1;
-        nxtVert *= scaleValue;
-        nxtVert += middle;
-        
-        CP_Graphics_DrawCircle(vert.x, vert.y, 2);
-        CP_Settings_StrokeWeight(1);
-        CP_Settings_Stroke(CP_Color_Create(255, 127, 127, 255));
-        CP_Graphics_DrawLine(vert.x, vert.y, nxtVert.x, nxtVert.y);
-    }
-    
-    cVec2 middlePos = inTfm.p * scaleValue;
-    middlePos.y *= -1;
-    middlePos += middle;
-    CP_Graphics_DrawCircle(middlePos.x, middlePos.y, 3);
-}
-
-void DrawContact(cContact* contact)
-{
-    int pointCount = contact->manifold.pointCount;
-    cVec2 normal = contact->manifold.normal;
-    cTransform xf = world.p_actors[world.p_shapes[contact->shapeIndexA]->actorIndex]->getTransform();
-    for (int j = 0; j < pointCount; ++j)
-    {
-        cManifoldPoint* point = contact->manifold.points + j;
-        cVec2 anchor = point->localAnchorA;
-        
-        if (anchor == cVec2::zero)
-            continue;
-        
-        anchor.y *= -1;
-        cVec2 worldPoint = cTransformVec(xf, anchor);
-        worldPoint *= scaleValue; worldPoint += middle;
-        
-        if (point->separation > 0.005f) // speculative point
-        {
-            CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
-            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 3);
-        }
-        else if (!point->persisted)
-        {
-            CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255));
-            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 6);
-        }
-        else if (point->persisted)
-        {
-            CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
-            CP_Graphics_DrawCircle(worldPoint.x, worldPoint.y, 3);
-        }
-
-        cVec2 normalAnchor = anchor + contact->manifold.normal;
-        normalAnchor.y *= -1;
-        cVec2 normalCap = cTransformVec(xf, normalAnchor);
-        normalCap *= scaleValue;
-        normalCap += middle;
-
-        cVec2 line = normalCap - worldPoint;
-        line *= point->separation;
-        normalCap = worldPoint + line;
-
-        CP_Settings_StrokeWeight(3);
-        CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
-        CP_Graphics_DrawLine(worldPoint.x, worldPoint.y, normalCap.x, normalCap.y);
-    }
 }
 
 void BoxScene()
@@ -190,23 +112,31 @@ void RampScene()
         s_config.friction = friction[i];
         world.CreateShape(bodyId, s_config, &box);
     }
+
+
+    {
+        drawer.ChangeZoom(45.0f);
+		drawer.SetCamera({ 0.0f, 7.0f });
+    }
 }
+
 
 void InitPhysics()
 {
     //BoxScene();
     RampScene();
+
+    drawer.Create();
 }
 
 
-DebugGraphics drawer;
+
 void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
 	InitPhysics();
-    drawer.Create();
 }
 
 bool pauseStep = false;
@@ -233,56 +163,6 @@ void RunChioriPhysics()
             pauseStep = false;
         }
     }
-    
-    world.DebugDraw(&drawer.draw);
-
-    //for (int itr = 0; itr < world.p_actors.size(); itr++)
-    //{
-    //    cActor* a = world.p_actors[itr];
-    //    int shapeIndex = a->shapeList;
-    //    while (shapeIndex != -1)
-    //    {
-    //        cShape* s = world.p_shapes[shapeIndex];
-    //        DrawActor(s, a->getTransform());
-    //        shapeIndex = s->nextShapeIndex;
-    //    }
-    //}
-    //for (int itr = 0; itr < world.p_contacts.capacity(); itr++)
-    //{
-    //    if (!world.p_contacts.isValid(itr))
-    //        continue;
-    //    
-    //    cContact* c = world.p_contacts[itr];
-    //    DrawContact(c);
-    //}
-
-    //auto drawFunc = [&](int height, const AABB& aabb)
-    //    {
-    //        CP_Settings_StrokeWeight(2);
-    //        CP_Settings_Stroke(CP_Color_Create(50, 50, 255, 255));
-    //        cVec2 aabbv[4];
-    //        aabbv[0] = { aabb.min };
-    //        aabbv[1] = { aabb.max.x, aabb.min.y };
-    //        aabbv[2] = { aabb.max };
-    //        aabbv[3] = { aabb.min.x, aabb.max.y };
-    //        for (int i = 0; i < 4; i++)
-    //        {
-    //            int j = (i + 1) % 4;
-    //            cVec2 p = aabbv[i];
-    //            cVec2 q = aabbv[j];
-    //            p.y = -p.y;
-    //            q.y = -q.y;
-    //            p *= scaleValue;
-    //            q *= scaleValue;
-    //            p += middle;
-    //            q += middle;
-
-    //            CP_Graphics_DrawLine(p.x, p.y, q.x, q.y);
-    //        }
-    //        CP_Settings_Fill(CP_Color_Create(127, 127, 255, 255));
-    //    };
-    //world.m_broadphase.GetTree().DisplayTree(drawFunc);
-    
 }
 
 cActor* selectedActor;
@@ -393,6 +273,9 @@ void game_update(void)
     HandleInput(mousePos);
     RunChioriPhysics();
 
+
+    drawer.DrawFrame(&world);
+
     // Profiling info and frameRate testing
     if (true)
     {
@@ -407,9 +290,6 @@ void game_update(void)
         CP_Font_DrawText(buffer, 20, 20);
     }
 }
-
-
-
 
 void game_exit(void)
 {
