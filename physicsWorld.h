@@ -35,6 +35,7 @@ namespace chiori
 		int CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom);
 		void RemoveActor(int inActorIndex);
 
+		float fontSize = 14.0f;
 		void DebugDraw(cDebugDraw* draw);
 
 		cPool<cActor> p_actors;

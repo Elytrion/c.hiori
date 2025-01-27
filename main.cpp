@@ -128,6 +128,21 @@ void InitUI()
         printf("Hello World\n");
         };
     ui_manager.AddRectUIButton(testBtnConfig, { clickEvent });
+
+    float spacing = 50.0f;
+    float startX = spacing; // Initial horizontal offset
+    float y = 20.0f;        // Fixed Y position near the top of the screen
+    cVec2 btnDim = { 30.0f, 30.0f };
+    for (int i = 0; i < 8; ++i)
+    {
+        // Define button configuration
+        UIComponentConfig buttonConfig{
+            startX, y,                    // x, y position
+            btnDim.x, btnDim.y,    // width, height
+            0.9f, 0.9f, 0.9f, 1.0f,           // RGBA color
+            "Button " + std::to_string(i + 1), // Button text
+            18.0f                         // Text size
+        };
 }
 
 void game_init(void)
@@ -139,31 +154,7 @@ void game_init(void)
     InitUI();
 }
 
-bool pauseStep = false;
-bool isPaused = true;
-void RunChioriPhysics()
-{
-    if (!isPaused)
-    {
-        world.update(CP_System_GetDt());
-        if (CP_Input_KeyTriggered(KEY_SPACE))
-            isPaused = true;
-    }
-    else
-    {
-        if (CP_Input_KeyTriggered(KEY_SPACE))
-            isPaused = false;
-        
-        if (CP_Input_KeyTriggered(KEY_SLASH) || CP_Input_KeyDown(KEY_PERIOD))
-            pauseStep = true;
-        
-        if (pauseStep)
-        {
-            world.step(1.0f / 60.0f);
-            pauseStep = false;
-        }
-    }
-}
+
 
 cActor* selectedActor;
 void HandleInput(CP_Vector mousePosIn)
@@ -207,61 +198,10 @@ void HandleInput(CP_Vector mousePosIn)
     {
         drawer.PanCamera(moveDelta);
     }
-    
-    
-
-    //std::cout << "Is Holding: " << ((isHolding_mouse) ? selectedActor->shapeIndex : -1) << std::endl;
-    CP_Vector mousePos = mousePosIn;// CP_Vector_Add(mousePosIn, { middle.x / 2, middle.y / 2 });
-    cVec2 worldPos = { mousePos.x, mousePos.y };
-    worldPos -= middle;
-    worldPos /= scaleValue;
-    worldPos.y = -worldPos.y;
-    
-    if ((CP_Input_MouseDown(MOUSE_BUTTON_1) && !isHolding_mouse))
-    {
-        for (int itr = 0; itr < world.p_actors.size(); itr++)
-        {
-            cActor* a = world.p_actors[itr];
-            if (a->type == cActorType::STATIC)
-                continue;
-            cTransform tfm = a->getTransform();
-            if (IsPointInRadius(tfm.p, 1, worldPos))
-            {
-                selectedActor = a;
-                isHolding_mouse = true;
-                break;
-            }
-        }
-    }
-
-    if (CP_Input_MouseReleased(MOUSE_BUTTON_1))
-    {
-        selectedActor = nullptr;
-        isHolding_mouse = false;
-    }
-
-    if (isHolding_mouse && selectedActor)
-    {
-        selectedActor->linearVelocity = cVec2::zero;
-        cTransform tfm = selectedActor->getTransform();
-        tfm.p = { worldPos.x, worldPos.y };
-        selectedActor->setTransform(tfm);
-
-        //if (CP_Input_MouseDown(MOUSE_BUTTON_2))
-        //{
-        //    cTransform tfm = selectedActor->getTransform();
-        //    tfm.q += (35 * DEG2RAD) * CP_System_GetDt();
-        //    selectedActor->setTransform(tfm);
-        //}
-
-        if (CP_Input_KeyTriggered(KEY_K))
-        {
-            selectedActor->addTorque(5000.0f);
-        }
-    }
-
 }
 
+bool pauseStep = false;
+bool isPaused = true;
 void game_update(void)
 {
     CP_Settings_BlendMode(CP_BLEND_ALPHA);
@@ -270,7 +210,27 @@ void game_update(void)
     
     CP_Vector mousePos = CP_Vector{ (float)CP_Input_GetMouseWorldX(), (float)CP_Input_GetMouseWorldY() };
     HandleInput(mousePos);
-    RunChioriPhysics();
+    
+    if (!isPaused)
+    {
+        world.update(CP_System_GetDt());
+        if (CP_Input_KeyTriggered(KEY_SPACE))
+            isPaused = true;
+    }
+    else
+    {
+        if (CP_Input_KeyTriggered(KEY_SPACE))
+            isPaused = false;
+
+        if (CP_Input_KeyTriggered(KEY_SLASH) || CP_Input_KeyDown(KEY_PERIOD))
+            pauseStep = true;
+
+        if (pauseStep)
+        {
+            world.step(1.0f / 60.0f);
+            pauseStep = false;
+        }
+    }
 
     ui_manager.Update();
     drawer.DrawFrame(&world);

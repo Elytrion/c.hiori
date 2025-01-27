@@ -38,7 +38,7 @@ public:
 	void DrawCircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
 	void DrawPoint (chiori::cVec2 p, float size, chiori::cDebugColor color);
 	void DrawLine (chiori::cVec2 p1, chiori::cVec2 p2, chiori::cDebugColor color);
-	void DrawString (chiori::cVec2 p, const char* str, chiori::cDebugColor color);
+	void DrawString (chiori::cVec2 p, float size, const char* str, chiori::cDebugColor color);
 	void DrawTransform (chiori::cTransform xf);
 
 	void PanCamera(chiori::cVec2 moveDelta);
@@ -52,9 +52,11 @@ public:
 
 	CP_Color ConvertColor(chiori::cDebugColor inColor);
 
-	void DrawUIRect(chiori::cVec2 position, chiori::cVec2 size, chiori::cDebugColor color);
-	void DrawUICircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
-	void DrawUIText(chiori::cVec2 position, const std::string& str, chiori::cDebugColor color);
+	int DrawUIRect(chiori::cVec2 position, chiori::cVec2 size, chiori::cDebugColor color);
+	int DrawUICircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
+	int DrawUIText(chiori::cVec2 position, const std::string& str, float size, chiori::cDebugColor color);
 
 	void DrawFrame(void* world);
+
+	std::vector<UIElement>& getUIElements() { return uiElements; }
 };

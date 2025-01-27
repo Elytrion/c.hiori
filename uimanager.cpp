@@ -4,7 +4,7 @@
 #include "graphics.h"
 
 
-void UIManager::AddRectUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events)
+int UIManager::AddRectUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events)
 {
     UIComponent button;
     button.position[0] = config.x;
@@ -14,28 +14,28 @@ void UIManager::AddRectUIButton(UIComponentConfig config, std::vector<UIEventTri
     button.size[1] = config.h;
     chiori::cVec2 size = { config.w, config.h };
     
-    bool hasEvents = false;
+
     for (const UIEventTrigger& event : events)
     {
         if (event.type != UIEventType::NONE)
         {
             button.events.push_back(event);
-            hasEvents = true;
         }
     }
-    if (hasEvents)
-        uiComponents.push_back(button);
     
-    drawer->DrawUIRect(pos, size, { config.r, config.g, config.b, config.a });
+    button.drawIndex = drawer->DrawUIRect(pos, size, { config.r, config.g, config.b, config.a });
 
     if (config.str.size() > 0)
     {
         pos += { config.sx, config.sy };
-        drawer->DrawUIText(pos, config.str, { config.sr, config.sg, config.sb, config.sa });
+        button.textDrawIndex = drawer->DrawUIText(pos, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
     }
+    
+    uiComponents.push_back(button);
+    return uiComponents.size() - 1;
 }
 
-void UIManager::AddCircleUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events)
+int UIManager::AddCircleUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events)
 {
     UIComponent button;
     button.position[0] = config.x;
@@ -44,24 +44,56 @@ void UIManager::AddCircleUIButton(UIComponentConfig config, std::vector<UIEventT
     button.size[0] = config.w;
     button.size[1] = config.w;
 
-    bool hasEvents = false;
     for (const UIEventTrigger& event : events)
     {
         if (event.type != UIEventType::NONE)
         {
             button.events.push_back(event);
-            hasEvents = true;
         }
     }
-    if (hasEvents)
-        uiComponents.push_back(button);
     
-    drawer->DrawUICircle(center, config.w, { config.r, config.g, config.b, config.a });
+    button.drawIndex = drawer->DrawUICircle(center, config.w, { config.r, config.g, config.b, config.a });
     if (config.str.size() > 0)
     {
         center += { config.sx,config.sy };
-        drawer->DrawUIText(center, config.str, { config.sr, config.sg, config.sb, config.sa });
+        button.textDrawIndex = drawer->DrawUIText(center, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
     }
+
+    uiComponents.push_back(button);
+
+    return uiComponents.size() - 1;
+}
+
+void UIManager::AddEventToUIComponent(int index, UIEventTrigger event)
+{
+    auto& component = uiComponents[index];
+    component.events.push_back(event);
+}
+
+void UIManager::ChangeConfig(int index, UIComponentConfig config)
+{
+    auto& button = uiComponents[index];
+    auto& uiElements = drawer->getUIElements();
+
+    button.position[0] = config.x;
+    button.position[1] = config.y;
+    button.size[0] = config.w;
+    button.size[1] = config.h;
+    button.str = config.str;
+
+    auto& bgUIElement = uiElements[button.drawIndex];
+    bgUIElement.position[0] = config.x;
+    bgUIElement.position[1] = config.y;
+    bgUIElement.size[0] = config.w;
+    bgUIElement.size[1] = config.h;
+    bgUIElement.color = drawer->ConvertColor({config.r, config.g, config.b, config.a });
+
+    if (config.str.size() > 0)
+    {
+        auto& textUIElement = uiElements[button.textDrawIndex];
+    }
+    
+    
 }
 
 void UIManager::Update()

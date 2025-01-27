@@ -32,6 +32,8 @@ struct UIComponent
 	float size[2];       // Size of the element
 	std::string str;	 // optional string for text on the button
 	std::vector<UIEventTrigger> events; // List of event triggers for this component
+	int drawIndex{-1};
+	int textDrawIndex{-1};
 
     bool Contains(float x, float y)
     {
@@ -48,6 +50,7 @@ struct UIComponentConfig
 	std::string str;	// optional string for text on the button
 	float sx{ 0.0f }, sy{ 0.0f };			// string pos offset from pos
 	float sr {0.9f}, sg{ 0.9f }, sb{ 0.9f }, sa{ 1.0f };	// string color
+	float textSize{ 14.0f };
 };
 
 class UIManager
@@ -61,6 +64,9 @@ public:
 
     void Update();
 
-	void AddRectUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events);
-	void AddCircleUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events);
+	int AddRectUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events);
+	int AddCircleUIButton(UIComponentConfig config, std::vector<UIEventTrigger> events);
+
+	void AddEventToUIComponent(int index, UIEventTrigger event);
+	void ChangeConfig(int index, UIComponentConfig config);
 };

@@ -51,7 +51,7 @@ namespace chiori
 
 		void (*DrawLine) (cVec2 p1, cVec2 p2, cDebugColor color, void* context);
 
-		void (*DrawString) (cVec2 p, const char* str, cDebugColor color, void* context);
+		void (*DrawString) (cVec2 p, float size, const char* str,  cDebugColor color, void* context);
 	
 		void (*DrawTransform) (cTransform xf, void* context);
 	};

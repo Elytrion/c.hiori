@@ -351,6 +351,7 @@ namespace chiori
 
 	void cPhysicsWorld::DebugDraw(cDebugDraw* draw)
 	{
+		float textSize = fontSize;
 		if (draw->drawShapes)
 		{
 			int count = p_actors.capacity();
@@ -404,7 +405,7 @@ namespace chiori
 
 				char buffer[32];
 				snprintf(buffer, 32, "%d", i);
-				draw->DrawString(actor->position, buffer, AABBcolor, draw->context);
+				draw->DrawString(actor->position, textSize, buffer, AABBcolor, draw->context);
 
 				int shapeIndex = actor->shapeList;
 				while (shapeIndex != NULL_INDEX)
@@ -435,7 +436,7 @@ namespace chiori
 					
 					char buffer[32];
 					snprintf(buffer, 32, "%d", height);
-					draw->DrawString(center, buffer, treeColor, draw->context);
+					draw->DrawString(center, textSize, buffer, treeColor, draw->context);
 					
 					cVec2 verts[4] = {
 						{aabb.min.x, aabb.min.y},
@@ -451,7 +452,7 @@ namespace chiori
 
 		if (draw->drawMass)
 		{
-			cVec2 offset = { 0,0 };
+			cVec2 offset = { 0.1f,0.1f };
 			int count = p_actors.capacity();
 			for (int i = 0; i < count; ++i)
 			{
@@ -466,7 +467,7 @@ namespace chiori
 				
 				char buffer[32];
 				snprintf(buffer, 32, "%.2g", actor->mass);
-				draw->DrawString(p, buffer, cDebugColor::White, draw->context);
+				draw->DrawString(p, textSize, buffer, cDebugColor::White, draw->context);
 			}
 		}
 
@@ -523,7 +524,7 @@ namespace chiori
 						cVec2 p2 = p1 + (impulseScale * point->normalImpulse) * normal;
 						draw->DrawLine(p1, p2, impulseColor, draw->context);
 						snprintf(buffer, 32, "%.2f", point->normalImpulse);
-						draw->DrawString(p1, buffer, impulseColor, draw->context);
+						draw->DrawString(p1, textSize, buffer, impulseColor, draw->context);
 					}
 					else if (draw->drawContactNormals)
 					{
@@ -539,7 +540,7 @@ namespace chiori
 						cVec2 p2 = p1 + (impulseScale * point->tangentImpulse) * tangent;
 						draw->DrawLine(p1, p2, frictionColor, draw->context);
 						snprintf(buffer, 32, "%.2f", point->tangentImpulse);
-						draw->DrawString(p1, buffer, frictionColor, draw->context);
+						draw->DrawString(p1, textSize, buffer, frictionColor, draw->context);
 					}
 				}
 			}

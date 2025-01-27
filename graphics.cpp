@@ -27,9 +27,9 @@ void DrawLineFnc (cVec2 p1, cVec2 p2, cDebugColor color, void* context)
 	static_cast<DebugGraphics*>(context)->DrawLine(p1, p2, color);
 }
 
-void DrawStringFnc(cVec2 p, const char* str, cDebugColor color, void* context)
+void DrawStringFnc(cVec2 p, float size, const char* str, cDebugColor color, void* context)
 {
-	static_cast<DebugGraphics*>(context)->DrawString(p, str, color);
+	static_cast<DebugGraphics*>(context)->DrawString(p, size, str, color);
 }
 
 void DrawTransformFnc(cTransform xf, void* context)
@@ -130,7 +130,6 @@ void DebugGraphics::DrawCircle(cVec2 center, float radius, cDebugColor color)
 	// Draw the circle
 	CP_Graphics_DrawCircle(screenCenter.x, screenCenter.y, screenRadius);
 }
-
 void DebugGraphics::DrawPoint(cVec2 p, float size, cDebugColor color)
 {
 	// Convert point to screen coordinates
@@ -157,7 +156,7 @@ void DebugGraphics::DrawLine(cVec2 p1, cVec2 p2, cDebugColor color)
 	// Draw the line
 	CP_Graphics_DrawLine(screenP1.x, screenP1.y, screenP2.x, screenP2.y);
 }
-void DebugGraphics::DrawString(cVec2 p, const char* str, cDebugColor color)
+void DebugGraphics::DrawString(cVec2 p, float size, const char* str, cDebugColor color)
 {
 	// Convert position to screen coordinates
 	cVec2 screenPos = ConvertWorldToScreen(p);
@@ -165,7 +164,7 @@ void DebugGraphics::DrawString(cVec2 p, const char* str, cDebugColor color)
 	// Set the color
 	CP_Color cpColor = ConvertColor(color);
 	CP_Settings_Fill(cpColor);
-
+	CP_Settings_TextSize(size);
 	// Draw the string
 	CP_Font_DrawText(str, screenPos.x, screenPos.y);
 }
@@ -203,7 +202,7 @@ void DebugGraphics::DrawTransform(cTransform xf)
 }
 
 
-void DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
+int DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::RECT;
@@ -213,9 +212,10 @@ void DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
 	newElement.size[1] = size.y;
 	newElement.color = ConvertColor(color);
 	uiElements.push_back(newElement);
+	return uiElements.size() - 1;
 }
 
-void DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
+int DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::CIRCLE;
@@ -224,18 +224,21 @@ void DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
 	newElement.size[0] = radius;
 	newElement.color = ConvertColor(color);
 	uiElements.push_back(newElement);
+	return uiElements.size() - 1;
 }
 
-void DebugGraphics::DrawUIText(cVec2 position, const std::string& str, cDebugColor color)
+int DebugGraphics::DrawUIText(cVec2 position, const std::string& str, float size, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::TEXT;
 	newElement.position[0] = position.x;
 	newElement.position[1] = position.y;
+	newElement.size[0] = size;
 	strncpy_s(newElement.textBuffer, str.c_str(), 63);
 	newElement.textBuffer[63] = '\0';
 	newElement.color = ConvertColor(color);
 	uiElements.push_back(newElement);
+	return uiElements.size() - 1;
 }
 
 void DebugGraphics::DrawUI()
@@ -256,6 +259,7 @@ void DebugGraphics::DrawUI()
 			CP_Graphics_DrawCircle(uie.position[0], uie.position[1], uie.size[0]);
 			break;
 		case UIElement::ElementType::TEXT:
+			CP_Settings_TextSize(uie.size[0]);
 			CP_Font_DrawText(uie.textBuffer, uie.position[0], uie.position[1]);
 			break;
 		}
