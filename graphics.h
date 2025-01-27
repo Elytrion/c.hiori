@@ -5,29 +5,29 @@
 class DebugGraphics
 {
 private:
-	cVec2 cameraCenter{ 0.0f, 0.0f };
-	float zoomScale{ 100.0f  };
-	cVec2 screenDimensions{ 1600, 900 };
-	cDebugDraw draw;
-	
+	chiori::cVec2 cameraCenter{ 0.0f, 0.0f };
+	float zoomScale{ 50.0f  };
+	chiori::cVec2 screenDimensions{ 1600, 900 };
+
 public:
+	chiori::cDebugDraw draw;
 	void Create();
 
-	void DrawPolygon(const cVec2* vertices, int vertextCount, cDebugColor color);
-	void DrawCircle(cVec2 center, float radius, cDebugColor color);
-	void DrawPoint (cVec2 p, float size, cDebugColor color);
-	void DrawLine (cVec2 p1, cVec2 p2, cDebugColor color);
-	void DrawString (cVec2 p, const char* str, cDebugColor color);
-	void DrawTransform (cTransform xf);
+	void DrawPolygon(const chiori::cVec2* vertices, int vertextCount, chiori::cDebugColor color);
+	void DrawCircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
+	void DrawPoint (chiori::cVec2 p, float size, chiori::cDebugColor color);
+	void DrawLine (chiori::cVec2 p1, chiori::cVec2 p2, chiori::cDebugColor color);
+	void DrawString (chiori::cVec2 p, const char* str, chiori::cDebugColor color);
+	void DrawTransform (chiori::cTransform xf);
 
-	void PanCamera(cVec2 moveDelta);
+	void PanCamera(chiori::cVec2 moveDelta);
 	void ChangeZoom(float zoom);
-	void ChangeScreenDimensions(cVec2 dims);
+	void ChangeScreenDimensions(chiori::cVec2 dims);
 	void ResetCamera();
 
-	cVec2 ConvertScreenToWorld(cVec2 ps);
-	cVec2 ConvertWorldToScreen(cVec2 pw);
+	chiori::cVec2 ConvertScreenToWorld(chiori::cVec2 ps);
+	chiori::cVec2 ConvertWorldToScreen(chiori::cVec2 pw);
 
-	CP_Color ConvertColor(cDebugColor inColor);
+	CP_Color ConvertColor(chiori::cDebugColor inColor);
 
 };

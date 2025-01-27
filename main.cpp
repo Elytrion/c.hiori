@@ -234,7 +234,7 @@ void RunChioriPhysics()
         }
     }
     
-    world.DebugDraw(drawer->context);
+    world.DebugDraw(&drawer.draw);
 
     //for (int itr = 0; itr < world.p_actors.size(); itr++)
     //{
@@ -286,8 +286,51 @@ void RunChioriPhysics()
 }
 
 cActor* selectedActor;
+float zoomVal = 50.0f;
 void HandleInput(CP_Vector mousePosIn)
 {
+    if (CP_Input_KeyDown(KEY_LEFT_BRACKET))
+    {
+        zoomVal = c_clamp(zoomVal - 0.5f, 1.0f, 1000.0f);
+        drawer.ChangeZoom(zoomVal);
+    }
+    else if (CP_Input_KeyDown(KEY_RIGHT_BRACKET))
+    {
+        zoomVal = c_clamp(zoomVal + 0.5f, 1.0f, 1000.0f);
+        drawer.ChangeZoom(zoomVal);
+    }
+
+    cVec2 moveDelta = cVec2::zero;
+    bool moved = false;
+    if (CP_Input_KeyDown(KEY_DOWN))
+    {
+        moveDelta.y -= 5.0f;
+        moved = true;
+    }
+    else if (CP_Input_KeyDown(KEY_UP))
+    {
+        moveDelta.y += 5.0f;
+        moved = true;
+    }
+
+    if (CP_Input_KeyDown(KEY_LEFT))
+    {
+        moveDelta.x -= 5.0f;
+        moved = true;
+    }
+    else if (CP_Input_KeyDown(KEY_RIGHT))
+    {
+        moveDelta.x += 5.0f;
+        moved = true;
+    }
+
+    if (moved)
+    {
+        drawer.PanCamera(moveDelta);
+    }
+    
+    
+
     //std::cout << "Is Holding: " << ((isHolding_mouse) ? selectedActor->shapeIndex : -1) << std::endl;
     CP_Vector mousePos = mousePosIn;// CP_Vector_Add(mousePosIn, { middle.x / 2, middle.y / 2 });
     cVec2 worldPos = { mousePos.x, mousePos.y };
@@ -309,28 +352,6 @@ void HandleInput(CP_Vector mousePosIn)
                 isHolding_mouse = true;
                 break;
             }
-        }
-    }
-    else if (CP_Input_KeyTriggered(KEY_P))
-    {
-        if (!isHolding_keys)
-        {
-            for (int itr = 0; itr < world.p_actors.size(); itr++)
-            {
-                cActor* a = world.p_actors[itr];
-                cTransform tfm = a->getTransform();
-                if (IsPointInRadius(tfm.p, 1, worldPos))
-                {
-                    selectedActor = a;
-                    isHolding_keys = true;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            isHolding_keys = false;
-            selectedActor = nullptr;
         }
     }
 
@@ -359,30 +380,7 @@ void HandleInput(CP_Vector mousePosIn)
             selectedActor->addTorque(5000.0f);
         }
     }
-    
-    if (isHolding_keys && selectedActor)
-    {
-        cTransform tfm = selectedActor->getTransform();
-        cVec2& pos = tfm.p;
 
-        if (CP_Input_KeyDown(KEY_RIGHT))
-        {
-            tfm.p += cVec2::right * 0.1f;
-        }
-        else if (CP_Input_KeyDown(KEY_LEFT))
-        {
-            tfm.p += cVec2::left * 0.1f;
-        }
-        else if (CP_Input_KeyDown(KEY_UP))
-        {
-            tfm.p += cVec2::down * 0.1f;
-        }
-        else if (CP_Input_KeyDown(KEY_DOWN))
-        {
-            tfm.p += cVec2::up * 0.1f;
-        }
-        selectedActor->setTransform(tfm);
-    }
 }
 
 void game_update(void)

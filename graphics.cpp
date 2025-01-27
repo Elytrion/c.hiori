@@ -168,9 +168,13 @@ void DebugGraphics::DrawTransform(cTransform xf)
 	// Convert origin to screen coordinates
 	cVec2 screenOrigin = ConvertWorldToScreen(xf.p);
 
-	// Define axis vectors
-	cVec2 xAxis = xf.p + cVec2{ 1.0f, 0.0f }.rotated(xf.q) * 20.0f; // Scale for visibility
-	cVec2 yAxis = xf.p + cVec2{ 0.0f, 1.0f }.rotated(xf.q) * 20.0f;
+	// fixed axis length in screen space 
+	float fixedLength = 25.0f;
+	float inverseZoom = 1.0f / zoomScale;
+
+	// Scale the axis vectors inversely to zoom
+	cVec2 xAxis = xf.p + cVec2{ fixedLength * inverseZoom, 0.0f }.rotated(xf.q);
+	cVec2 yAxis = xf.p + cVec2{ 0.0f, fixedLength * inverseZoom }.rotated(xf.q);
 
 	// Convert axes to screen coordinates
 	cVec2 screenXAxis = ConvertWorldToScreen(xAxis);
