@@ -50,7 +50,7 @@ private:
 public:
 	bool drawCamera{ true };
 	bool drawInstructions{ true };
-	bool drawStats{ false };
+	bool drawStats{ true };
 
 	int currentScene{ -1 };
 	int sceneCount{ 0 };

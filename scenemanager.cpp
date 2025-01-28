@@ -212,6 +212,21 @@ void SceneManager::Update(float dt)
     {
 		drawCamera = !drawCamera;
 	}
+    if (CP_Input_KeyTriggered(KEY_S))
+    {
+        drawStats = !drawStats;
+    }
+    if (CP_Input_KeyTriggered(KEY_F1))
+    {
+        if (!isPaused)
+        {
+            std::cout << "Cannot change solvers while unpaused!\n" << std::endl;
+        }
+        else
+        {
+            scenes[currentScene]->settings.runBasicSolver = !scenes[currentScene]->settings.runBasicSolver;
+        }
+	}
 
     HandleCameraInput();
     drawer->DrawFrame(world);
@@ -261,11 +276,20 @@ void SceneManager::Update(float dt)
 
         snprintf(buffer, 64, "Press C to toggle camera display");
         drawer->DrawUIText(displayDim.x - 220, 160, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press S to toggle stats");
+        drawer->DrawUIText(displayDim.x - 220, 180, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press F1 to toggle solvers");
+        drawer->DrawUIText(displayDim.x - 220, 200, buffer, 15, textColor);
     }
 
     if (drawStats)
     {
-
+        char buffer[64];
+        CP_Color textColor = CP_Color{ 255, 50, 50, 255 };
+        snprintf(buffer, 64, "Running %s", scenes[currentScene]->settings.runBasicSolver ? "PGS Basic" : "PGS Soft");
+        drawer->DrawUIText(20, displayDim.y - 20, buffer, 15, textColor);
     }
 }
 

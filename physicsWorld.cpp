@@ -326,9 +326,13 @@ namespace chiori
 		context.inv_h = context.inv_dt;
 
 		if (runBasicSolver)
+		{
 			PGSSolver(this, &context);
+		}
 		else
+		{
 			PGSSoftSolver(this, &context);
+		}
 		
 		//PGSSoftSolver(this, &context);
 		//PGSSolver(this, &context);
