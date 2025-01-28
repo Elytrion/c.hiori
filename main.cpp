@@ -143,6 +143,7 @@ void InitUI()
             "Button " + std::to_string(i + 1), // Button text
             18.0f                         // Text size
         };
+    }
 }
 
 void game_init(void)

@@ -290,6 +290,11 @@ namespace chiori
 			return manifold;
 		}
 
+		if (cache->count == 3)
+		{
+			return manifold; // TODO: find out why this happens, it should not
+		}
+
 		if (cache->count == 1)
 		{
 			// vertex-vertex collision
