@@ -424,6 +424,15 @@ void SceneManager::Update(float dt)
         snprintf(buffer, 64, "Shapes: %d/%d", shapeCount, shapeCapacity);
         drawer->DrawUIText(20, displayDim.y - 60, buffer, 15, textColor);
 
+        CP_Settings_TextSize(20);
+        CP_Settings_BlendMode(CP_BLEND_ALPHA);
+        CP_Settings_Fill(CP_Color_Create(0, 0, 0, 128));
+        CP_Settings_NoStroke();
+        CP_Graphics_DrawRect(0, 0, 150, 30);
+        CP_Settings_Fill(CP_Color_Create(255, 255, 255, 255));
+        char nbuffer[100];
+        sprintf_s(nbuffer, 100, "FPS: %f", CP_System_GetFrameRate());
+        CP_Font_DrawText(nbuffer, 20, 20);
     }
 }
 

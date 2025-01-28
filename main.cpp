@@ -28,13 +28,6 @@ UIManager ui_manager{ &drawer }; // create a ui manager to handle UI input event
 SceneManager scene_manager{ &drawer, &world }; // create a scene manager to handle different scenes
 
 
-
-
-void RampScene()
-{
-  
-}
-
 void InitUI()
 {
     //UIComponentConfig testBtnConfig
@@ -197,8 +190,6 @@ void UpdateChioriGUI()
 }
 
 
-
-
 void game_init(void)
 {
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
@@ -216,7 +207,7 @@ void game_update(void)
     UpdateChioriGUI();
 
     // Profiling info and frameRate testing
-    if (true)
+    if (false)
     {
         CP_Settings_TextSize(20);
         CP_Settings_BlendMode(CP_BLEND_ALPHA);
