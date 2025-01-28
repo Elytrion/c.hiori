@@ -88,7 +88,9 @@ public:
         }
     }
 };
-
+// Loads in a scene with slanted ramps and 5 boxes of varying friction
+// Boxes with high friction should be able to stop on ramped surfaces
+// Boxes with low friction should slide down the ramps
 class RampScene : public PhysicsScene
 {
 public:
@@ -151,6 +153,9 @@ public:
     }
 };
 
+// Loads in a scene with a row of 15 dominos, with the first one set to fall
+// The dominos should knock each other over, then at the end, 
+// the last domino should fall in a way to push all the previous dominos flat (double-domino effect)
 class DominoScene : public PhysicsScene
 {
 public:
@@ -198,6 +203,52 @@ public:
         }
     }
 };
+
+class OverlapRecoveryScene : public PhysicsScene
+{
+public:
+    OverlapRecoveryScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+        // Create a floor
+        ActorConfig a_config;
+        a_config.position = { 0.0f, -1.0f };
+        a_config.type = cActorType::STATIC;
+        int staticID = pWorld->CreateActor(a_config);
+        ShapeConfig s_config;
+        cPolygon floorShape = GeomMakeBox(10.0f, 1.0f);
+        pWorld->CreateShape(staticID, s_config, &floorShape);
+
+
+        int baseCount = 4;
+        float overlap = 0.25f;
+        float extent = 0.5f;
+        float fraction = 1.0f - overlap;
+        float y = 0.3f;
+
+        a_config.type = cActorType::DYNAMIC;
+        cPolygon box = GeomMakeBox(extent, extent);
+
+        for (int i = 0; i < baseCount; ++i)
+        {
+            float x = fraction * extent * (i - baseCount);
+            for (int j = i; j < baseCount; ++j)
+            {
+                a_config.position = { x, y };
+                int bodyId = pWorld->CreateActor(a_config);
+
+                pWorld->CreateShape(bodyId, s_config, &box);
+
+                x += 2.0f * fraction * extent;
+            }
+
+            y += 2.0f * fraction * extent;
+        }
+    }
+};
 #pragma endregion
 
 #pragma region Scene Manager
@@ -207,6 +258,7 @@ SceneManager::SceneManager(DebugGraphics* drawer, void* world)
     AddScene(new DefaultScene(drawer, world));
     AddScene(new RampScene(drawer, world));
     AddScene(new DominoScene(drawer, world));
+    AddScene(new OverlapRecoveryScene(drawer, world));
 	ChangeScene(0);
 }
 
@@ -277,6 +329,11 @@ void SceneManager::Update(float dt)
             scenes[currentScene]->settings.runBasicSolver = !scenes[currentScene]->settings.runBasicSolver;
         }
 	}
+    if (CP_Input_KeyTriggered(KEY_ESCAPE))
+    {
+        // reload the current scene
+        ChangeScene(currentScene);
+    }
 
     HandleCameraInput();
     drawer->DrawFrame(world);
@@ -303,35 +360,51 @@ void SceneManager::Update(float dt)
     {
         char buffer[64];
         CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
+        float x = displayDim.x - 220;
+        float y = 20;
         snprintf(buffer, 64, "Press SPACE to %s", isPaused ? "Play" : "Pause");
-        drawer->DrawUIText(displayDim.x - 220, 20, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press SLASH to step once");
-        drawer->DrawUIText(displayDim.x - 220, 40, buffer, 15, textColor);
-        
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
+
         snprintf(buffer, 64, "Hold PERIOD to keep stepping");
-        drawer->DrawUIText(displayDim.x - 220, 60, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press EQUAL to change scenes");
-        drawer->DrawUIText(displayDim.x - 220, 80, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
+
+        snprintf(buffer, 64, "Press ESC to reset scene");
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press LEFT/RIGHT BRACKET to zoom");
-        drawer->DrawUIText(displayDim.x - 220, 100, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press UP/DOWN/LEFT/RIGHT to pan");
-        drawer->DrawUIText(displayDim.x - 220, 120, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press I to toggle instructions");
-        drawer->DrawUIText(displayDim.x - 220, 140, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press C to toggle camera display");
-        drawer->DrawUIText(displayDim.x - 220, 160, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press S to toggle stats");
-        drawer->DrawUIText(displayDim.x - 220, 180, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
 
         snprintf(buffer, 64, "Press F1 to toggle solvers");
-        drawer->DrawUIText(displayDim.x - 220, 200, buffer, 15, textColor);
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
     }
 
     if (drawStats)
