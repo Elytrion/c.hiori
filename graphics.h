@@ -9,13 +9,14 @@ struct UIElement
 	{
 		RECT,
 		CIRCLE,
-		TEXT
+		TEXT,
+		LINE
 	};
 
 	char textBuffer[64];     // Text for TEXT elements
 	CP_Color color;		     // Color of the element
-	float position[2];       // Position in screen space
-	float size[2];           // Size for RECT, radius for CIRCLE (stored in `size.x`)
+	float position[2];       // Position in screen space (Start position for LINE)
+	float size[2];           // Size for RECT, radius for CIRCLE (stored in `size.x`), end position for LINE
 	ElementType type;
 };
 
@@ -63,6 +64,8 @@ public:
 	void DrawUICircle(float x, float y, float radius, CP_Color color);
 	int AddUIText(chiori::cVec2 position, const std::string& str, float size, chiori::cDebugColor color);
 	void DrawUIText(float x, float y, const std::string& str, float size, CP_Color color);
+	int AddUILine(chiori::cVec2 start, chiori::cVec2 end, chiori::cDebugColor color);
+	void DrawUILine(float x1, float y1, float x2, float y2, CP_Color color);
 
 	void DrawFrame(void* world);
 

@@ -256,6 +256,27 @@ int DebugGraphics::AddUIText(cVec2 position, const std::string& str, float size,
 	return uiElements.size() - 1;
 }
 
+int DebugGraphics::AddUILine(chiori::cVec2 start, chiori::cVec2 end, chiori::cDebugColor color)
+{
+	UIElement newElement;
+	newElement.type = UIElement::ElementType::LINE;
+	newElement.position[0] = start.x;
+	newElement.position[1] = start.y;
+	newElement.size[0] = end.x;
+	newElement.size[1] = end.y;
+	newElement.color = ConvertColor(color);
+	uiElements.push_back(newElement);
+	return uiElements.size() - 1;
+}
+
+void DebugGraphics::DrawUILine(float x1, float y1, float x2, float y2, CP_Color color)
+{
+	CP_Settings_Stroke(color);
+	CP_Settings_StrokeWeight(2);
+	CP_Settings_Fill(color);
+	CP_Graphics_DrawLine(x1, y1, x2, y2);
+}
+
 void DebugGraphics::DrawUIRect(float x, float y, float w, float h, CP_Color color)
 {
 	CP_Settings_Stroke(color);
@@ -297,6 +318,9 @@ void DebugGraphics::DrawUI()
 			break;
 		case UIElement::ElementType::TEXT:
 			DrawUIText(uie.position[0], uie.position[1], uie.textBuffer, uie.size[0], uie.color);
+			break;
+		case UIElement::ElementType::LINE:
+			DrawUILine(uie.position[0], uie.position[1], uie.size[0], uie.size[1], uie.color);
 			break;
 		}
 	}

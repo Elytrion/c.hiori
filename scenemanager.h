@@ -47,8 +47,10 @@ private:
 
 	bool isPaused{ true };
 	bool stepOnce{ false };
-	bool drawCamera{ true };
 public:
+	bool drawCamera{ true };
+	bool drawInstructions{ true };
+
 	int currentScene{ -1 };
 	int sceneCount{ 0 };
 

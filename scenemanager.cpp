@@ -204,25 +204,64 @@ void SceneManager::Update(float dt)
         }
     }
 
+    if (CP_Input_KeyTriggered(KEY_I))
+    {
+        drawInstructions = !drawInstructions;
+    }
+    if (CP_Input_KeyTriggered(KEY_C))
+    {
+		drawCamera = !drawCamera;
+	}
+
     HandleCameraInput();
     drawer->DrawFrame(world);
-
-    // draw camera world and screen positions
+    cVec2 displayDim = drawer->getScreenDimensions();
+    // draw camera
     // TODO: draw physics world stats
     if (drawCamera)
     {
         cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
 
-        cVec2 displayDim = drawer->getScreenDimensions();
         char buffer[64];
         CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
         snprintf(buffer, 64, "Cam World Pos: (%.2f, %.2f)", drawer->getCameraWorldPos().x, drawer->getCameraWorldPos().y);
-
         drawer->DrawUIText(displayDim.x - 200, displayDim.y - 20, buffer, 15, textColor);
 
-        // draw a small circle at the camera screen position
+        // draw 2 lines +x +y from camera pos
         cVec2 camScreenPos = drawer->getCameraScreenPos();
-        drawer->DrawUICircle(camScreenPos.x, camScreenPos.y, 2.0f, CP_Color{ 255, 50, 50, 255 });
+        cVec2 xLineEnd = camScreenPos + cVec2::right * 10.0f;
+        cVec2 yLineEnd = camScreenPos + -cVec2::up * 10.0f;
+        drawer->DrawUILine(camScreenPos.x, camScreenPos.y, xLineEnd.x, xLineEnd.y, CP_Color{ 255, 0, 100, 255 });
+        drawer->DrawUILine(camScreenPos.x, camScreenPos.y, yLineEnd.x, yLineEnd.y, CP_Color{ 100, 255, 0, 255 });
+    }
+
+    if (drawInstructions)
+    {
+        char buffer[64];
+        CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
+        snprintf(buffer, 64, "Press SPACE to %s", isPaused ? "Play" : "Pause");
+        drawer->DrawUIText(displayDim.x - 220, 20, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press SLASH to step once");
+        drawer->DrawUIText(displayDim.x - 220, 40, buffer, 15, textColor);
+        
+        snprintf(buffer, 64, "Hold PERIOD to keep stepping");
+        drawer->DrawUIText(displayDim.x - 220, 60, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press EQUAL to change scenes");
+        drawer->DrawUIText(displayDim.x - 220, 80, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press LEFT/RIGHT BRACKET to zoom");
+        drawer->DrawUIText(displayDim.x - 220, 100, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press UP/DOWN/LEFT/RIGHT to pan");
+        drawer->DrawUIText(displayDim.x - 220, 120, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press I to toggle instructions");
+        drawer->DrawUIText(displayDim.x - 220, 140, buffer, 15, textColor);
+
+        snprintf(buffer, 64, "Press C to toggle camera display");
+        drawer->DrawUIText(displayDim.x - 220, 160, buffer, 15, textColor);
     }
 }
 
