@@ -369,9 +369,7 @@ namespace chiori
 		bool isValid(int index) const
 		{
 			if (index < 0 || static_cast<size_t>(index) >= p_capacity)
-			{
-				throw std::out_of_range("Index out of range!");
-			}
+				return false;
 			const T* obj = &pool[index];
 			return (obj->header.next == obj->header.index);
 		}

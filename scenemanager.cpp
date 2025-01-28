@@ -318,6 +318,8 @@ public:
     }
 };
 
+// Loads in a scene with an arch held up by friction and their contact points
+// The scene should further demonstrate the stability of the physics simulation
 class ArchScene : public PhysicsScene
 {
 public:
@@ -327,23 +329,164 @@ public:
     {
         cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
 
-        ShapeConfig s_config;
-        s_config.friction = 0.6f;
+        // Configure camera
+        {
+            currentZoom = 35.0f;
+            drawer->ChangeZoom(currentZoom);
+            drawer->SetCamera({ 0.0f, 8.0f });
+        }
+
+        // Define polygon points for the arch
+        cVec2 ps1[9] = { {16.0f, 0.0f},
+                        {14.93803712795643f, 5.133601056842984f},
+                        {13.79871746027416f, 10.24928069555078f},
+                        {12.56252963284711f, 15.34107019122473f},
+                        {11.20040987372525f, 20.39856541571217f},
+                        {9.66521217819836f, 25.40369899225096f},
+                        {7.87179930638133f, 30.3179337000085f},
+                        {5.635199558196225f, 35.03820717801641f},
+                        {2.405937953536585f, 39.09554102558315f} };
+
+        cVec2 ps2[9] = { {24.0f, 0.0f},
+                        {22.33619528222415f, 6.02299846205841f},
+                        {20.54936888969905f, 12.00964361211476f},
+                        {18.60854610798073f, 17.9470321677465f},
+                        {16.46769273811807f, 23.81367936585418f},
+                        {14.05325025774858f, 29.57079353071012f},
+                        {11.23551045834022f, 35.13775818285372f},
+                        {7.752568160730571f, 40.30450679009583f},
+                        {3.016931552701656f, 44.28891593799322f} };
+
+        // Scale the points
+        float scale = 0.25f;
+        for (int i = 0; i < 9; ++i)
+        {
+            ps1[i] = ps1[i] * scale;
+            ps2[i] = ps2[i] * scale;
+        }
+
 
         // Create a floor
         ActorConfig a_config;
-        a_config.position = { 0.0f, -1.0f };
+        a_config.position = { 0.0f, -2.0f };
         a_config.type = cActorType::STATIC;
         int staticID = pWorld->CreateActor(a_config);
+
+        ShapeConfig s_config;
+        s_config.friction = 0.6f;
         cPolygon floorShape = GeomMakeBox(100.0f, 1.0f);
         pWorld->CreateShape(staticID, s_config, &floorShape);
-        
+
+        a_config.position = { 0.0f, 0.0f };
+        // Create left side of the arch
+        ActorConfig dynamicConfig;
+        dynamicConfig.type = cActorType::DYNAMIC;
+        for (int i = 0; i < 8; ++i)
         {
-			currentZoom = 50.0f;
-			drawer->ChangeZoom(currentZoom);
-			drawer->SetCamera({ 0.0f, 8.0f });
+            cVec2 ps[4] = { ps1[i], ps2[i], ps2[i + 1], ps1[i + 1] };
+            cPolygon polygon{ ps, 4 };
+            dynamicConfig.position = { 0.0f, 0.0f };
+            int bodyID = pWorld->CreateActor(dynamicConfig);
+
+            pWorld->CreateShape(bodyID, s_config, &polygon);
         }
+
+        // Create right side of the arch
+        for (int i = 0; i < 8; ++i)
+        {
+            cVec2 ps[4] = {
+                {-ps2[i].x, ps2[i].y}, {-ps1[i].x, ps1[i].y}, {-ps1[i + 1].x, ps1[i + 1].y}, {-ps2[i + 1].x, ps2[i + 1].y} };
+            cPolygon polygon{ ps, 4 };
+            dynamicConfig.position = { 0.0f, 0.0f };
+            int bodyID = pWorld->CreateActor(dynamicConfig);
+
+            pWorld->CreateShape(bodyID, s_config, &polygon);
+        }
+
+        // Create the top of the arch
+        {
+            cVec2 ps[4] = { ps1[8], ps2[8], {-ps2[8].x, ps2[8].y}, {-ps1[8].x, ps1[8].y} };
+            cPolygon polygon{ ps, 4 };
+            dynamicConfig.position = { 0.0f, 0.0f };
+            int bodyID = pWorld->CreateActor(dynamicConfig);
+
+            pWorld->CreateShape(bodyID, s_config, &polygon);
+        }
+
     }
+};
+
+// Loads in a scene with a heap of polygons of varying sizes
+// Pressing R will apply a random force to a random polygon
+// This showcases the engine can support more complex shapes
+class PolygonScene : public PhysicsScene
+{
+public:
+    PolygonScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+		cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+		// Create a confining box
+		ActorConfig a_config;
+		a_config.position = { 0.0f, -1.0f };
+		a_config.type = cActorType::STATIC;
+		int staticID = pWorld->CreateActor(a_config);
+
+		ShapeConfig s_config;
+		cPolygon wallShape = GeomMakeOffsetBox( 15.0f, 0.25f, { 0.0f, 0.0f });
+        pWorld->CreateShape(staticID, s_config, &wallShape);
+
+        wallShape = GeomMakeOffsetBox(15.0f, 0.25f, { 0.0f, 30.0f });
+        pWorld->CreateShape(staticID, s_config, &wallShape);
+
+        wallShape = GeomMakeOffsetBox(0.25f, 15.0f, { 15.25f, 15.0f });
+        pWorld->CreateShape(staticID, s_config, &wallShape);
+
+        wallShape = GeomMakeOffsetBox(0.25f, 15.0f, { -15.25f, 15.0f });
+        pWorld->CreateShape(staticID, s_config, &wallShape);
+
+
+        a_config.type = cActorType::DYNAMIC;
+        // create a heap of polygons
+        for (int iy = 1; iy < 5; ++iy)
+        {
+            for (int i = 3; i < 8; ++i)
+            {
+                cPolygon poly = GeomMakeRegularPolygon(i);
+
+                a_config.position = { -5.0f + 1.0f * i, iy * 2.0f };
+
+                int bodyID = pWorld->CreateActor(a_config);
+                pWorld->CreateShape(bodyID, s_config, &poly);
+            }
+        }
+	}
+
+    void Update(float dt) override
+    {
+        PhysicsScene::Update(dt);
+
+        // Pick a random polygon and apply a random force
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        if (CP_Input_KeyTriggered(KEY_R))
+        {
+            int bodyID = -1;
+            while (!pWorld->p_actors.isValid(bodyID))
+            {
+                bodyID = CP_Random_RangeInt(0, pWorld->p_actors.capacity() - 1);
+            }
+			cActor* actor = pWorld->p_actors[bodyID];
+
+            float xforce = CP_Random_RangeFloat(-100.0f, 100.0f);
+            float yforce = CP_Random_RangeFloat(-100.0f, 100.0f);
+
+			cVec2 force = { xforce, yforce };
+			actor->applyImpulse(force, actor->position);
+		}
+    }
+
 };
 #pragma endregion
 
@@ -351,12 +494,15 @@ public:
 SceneManager::SceneManager(DebugGraphics* drawer, void* world)
     : drawer(drawer), world(world)
 {
+
     AddScene(new DefaultScene(drawer, world));
+    AddScene(new StackScene(drawer, world));
     AddScene(new RampScene(drawer, world));
     AddScene(new DominoScene(drawer, world));
     AddScene(new ArchScene(drawer, world));
     AddScene(new OverlapRecoveryScene(drawer, world));
-    AddScene(new StackScene(drawer, world));
+    AddScene(new PolygonScene(drawer, world));
+
 	ChangeScene(0);
 }
 

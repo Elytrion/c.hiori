@@ -28,7 +28,7 @@ namespace chiori
 		Set(inPoints, inCount);
 	}
 
-	cPolygon GeomMakeRegularPolygon(const cVec2* points, int count) {
+	cPolygon GeomMakeRegularPolygon(int count) {
 		cassert(count >= 3 && count <= MAX_POLYGON_VERTICES);
 
 		cVec2 vertices[MAX_POLYGON_VERTICES];
