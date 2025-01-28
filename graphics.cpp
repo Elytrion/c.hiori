@@ -50,7 +50,7 @@ void DebugGraphics::Create()
 
 void DebugGraphics::ResetCamera()
 {
-	cameraCenter = cVec2{ 0.0f, 0.0f };  // Center the camera at the origin
+	cameraCenter = { 0, 0 };  // Center the camera at the origin
 	zoomScale =100.0f; // Default zoom scale
 }
 
@@ -72,6 +72,11 @@ void DebugGraphics::ChangeZoom(float zoom)
 void DebugGraphics::ChangeScreenDimensions(cVec2 dims)
 {
 	screenDimensions = dims;
+
+	zoomScale *= c_min(dims.x / initScreenDimensions.x,
+		dims.y / initScreenDimensions.y);
+
+	initScreenDimensions = dims;
 }
 
 cVec2 DebugGraphics::ConvertScreenToWorld(cVec2 ps)
@@ -89,6 +94,16 @@ cVec2 DebugGraphics::ConvertWorldToScreen(cVec2 pw)
 	screenPos.y = screenDimensions.y - screenPos.y;
 	return screenPos;
 }
+
+cVec2 DebugGraphics::getCameraWorldPos()
+{
+	return cameraCenter;
+}
+cVec2 DebugGraphics::getCameraScreenPos()
+{
+	return ConvertWorldToScreen(cameraCenter);
+}
+
 
 CP_Color DebugGraphics::ConvertColor(cDebugColor inColor)
 {
@@ -202,7 +217,7 @@ void DebugGraphics::DrawTransform(cTransform xf)
 }
 
 
-int DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
+int DebugGraphics::AddUIRect(cVec2 position, cVec2 size, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::RECT;
@@ -215,7 +230,7 @@ int DebugGraphics::DrawUIRect(cVec2 position, cVec2 size, cDebugColor color)
 	return uiElements.size() - 1;
 }
 
-int DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
+int DebugGraphics::AddUICircle(cVec2 center, float radius, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::CIRCLE;
@@ -227,7 +242,7 @@ int DebugGraphics::DrawUICircle(cVec2 center, float radius, cDebugColor color)
 	return uiElements.size() - 1;
 }
 
-int DebugGraphics::DrawUIText(cVec2 position, const std::string& str, float size, cDebugColor color)
+int DebugGraphics::AddUIText(cVec2 position, const std::string& str, float size, cDebugColor color)
 {
 	UIElement newElement;
 	newElement.type = UIElement::ElementType::TEXT;
@@ -241,26 +256,47 @@ int DebugGraphics::DrawUIText(cVec2 position, const std::string& str, float size
 	return uiElements.size() - 1;
 }
 
+void DebugGraphics::DrawUIRect(float x, float y, float w, float h, CP_Color color)
+{
+	CP_Settings_Stroke(color);
+	CP_Settings_StrokeWeight(1);
+	CP_Settings_Fill(color);
+	CP_Graphics_DrawRect(x, y, w, h);
+}
+
+void DebugGraphics::DrawUICircle(float x, float y, float radius, CP_Color color)
+{
+	CP_Settings_Stroke(color);
+	CP_Settings_StrokeWeight(1);
+	CP_Settings_Fill(color);
+	CP_Graphics_DrawCircle(x, y, radius);
+}
+
+void DebugGraphics::DrawUIText(float x, float y, const std::string& str, float size, CP_Color color)
+{
+	CP_Settings_Fill(color);
+	CP_Settings_TextSize(size);
+	CP_Font_DrawText(str.c_str(), x, y);
+}
+
+
+
 void DebugGraphics::DrawUI()
 {
 	for (int i = 0; i < uiElements.size(); ++i)
 	{
 		const UIElement& uie = uiElements[i];
-		CP_Settings_Fill(uie.color);
-		CP_Settings_Stroke(uie.color);
-		CP_Settings_StrokeWeight(1);
 		
 		switch (uie.type)
 		{
 		case UIElement::ElementType::RECT:
-			CP_Graphics_DrawRect(uie.position[0], uie.position[1], uie.size[0], uie.size[1]);
+			DrawUIRect(uie.position[0], uie.position[1], uie.size[0], uie.size[1], uie.color);
 			break;
 		case UIElement::ElementType::CIRCLE:
-			CP_Graphics_DrawCircle(uie.position[0], uie.position[1], uie.size[0]);
+			DrawUICircle(uie.position[0], uie.position[1], uie.size[0], uie.color);
 			break;
 		case UIElement::ElementType::TEXT:
-			CP_Settings_TextSize(uie.size[0]);
-			CP_Font_DrawText(uie.textBuffer, uie.position[0], uie.position[1]);
+			DrawUIText(uie.position[0], uie.position[1], uie.textBuffer, uie.size[0], uie.color);
 			break;
 		}
 	}
@@ -277,6 +313,9 @@ void DebugGraphics::DrawFrame(void* world)
 
 	DrawUI();
 }
+
+
+
 
 
 

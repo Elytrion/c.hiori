@@ -222,6 +222,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="physicsWorld.cpp" />
+    <ClCompile Include="scenemanager.cpp" />
     <ClCompile Include="solver.cpp" />
     <ClCompile Include="uimanager.cpp" />
   </ItemGroup>
@@ -246,6 +247,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="manifold.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="physicsWorld.h" />
+    <ClInclude Include="scenemanager.h" />
     <ClInclude Include="solver.h" />
     <ClInclude Include="uimanager.h" />
   </ItemGroup>

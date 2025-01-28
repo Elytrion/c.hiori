@@ -25,12 +25,17 @@ private:
 	chiori::cVec2 cameraCenter{ 0.0f, 0.0f };
 	float zoomScale{ 50.0f  };
 	chiori::cVec2 screenDimensions{ 1600, 900 };
+	chiori::cVec2 initScreenDimensions{ 1600, 900 };
 	std::vector<UIElement> uiElements; // Cache of UI elements
 
 	void DrawUI();
 	
 public:
-	
+	DebugGraphics(float screenWidth, float screenHeight) : screenDimensions(screenWidth, screenHeight), initScreenDimensions(screenWidth, screenHeight) {}
+
+	chiori::cVec2 getCameraWorldPos();
+	chiori::cVec2 getCameraScreenPos();
+	chiori::cVec2 getScreenDimensions() { return screenDimensions;}
 	chiori::cDebugDraw draw;
 	void Create();
 
@@ -52,9 +57,12 @@ public:
 
 	CP_Color ConvertColor(chiori::cDebugColor inColor);
 
-	int DrawUIRect(chiori::cVec2 position, chiori::cVec2 size, chiori::cDebugColor color);
-	int DrawUICircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
-	int DrawUIText(chiori::cVec2 position, const std::string& str, float size, chiori::cDebugColor color);
+	int AddUIRect(chiori::cVec2 position, chiori::cVec2 size, chiori::cDebugColor color);
+	void DrawUIRect(float x, float y, float w, float h, CP_Color color);
+	int AddUICircle(chiori::cVec2 center, float radius, chiori::cDebugColor color);
+	void DrawUICircle(float x, float y, float radius, CP_Color color);
+	int AddUIText(chiori::cVec2 position, const std::string& str, float size, chiori::cDebugColor color);
+	void DrawUIText(float x, float y, const std::string& str, float size, CP_Color color);
 
 	void DrawFrame(void* world);
 

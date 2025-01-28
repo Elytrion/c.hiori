@@ -40,6 +40,9 @@
     <ClCompile Include="uimanager.cpp">
       <Filter>Source\GUI</Filter>
     </ClCompile>
+    <ClCompile Include="scenemanager.cpp">
+      <Filter>Source\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -147,6 +150,9 @@
       <Filter>Headers\GUI</Filter>
     </ClInclude>
     <ClInclude Include="uimanager.h">
+      <Filter>Headers\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="scenemanager.h">
       <Filter>Headers\GUI</Filter>
     </ClInclude>
   </ItemGroup>

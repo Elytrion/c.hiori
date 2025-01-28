@@ -200,30 +200,27 @@ namespace chiori
 
 		return shapeIndex;
 	}
-
-
-
 	
-	void cPhysicsWorld::update(float inDT)
-	{
-		// Accumulate the time since the last frame
-		accumulator += inDT;
-		int steps = 0; // to prevent SOD
-		while (accumulator >= physicsStepTime && steps < MAX_FIXED_UPDATES_PER_FRAME) {
-			step(physicsStepTime); 
-			accumulator -= physicsStepTime;
-			++steps;
-		}
-		if (steps >= MAX_FIXED_UPDATES_PER_FRAME)
-		{
-			// Skip the remaining time in the accumulator to prevent SOD, 
-			// will cause the simulation to bug out at the cost of saving the program from crashing
-			accumulator = 0.0f; 
-			std::cerr << "[cPhysicsWorld] Accumulator Overflowed! Skipping updates to prevent crash!";
-		}
-	}
+	//void cPhysicsWorld::update(float inDT)
+	//{
+	//	// Accumulate the time since the last frame
+	//	accumulator += inDT;
+	//	int steps = 0; // to prevent SOD
+	//	while (accumulator >= physicsStepTime && steps < MAX_FIXED_UPDATES_PER_FRAME) {
+	//		step(physicsStepTime); 
+	//		accumulator -= physicsStepTime;
+	//		++steps;
+	//	}
+	//	if (steps >= MAX_FIXED_UPDATES_PER_FRAME)
+	//	{
+	//		// Skip the remaining time in the accumulator to prevent SOD, 
+	//		// will cause the simulation to bug out at the cost of saving the program from crashing
+	//		accumulator = 0.0f; 
+	//		std::cerr << "[cPhysicsWorld] Accumulator Overflowed! Skipping updates to prevent crash!";
+	//	}
+	//}
 
-	void cPhysicsWorld::step(float inDT)
+	void cPhysicsWorld::step(float inFDT, int primaryIterations, int secondaryIterations, bool warmStart)
 	{
 		int actorCapacity = p_actors.capacity();
 		// Step 1: Update the transform and broadphase AABBs for all shapes
@@ -319,17 +316,21 @@ namespace chiori
 
 		// Step 4: Integrate velocities, solve velocity constraints,
 		// and integrate positions. This is done primary in the solver.
-		// TODO: let user modify these values if needed
 		SolverContext context;
-		context.dt = inDT;
-		context.iterations = 4;
-		context.extraIterations = 2;
-		context.warmStart = true;
-		context.inv_dt = (inDT > 0.0f) ? 1.0f / inDT : 0.0f;
+		context.dt = inFDT;
+		context.iterations = primaryIterations;
+		context.extraIterations = secondaryIterations;
+		context.warmStart = warmStart;
+		context.inv_dt = (inFDT > 0.0f) ? 1.0f / inFDT : 0.0f;
 		context.h = context.dt;
 		context.inv_h = context.inv_dt;
 
-		PGSSoftSolver(this, &context);
+		if (runBasicSolver)
+			PGSSolver(this, &context);
+		else
+			PGSSoftSolver(this, &context);
+		
+		//PGSSoftSolver(this, &context);
 		//PGSSolver(this, &context);
 	}
 

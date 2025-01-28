@@ -28,8 +28,7 @@ namespace chiori
 		
 		float physicsStepTime = 0.0167f;
 		cVec2 gravity = { 0.0f, -9.81f };
-		void update(float inDT);	// converts update into fixed updates
-		void step(float inDT);	// simulates one time step of physics, call directly if not using update
+		void step(float inFDT, int primaryIterations = 4, int secondaryIterations = 2, bool warmStart = true);	// simulates one time step of physics, call directly if not using update
 
 		int CreateActor(const ActorConfig& inConfig);
 		int CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom);
@@ -37,6 +36,7 @@ namespace chiori
 
 		float fontSize = 14.0f;
 		void DebugDraw(cDebugDraw* draw);
+		bool runBasicSolver = false;
 
 		cPool<cActor> p_actors;
 		cPool<cShape> p_shapes;

@@ -23,12 +23,12 @@ int UIManager::AddRectUIButton(UIComponentConfig config, std::vector<UIEventTrig
         }
     }
     
-    button.drawIndex = drawer->DrawUIRect(pos, size, { config.r, config.g, config.b, config.a });
+    button.drawIndex = drawer->AddUIRect(pos, size, { config.r, config.g, config.b, config.a });
 
     if (config.str.size() > 0)
     {
         pos += { config.sx, config.sy };
-        button.textDrawIndex = drawer->DrawUIText(pos, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
+        button.textDrawIndex = drawer->AddUIText(pos, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
     }
     
     uiComponents.push_back(button);
@@ -52,11 +52,11 @@ int UIManager::AddCircleUIButton(UIComponentConfig config, std::vector<UIEventTr
         }
     }
     
-    button.drawIndex = drawer->DrawUICircle(center, config.w, { config.r, config.g, config.b, config.a });
+    button.drawIndex = drawer->AddUICircle(center, config.w, { config.r, config.g, config.b, config.a });
     if (config.str.size() > 0)
     {
         center += { config.sx,config.sy };
-        button.textDrawIndex = drawer->DrawUIText(center, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
+        button.textDrawIndex = drawer->AddUIText(center, config.str, config.textSize, { config.sr, config.sg, config.sb, config.sa });
     }
 
     uiComponents.push_back(button);
