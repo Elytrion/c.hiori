@@ -3,6 +3,7 @@
 #include "gjk.h"
 #include "manifold.h"
 #include "flag.h"
+#include "chioriPool.h"
 
 namespace chiori
 {
@@ -27,6 +28,7 @@ namespace chiori
 	// AABB in the broad-phase. Therefore a contact object may exist that has no contact points.
 	struct cContact
 	{
+		cObjHeader header; // required for pool allocator
 		enum
 		{
 			// This contact started touching after previously being not in contact

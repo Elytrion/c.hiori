@@ -181,7 +181,7 @@ public:
         s_config.friction = 0.6f;
         a_config.type = cActorType::DYNAMIC;
 
-        int count = 15;
+        int count = 17;
         float x = -0.5f * count;
         for (int i = 0; i < count; ++i)
         {

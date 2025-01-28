@@ -187,7 +187,7 @@ namespace chiori
 		cTransform xf = actor->getTransform();
 		
 		n_shape->aabb = n_shape->ComputeAABB(xf);
-		n_shape->broadphaseIndex = m_broadphase.CreateProxy(n_shape->aabb, n_shape);
+		n_shape->broadphaseIndex = m_broadphase.CreateProxy(n_shape->aabb, reinterpret_cast<void*>(n_shape->header.index));
 		
 		// Add to shape linked list
 		n_shape->nextShapeIndex = actor->shapeList;
@@ -200,25 +200,6 @@ namespace chiori
 
 		return shapeIndex;
 	}
-	
-	//void cPhysicsWorld::update(float inDT)
-	//{
-	//	// Accumulate the time since the last frame
-	//	accumulator += inDT;
-	//	int steps = 0; // to prevent SOD
-	//	while (accumulator >= physicsStepTime && steps < MAX_FIXED_UPDATES_PER_FRAME) {
-	//		step(physicsStepTime); 
-	//		accumulator -= physicsStepTime;
-	//		++steps;
-	//	}
-	//	if (steps >= MAX_FIXED_UPDATES_PER_FRAME)
-	//	{
-	//		// Skip the remaining time in the accumulator to prevent SOD, 
-	//		// will cause the simulation to bug out at the cost of saving the program from crashing
-	//		accumulator = 0.0f; 
-	//		std::cerr << "[cPhysicsWorld] Accumulator Overflowed! Skipping updates to prevent crash!";
-	//	}
-	//}
 
 	void cPhysicsWorld::step(float inFDT, int primaryIterations, int secondaryIterations, bool warmStart)
 	{
@@ -272,14 +253,14 @@ namespace chiori
 		m_broadphase.UpdatePairs(
 			[this](void* userDataA, void* userDataB)
 			{
-				cShape* shapeA = static_cast<cShape*>(userDataA);
-				cShape* shapeB = static_cast<cShape*>(userDataB);
-				int shapeAIndex = p_shapes.getIndex(shapeA);
-				int shapeBIndex = p_shapes.getIndex(shapeB);
+				//cShape* shapeA = reinterpret_cast<int>(userDataA);
+				//cShape* shapeB = reinterpret_cast<int>(userDataB);
+				int shapeAIndex = reinterpret_cast<int>(userDataA); // p_shapes.getIndex(shapeA);
+				int shapeBIndex = reinterpret_cast<int>(userDataB); //p_shapes.getIndex(shapeB);
 				//std::cout << shapeAIndex << " and " << shapeBIndex << " are a contact pair" << std::endl;
 				if (p_pairs.contains(shapeAIndex, shapeBIndex))
 					return; // no need to create a contact for these shapes since a contact already exists
-				CreateContact(this, shapeA, shapeB);
+				CreateContact(this, p_shapes[shapeAIndex], p_shapes[shapeBIndex]);
 			}
 		);
 

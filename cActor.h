@@ -3,6 +3,7 @@
 #include "chioriMath.h"
 #include "flag.h"
 #include "integrators.h"
+#include "chioriPool.h"
 
 namespace chiori
 {
@@ -31,6 +32,7 @@ namespace chiori
 	class cActor
 	{
 	public:
+		cObjHeader header; // required for pool allocator
 		cActorType type = DYNAMIC;
 
 		enum // Actor flags

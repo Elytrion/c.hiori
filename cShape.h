@@ -3,6 +3,7 @@
 #include "geom.h"
 #include "aabb.h"
 #include "flag.h"
+#include "chioriPool.h"
 
 namespace chiori
 {
@@ -16,6 +17,7 @@ namespace chiori
 	class cShape
 	{
 	public:
+		cObjHeader header; // required for pool allocator
 		enum // Shape flags
 		{
 			SCENE_QUERYABLE = (1 << 0), // this shape can be queried (either by raycasts or triggers)
