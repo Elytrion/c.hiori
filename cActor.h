@@ -123,6 +123,12 @@ namespace chiori
 			torques += torque * invInertia;
 		}
 
+		void applyImpulse(const cVec2& impulse, const cVec2& contactPoint)
+		{
+			linearVelocity += impulse * invMass;
+			angularVelocity += invInertia * cross(contactPoint - position, impulse);
+		}
+
 		bool operator==(const cActor& inRHS) const {
 			return this == &inRHS;
 		}

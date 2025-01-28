@@ -150,13 +150,63 @@ public:
         }
     }
 };
+
+class DominoScene : public PhysicsScene
+{
+public:
+    DominoScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+		cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+		// Create a floor
+		ActorConfig a_config;
+        a_config.position = { 0.0f, -1.0f };
+		a_config.type = cActorType::STATIC;
+		int staticID = pWorld->CreateActor(a_config);
+
+		ShapeConfig s_config;
+		cPolygon floorShape = GeomMakeBox(20.0f, 1.0f);
+		pWorld->CreateShape(staticID, s_config, &floorShape);
+	    
+        // Create row of dominos
+        cPolygon box = GeomMakeBox(0.125f, 0.5f);
+        s_config.friction = 0.6f;
+        a_config.type = cActorType::DYNAMIC;
+
+        int count = 15;
+        float x = -0.5f * count;
+        for (int i = 0; i < count; ++i)
+        {
+            a_config.position = { x, 0.5f };
+            int bodyId = pWorld->CreateActor(a_config);
+            pWorld->CreateShape(bodyId, s_config, &box);
+            if (i == 0)
+            {
+                cActor* actor = pWorld->p_actors[bodyId];
+                actor->applyImpulse({ 0.2f, 0.0f }, { x, 1.0f });
+            }
+
+            x += 1.0f;
+        }
+
+        {
+            currentZoom = 75.0f;
+			drawer->ChangeZoom(currentZoom);
+			drawer->SetCamera({ 0.0f, 4.0f });
+        }
+    }
+};
 #pragma endregion
 
+#pragma region Scene Manager
 SceneManager::SceneManager(DebugGraphics* drawer, void* world)
     : drawer(drawer), world(world)
 {
     AddScene(new DefaultScene(drawer, world));
     AddScene(new RampScene(drawer, world));
+    AddScene(new DominoScene(drawer, world));
 	ChangeScene(0);
 }
 
@@ -290,6 +340,17 @@ void SceneManager::Update(float dt)
         CP_Color textColor = CP_Color{ 255, 50, 50, 255 };
         snprintf(buffer, 64, "Running %s", scenes[currentScene]->settings.runBasicSolver ? "PGS Basic" : "PGS Soft");
         drawer->DrawUIText(20, displayDim.y - 20, buffer, 15, textColor);
+
+        int actorCapacity = static_cast<cPhysicsWorld*>(world)->p_actors.capacity();
+        int actorCount = static_cast<cPhysicsWorld*>(world)->p_actors.size();
+        snprintf(buffer, 64, "Actors: %d/%d", actorCount, actorCapacity);
+        drawer->DrawUIText(20, displayDim.y - 40, buffer, 15, textColor);
+
+        int shapeCapacity = static_cast<cPhysicsWorld*>(world)->p_shapes.capacity();
+        int shapeCount = static_cast<cPhysicsWorld*>(world)->p_shapes.size();
+        snprintf(buffer, 64, "Shapes: %d/%d", shapeCount, shapeCapacity);
+        drawer->DrawUIText(20, displayDim.y - 60, buffer, 15, textColor);
+
     }
 }
 
@@ -357,3 +418,4 @@ PhysicsScene* SceneManager::GetCurrentScene()
 {
 	return scenes[currentScene];
 }
+#pragma endregion
