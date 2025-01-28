@@ -217,7 +217,6 @@ void SceneManager::Update(float dt)
     drawer->DrawFrame(world);
     cVec2 displayDim = drawer->getScreenDimensions();
     // draw camera
-    // TODO: draw physics world stats
     if (drawCamera)
     {
         cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
@@ -262,6 +261,11 @@ void SceneManager::Update(float dt)
 
         snprintf(buffer, 64, "Press C to toggle camera display");
         drawer->DrawUIText(displayDim.x - 220, 160, buffer, 15, textColor);
+    }
+
+    if (drawStats)
+    {
+
     }
 }
 
