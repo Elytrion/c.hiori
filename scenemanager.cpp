@@ -49,6 +49,7 @@ void PhysicsScene::Step(float fdt)
 
 #pragma region Scenes
 // loads in a default scene of 2 stacked boxes and a floor
+// Shows basic physics simulation with collision and gravity
 class DefaultScene : public PhysicsScene
 {
 public:
@@ -204,6 +205,8 @@ public:
     }
 };
 
+// Loads in a scene of a pyramid of boxes that are intially overlapping
+// The scene should recover from the overlap and stabilize
 class OverlapRecoveryScene : public PhysicsScene
 {
 public:
@@ -249,6 +252,99 @@ public:
         }
     }
 };
+
+// Loads in a scene with a stack of 6 boxes on one side
+// and a Tower of Lire of 6 boxes on the other
+// The scene should demonstrate the stability of the physics simulation
+class StackScene : public PhysicsScene
+{
+public:
+    StackScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+        // Create a floor
+        ActorConfig a_config;
+        a_config.position = { 0.0f, -1.0f };
+        a_config.type = cActorType::STATIC;
+        int staticID = pWorld->CreateActor(a_config);
+
+        ShapeConfig s_config;
+        cPolygon floorShape = GeomMakeBox(20.0f, 1.0f);
+        pWorld->CreateShape(staticID, s_config, &floorShape);
+
+        // Create the stack of 5 boxes on one side
+        cPolygon boxShape = GeomMakeBox(0.5f, 0.5f); // Box dimensions: 1x1
+        s_config.friction = 0.5f;
+        int boxCount = 6;
+        a_config.type = cActorType::DYNAMIC;
+        float xStack = -5.0f; // Position of the stack
+        float yStack = 1.0f;  // Start from the ground
+
+        for (int i = 0; i < boxCount; ++i)
+        {
+            a_config.position = { xStack, yStack };
+            int bodyId = pWorld->CreateActor(a_config);
+            pWorld->CreateShape(bodyId, s_config, &boxShape);
+
+            yStack += 1.0f; // Stack each box 1 unit higher
+        }
+
+        // Create the tower of Lire (block-stacking problem) on the other side
+        float xTower = 5.0f; // Position of the tower
+        float yTower = 0.0f + 1.0f * boxCount; // Start from the top
+
+        for (int i = 0; i < boxCount; ++i)
+        {
+            float offset = 1.0f / (2.0f * (i + 1)); // Offset for overhang, largest at the top
+
+            a_config.position = { xTower + offset, yTower };
+            int bodyId = pWorld->CreateActor(a_config);
+            pWorld->CreateShape(bodyId, s_config, &boxShape);
+
+            yTower -= 1.0f; // Raise the next box
+        }
+
+        // Configure the camera to view both setups
+        {
+            currentZoom = 50.0f; // Adjust zoom to fit both setups
+            drawer->ChangeZoom(currentZoom);
+
+            // Center the camera between the two setups, with a slight upward adjustment
+            drawer->SetCamera({ 0.0f, 2.5f });
+        }
+    }
+};
+
+class ArchScene : public PhysicsScene
+{
+public:
+    ArchScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+        ShapeConfig s_config;
+        s_config.friction = 0.6f;
+
+        // Create a floor
+        ActorConfig a_config;
+        a_config.position = { 0.0f, -1.0f };
+        a_config.type = cActorType::STATIC;
+        int staticID = pWorld->CreateActor(a_config);
+        cPolygon floorShape = GeomMakeBox(100.0f, 1.0f);
+        pWorld->CreateShape(staticID, s_config, &floorShape);
+        
+        {
+			currentZoom = 50.0f;
+			drawer->ChangeZoom(currentZoom);
+			drawer->SetCamera({ 0.0f, 8.0f });
+        }
+    }
+};
 #pragma endregion
 
 #pragma region Scene Manager
@@ -258,7 +354,9 @@ SceneManager::SceneManager(DebugGraphics* drawer, void* world)
     AddScene(new DefaultScene(drawer, world));
     AddScene(new RampScene(drawer, world));
     AddScene(new DominoScene(drawer, world));
+    AddScene(new ArchScene(drawer, world));
     AddScene(new OverlapRecoveryScene(drawer, world));
+    AddScene(new StackScene(drawer, world));
 	ChangeScene(0);
 }
 

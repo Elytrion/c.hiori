@@ -40,7 +40,6 @@ namespace chiori
 		bool drawContactNormals{ false };
 		bool drawContactImpulses{ false };
 		bool drawFrictionImpulses{ false };
-		bool drawCenterOfMasses{ false };
 		void* context;
 	
 		void (*DrawPolygon) (const cVec2* vertices, int vertextCount, cDebugColor color, void* context);

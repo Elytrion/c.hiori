@@ -11,7 +11,7 @@ namespace chiori
 	struct cTreeNode
 	{
 		AABB aabb;
-		void* userData; // user data
+		void* userData{nullptr}; // user data
 		union
 		{
 			int parent;

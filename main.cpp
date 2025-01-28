@@ -112,15 +112,6 @@ void InitUI()
 		};
     events.push_back(drawFrictionImpulsesTrigger);
 
-    UIEventTrigger drawCenterOfMassesTrigger;
-    drawCenterOfMassesTrigger.type = UIEventType::OnMouseTriggered;
-    drawCenterOfMassesTrigger.mouse = MOUSE_BUTTON_1;
-    drawCenterOfMassesTrigger.callback = [&]() {
-        printf("WIP, does nothing\n");
-		drawer.draw.drawCenterOfMasses = !drawer.draw.drawCenterOfMasses;
-        };
-    events.push_back(drawCenterOfMassesTrigger);
-
     std::vector<std::string> buttonNames = {
 		"Toggle AABBs",
 		"Toggle Tree AABBs",
@@ -128,14 +119,12 @@ void InitUI()
 		"Toggle Contact Points",
 		"Toggle Contact Normals",
 		"Toggle Contact Impulses",
-		"Toggle Friction Impulses",
-		"Toggle Center of Masses"
+		"Toggle Friction Impulses"
 	};
 
     std::vector<cVec2> nameOffsets =
     {
         {-20.0f, 20.0f},
-        {10.0f, 20.0f},
         {10.0f, 20.0f},
         {10.0f, 20.0f},
         {10.0f, 20.0f},
@@ -149,7 +138,7 @@ void InitUI()
     float y = 40.0f;        // Fixed Y position near the top of the screen
     cVec2 btnDim = { 30.0f, 30.0f };
     std::vector<int> indices = {};
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 7; ++i)
     {
         // Define button configuration
         UIComponentConfig buttonConfig{
