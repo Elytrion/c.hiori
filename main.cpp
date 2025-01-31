@@ -190,7 +190,6 @@ cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, flo
     return { start.x + direction.x * t, start.y + direction.y * t };
 }
 
-
 void drawVoronoi()
 {
     CP_Settings_StrokeWeight(2);
@@ -282,18 +281,26 @@ void game_init(void)
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
-    //InitChioriGUI();
+    InitChioriGUI();
     SetupVoronoi();
 }
 
+bool drawChiori = true;
 void game_update(void)
 {
     CP_Settings_BlendMode(CP_BLEND_ALPHA);
     CP_Graphics_ClearBackground(CP_Color_Create(51, 51, 51, 255));
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
     
-    //UpdateChioriGUI();
-    UpdateVoronoi();
+    if (CP_Input_KeyTriggered(KEY_9))
+    {
+        drawChiori = !drawChiori;
+	}
+
+    if (drawChiori)
+        UpdateChioriGUI();
+    else
+        UpdateVoronoi();
 
 
     // Profiling info and frameRate testing
