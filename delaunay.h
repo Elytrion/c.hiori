@@ -24,11 +24,20 @@ namespace chiori
 			float distSqr = distanceSqr(p, center);
 			return distSqr <= radiusSqr;
 		}
+		bool operator==(const cDelTriangle& other) const {
+			return (a == other.a && b == other.b && c == other.c) ||
+				(a == other.b && b == other.c && c == other.a) || // Handle cyclic order
+				(a == other.c && b == other.a && c == other.b);
+		}
 	};
 
 	struct cDelEdge
 	{
 		cVec2 p1, p2;
+
+		bool operator==(const cDelEdge& other) const {
+			return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
+		}
 	};
 
 }
@@ -36,8 +45,9 @@ namespace std {
 	template <>
 	struct hash<chiori::cDelEdge> {
 		size_t operator()(const chiori::cDelEdge& e) const {
-			return hash<double>()(e.p1.x) ^ hash<double>()(e.p1.y) ^
-				hash<double>()(e.p2.x) ^ hash<double>()(e.p2.y);
+			size_t h1 = hash<float>()(e.p1.x) ^ (hash<float>()(e.p1.y) << 1);
+			size_t h2 = hash<float>()(e.p2.x) ^ (hash<float>()(e.p2.y) << 1);
+			return h1 ^ h2; // Ensures (A, B) == (B, A)
 		}
 	};
 }
@@ -61,7 +71,7 @@ namespace chiori
 
 		void insertPoint(const cVec2& p)
 		{
-			cassert(triangulation.size() >= 3);
+			cassert(triangulation.size() > 0);
 
 			std::vector<cDelTriangle> badTriangles;
 			std::unordered_map<cDelEdge, int> edgeCount;

@@ -8,6 +8,8 @@
 #include "scenemanager.h"
 #include "physicsWorld.h"
 
+#include "voronoi.h"
+
 using namespace chiori;
 
 CP_Color randomColors[] = {
@@ -27,27 +29,9 @@ DebugGraphics drawer{ recommendedWidth, recommendedHeight }; // create a graphic
 UIManager ui_manager{ &drawer }; // create a ui manager to handle UI input events
 SceneManager scene_manager{ &drawer, &world }; // create a scene manager to handle different scenes
 
-
+#pragma region c.hiori GUI
 void InitUI()
 {
-    //UIComponentConfig testBtnConfig
-    //{
-    //    50.0f, 50.0f,
-    //    80.0f, 30.0f,
-    //    0.9f, 0.9f, 0.9f, 1.0f,
-    //    "Click Me",
-    //    5.0f, 20.0f,
-    //    1.0f, 0.0f, 0.0f, 1.0f
-    //};
-    //// Event for the button
-    UIEventTrigger clickEvent;
-    clickEvent.type = UIEventType::OnMouseTriggered;
-    clickEvent.mouse = MOUSE_BUTTON_1; // Left mouse button
-    clickEvent.callback = []() {
-        printf("Hello World\n");
-        };
-    //ui_manager.AddRectUIButton(testBtnConfig, { clickEvent });
-
     std::vector<UIEventTrigger> events;
     UIEventTrigger drawAABBtrigger;
     drawAABBtrigger.type = UIEventType::OnMouseTriggered;
@@ -162,8 +146,6 @@ void InitChioriGUI()
 {
     drawer.Create();
     InitUI();
-    //CP_System_SetWindowSize(800, 450);
-    //drawer.ChangeScreenDimensions({ 800, 450 });
 }
 
 void UpdateChioriGUI()
@@ -177,6 +159,122 @@ void UpdateChioriGUI()
         scene_manager.ChangeScene(index);
     }
 }
+#pragma endregion
+
+
+// Voronoi diagram instance
+cVoronoiDiagram* voronoi = nullptr;
+std::vector<cVec2> points;
+int voronoiDrawMode = 0;
+
+void drawDelunay()
+{
+    CP_Settings_StrokeWeight(1);
+    CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
+
+    for (const auto& tri : voronoi->delaunay.triangulation) {
+        CP_Graphics_DrawLine(tri.a.x, tri.a.y, tri.b.x, tri.b.y);
+        CP_Graphics_DrawLine(tri.b.x, tri.b.y, tri.c.x, tri.c.y);
+        CP_Graphics_DrawLine(tri.c.x, tri.c.y, tri.a.x, tri.a.y);
+    }
+}
+
+cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, float screenWidth, float screenHeight)
+{
+    float tXMin = (direction.x > 0) ? (screenWidth - start.x) / direction.x : (0 - start.x) / direction.x;
+    float tYMin = (direction.y > 0) ? (screenHeight - start.y) / direction.y : (0 - start.y) / direction.y;
+
+    // Get the smallest positive t-value
+    float t = c_min(tXMin, tYMin);
+
+    return { start.x + direction.x * t, start.y + direction.y * t };
+}
+
+
+void drawVoronoi()
+{
+    CP_Settings_StrokeWeight(2);
+    CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Voronoi edges
+
+    float screenWidth = CP_System_GetWindowWidth();
+    float screenHeight = CP_System_GetWindowHeight();
+
+
+    for (const auto& edge : voronoi->edges) {
+        if (edge.infinite) {
+            // Compute intersection with screen boundary
+            cVec2 endPoint = findScreenEdgeIntersection(edge.origin, edge.endDir, screenWidth, screenHeight);
+            CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, endPoint.x, endPoint.y);
+        }
+        else {
+            // Draw finite edge
+            CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, edge.endDir.x, edge.endDir.y);
+        }
+    }
+
+    // Draw Voronoi sites
+    CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255)); // Yellow for sites
+    for (const auto& cell : voronoi->cells) {
+        CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
+    }
+}
+
+void UpdateVoronoi()
+{
+    for (const auto& p : points) {
+        CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255));
+		CP_Graphics_DrawCircle(p.x, p.y, 5);
+	}
+
+    if (CP_Input_KeyTriggered(KEY_V))
+    {
+        voronoiDrawMode = (voronoiDrawMode + 1) % 4;
+    }
+
+    if (voronoiDrawMode == 0)
+    {
+        // Draw Voronoi diagram
+        drawVoronoi();
+	}
+    else if (voronoiDrawMode == 1)
+    {
+        // Draw Delaunay triangles
+        drawDelunay();
+	}
+    else if (voronoiDrawMode == 2)
+    {
+		// Draw both
+		drawDelunay();
+		drawVoronoi();
+	} 
+    // else dont draw anything
+
+    //if (CP_Input_MouseClicked()) {
+    //    float mx = CP_Input_GetMouseX();
+    //    float my = CP_Input_GetMouseY();
+    //    cVec2 newPoint(mx, my);
+
+    //    //Add point to Voronoi
+    //    voronoi->insertPoint(newPoint);
+    //}
+
+}
+
+void SetupVoronoi()
+{
+    // Generate random points for testing
+    int numPoints = 20;
+    int bufferEdgeWidth = 200;
+    for (int i = 0; i < numPoints; i++) {
+        float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
+        float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
+        points.push_back({ x, y });
+    }
+    // Initialize Voronoi diagram
+    voronoi = new cVoronoiDiagram(points);
+}
+
+
 
 
 void game_init(void)
@@ -184,7 +282,8 @@ void game_init(void)
     CP_System_SetWindowSize(recommendedWidth, recommendedHeight);
     CP_System_SetFrameRate(60.0f);
     CP_System_ShowConsole();
-    InitChioriGUI();
+    //InitChioriGUI();
+    SetupVoronoi();
 }
 
 void game_update(void)
@@ -193,10 +292,12 @@ void game_update(void)
     CP_Graphics_ClearBackground(CP_Color_Create(51, 51, 51, 255));
     CP_Settings_Fill(CP_Color_Create(0, 0, 0, 255));
     
-    UpdateChioriGUI();
+    //UpdateChioriGUI();
+    UpdateVoronoi();
+
 
     // Profiling info and frameRate testing
-    if (false)
+    if (true)
     {
         CP_Settings_TextSize(20);
         CP_Settings_BlendMode(CP_BLEND_ALPHA);
@@ -208,11 +309,16 @@ void game_update(void)
         sprintf_s(buffer, 100, "FPS: %f", CP_System_GetFrameRate());
         CP_Font_DrawText(buffer, 20, 20);
     }
+
 }
+
+
 
 void game_exit(void)
 {
-
+    if (voronoi != nullptr) {
+		delete voronoi;
+	}
 }
 
 int main(void){

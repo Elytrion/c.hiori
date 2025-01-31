@@ -62,7 +62,7 @@ namespace chiori
 		// Edge case 1: Single point (no edges)
 		void handleSinglePoint(const cVec2& p)
 		{
-			cells.emplace_back(p, -1);
+			cells.push_back({ p, -1 });
 		}
 		// Edge case 2: Two points (one infinite edge)
 		void handleTwoPoints(const cVec2& p1, const cVec2& p2)
