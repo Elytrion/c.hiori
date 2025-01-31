@@ -140,6 +140,7 @@ void DebugGraphics::DrawCircle(cVec2 center, float radius, cDebugColor color)
 
 	// Set the color
 	CP_Color cpColor = ConvertColor(color);
+	CP_Settings_Stroke(cpColor);
 	CP_Settings_Fill(cpColor);
 
 	// Draw the circle
@@ -152,6 +153,7 @@ void DebugGraphics::DrawPoint(cVec2 p, float size, cDebugColor color)
 
 	// Set the color
 	CP_Color cpColor = ConvertColor(color);
+	CP_Settings_Stroke(cpColor);
 	CP_Settings_Fill(cpColor);
 
 	// Draw the point as a small circle
@@ -179,6 +181,7 @@ void DebugGraphics::DrawString(cVec2 p, float size, const char* str, cDebugColor
 	// Set the color
 	CP_Color cpColor = ConvertColor(color);
 	CP_Settings_Fill(cpColor);
+	CP_Settings_Stroke(cpColor);
 	CP_Settings_TextSize(size);
 	// Draw the string
 	CP_Font_DrawText(str, screenPos.x, screenPos.y);

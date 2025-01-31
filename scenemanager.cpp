@@ -488,6 +488,104 @@ public:
     }
 
 };
+
+
+class SelfBalancingBoxScene : public PhysicsScene
+{
+    int boxID{ -1 };
+    const cManifoldPoint* mp = nullptr;
+public:
+    SelfBalancingBoxScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+
+        // Create a floor
+        ActorConfig a_config;
+        a_config.type = cActorType::STATIC;
+        int floorID = pWorld->CreateActor(a_config);
+
+        ShapeConfig s_config;
+        s_config.friction = 0.2f;
+        cPolygon floorShape = GeomMakeBox(10.0f, 0.25f);
+        pWorld->CreateShape(floorID, s_config, &floorShape);
+
+        // Create Walls
+        int wallID = pWorld->CreateActor(a_config);
+        cPolygon wallShape = GeomMakeOffsetBox(0.25f, 10.0f, { -7.0f, 0.0f });
+        pWorld->CreateShape(wallID, s_config, &wallShape);
+        wallShape = GeomMakeOffsetBox(0.25f, 10.0f, { 7.0f, 0.0f });
+        pWorld->CreateShape(wallID, s_config, &wallShape);
+
+        // Create the ground box
+        a_config.type = cActorType::DYNAMIC;
+        a_config.position = { 0.0f, 1.5f };
+        a_config.angle = 45.1f * DEG2RAD;
+        a_config.angularDamping = 0.75f;
+        boxID = pWorld->CreateActor(a_config);
+        cPolygon box = GeomMakeBox(0.5f, 0.5f);
+
+        int boxShapeIndex = pWorld->CreateShape(boxID, s_config, &box);
+
+        // configure camera
+        {
+            currentZoom = 90.0f;
+            drawer->ChangeZoom(currentZoom);
+            drawer->SetCamera({ 0.0f, 3.0f });
+        }
+    }
+
+    void Update(float dt) override
+    {
+		PhysicsScene::Update(dt);
+
+        // Apply a force to the box to keep it balanced on its tip everytime it collides with the ground on one side
+        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cActor* boxActor = pWorld->p_actors[boxID];
+        if (boxActor)
+        {
+            cTransform xf = boxActor->getTransform();
+            if (boxActor->contactCount < 1)
+                return;
+
+
+            int contactKey = boxActor->contactList;
+            // cVec2 worldPoint = cTransformVec(xf, p.localAnchorA);
+            while (contactKey != NULL_INDEX)
+            {
+                cContact* contact = pWorld->p_contacts[(contactKey >> 1)];
+                const cManifold& manifold = contact->manifold;
+                if (manifold.pointCount > 1)
+                {
+                    if (!mp)
+                    {
+                        for (int i = 0; i < manifold.pointCount; ++i)
+                        {
+                            const cManifoldPoint* p = manifold.points + i;
+                            if (p->separation > commons::LINEAR_SLOP)
+                            {
+                                mp = p;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (mp->separation <= commons::LINEAR_SLOP)
+                        {
+							cVec2 worldPoint = cTransformVec(xf, mp->localAnchorA);
+                            cVec2 force = cVec2::up * 1.9f;
+							boxActor->applyImpulse(force, worldPoint);
+                            mp = nullptr;
+						}
+                    }
+				}
+                contactKey = contact->edges[contactKey & 1].nextKey;
+            }
+        }
+	}
+};
 #pragma endregion
 
 #pragma region Scene Manager
@@ -502,6 +600,7 @@ SceneManager::SceneManager(DebugGraphics* drawer, void* world)
     AddScene(new ArchScene(drawer, world));
     AddScene(new OverlapRecoveryScene(drawer, world));
     AddScene(new PolygonScene(drawer, world));
+    AddScene(new SelfBalancingBoxScene(drawer, world));
 
 	ChangeScene(0);
 }

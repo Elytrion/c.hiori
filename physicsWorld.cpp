@@ -463,7 +463,7 @@ namespace chiori
 			const float axisScale = 0.3f;
 			cDebugColor speculativeColor = { 0.3f, 0.3f, 0.3f, 1.0f };
 			cDebugColor addColor = { 0.3f, 0.95f, 0.3f, 1.0f };
-			cDebugColor persistColor = { 0.3f, 0.3f, 0.95f, 1.0f };
+			cDebugColor persistColor = { 0.1f, 0.1f, 0.95f, 1.0f };
 			cDebugColor normalColor = { 0.9f, 0.9f, 0.9f, 1.0f };
 			cDebugColor impulseColor = { 0.9f, 0.9f, 0.3f, 1.0f };
 			cDebugColor frictionColor = { 0.9f, 0.9f, 0.3f, 1.0f };

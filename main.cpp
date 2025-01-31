@@ -19,8 +19,8 @@ CP_Color randomColors[] = {
     { 0,   128, 128, 255 },
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
-float recommendedWidth = 1600.0f;
-float recommendedHeight = 900.0f;
+float recommendedWidth = 1152.0f;
+float recommendedHeight = 648.0f;
 bool drawFPS = true;
 cVec2 middle = cVec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
 
