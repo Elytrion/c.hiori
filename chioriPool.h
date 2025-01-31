@@ -7,7 +7,7 @@
 namespace chiori
 {
 	#define LOOKUP_KEY(x, y) x < y ? (uint64_t)x << 32 | (uint64_t)y : (uint64_t)y << 32 | (uint64_t)x
-	inline const int INIT_POOL_SIZE = 64;
+	inline const int INIT_POOL_SIZE = 16;
 	
 	/// <summary>
 	/// > This is REQUIRED to be an accessible member of the object in the pool <
