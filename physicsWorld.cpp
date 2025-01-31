@@ -46,7 +46,7 @@ namespace chiori
 		while (edgeKey != -1)
 		{
 			int contactIndex = edgeKey >> 1;
-			int edgeIndex = edgeKey & 1;
+			int edgeList = edgeKey & 1;
 
 			int twinKey = edgeKey ^ 1;
 			int twinIndex = twinKey & 1;
@@ -83,7 +83,7 @@ namespace chiori
 			// Remove pair from set
 			p_pairs.erase(contact->shapeIndexA, contact->shapeIndexB);
 
-			cContactEdge* edge = contact->edges + edgeIndex;
+			cContactEdge* edge = contact->edges + edgeList;
 			edgeKey = edge->nextKey;
 			
 			// Free contact

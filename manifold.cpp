@@ -136,7 +136,7 @@ namespace chiori
 	}
 
 	// Find the max separation between poly1 and poly2 using edge normals from poly1.
-	static float FindMaxSeparation(int* edgeIndex, const cPolygon* poly1, const cPolygon* poly2)
+	static float FindMaxSeparation(int* edgeList, const cPolygon* poly1, const cPolygon* poly2)
 	{
 		int count1 = poly1->count;
 		int count2 = poly2->count;
@@ -170,7 +170,7 @@ namespace chiori
 			}
 		}
 
-		*edgeIndex = bestIndex;
+		*edgeList = bestIndex;
 		return maxSeparation;
 	}
 

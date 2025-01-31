@@ -246,6 +246,11 @@ namespace chiori
 		cVec2 v = inLHS - inRHS;
 		return v.magnitude();
 	}
+	static inline float distanceSqr(const cVec2& inLHS, const cVec2& inRHS)
+	{
+		cVec2 v = inLHS - inRHS;
+		return v.sqrMagnitude();
+	}
 
 	// vector linear interpolation
 	static inline cVec2 vlerp(cVec2 a, cVec2 b, float t)

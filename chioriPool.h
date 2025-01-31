@@ -359,10 +359,18 @@ namespace chiori
 		size_t capacity() const { return p_capacity; }
 		T* operator[](int index)
 		{
+			if (index < 0 || static_cast<size_t>(index) >= p_capacity)
+			{
+				throw std::out_of_range("Index out of range");
+			}
 			return GetFromIndex(static_cast<unsigned>(index));
 		}
 		const T* operator[](int index) const
 		{
+			if (index < 0 || static_cast<size_t>(index) >= p_capacity)
+			{
+				throw std::out_of_range("Index out of range");
+			}
 			return GetFromIndex(static_cast<unsigned>(index));
 		}
 
