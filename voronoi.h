@@ -55,13 +55,33 @@ namespace chiori
 				{
 					if (!hasNeighbor(tri, edge)) // No neighboring triangle => Infinite edge
 					{
-						cVec2 direction = (edge.p1 - edge.p2).normalized();
-						edges.emplace_back(circumcenter, circumcenter + direction * 1000.0f, true);
+						cVec2 direction = getPerpendicularBisector(tri, edge);
+						edges.emplace_back(circumcenter,  direction, true);
 					}
 				}
 			}
 		}
 	private:
+		cVec2 getPerpendicularBisector(const cDelTriangle& tri, const cDelEdge& edge)
+		{
+			// Midpoint of the edge
+			cVec2 mid = (edge.p1 + edge.p2) * 0.5f;
+
+			// Compute the edge direction and perpendicular vector
+			cVec2 edgeDir = (edge.p2 - edge.p1).normalized();
+			cVec2 perpDir = cVec2(-edgeDir.y, edgeDir.x); // Rotate by 90 degrees
+
+			// Ensure the bisector points **away** from the triangle
+			cVec2 circumcenter = tri.circumcenter();
+			cVec2 testDir = circumcenter - mid;
+			if (perpDir.dot(testDir) > 0) // Flip direction if it points toward the triangle
+			{
+				perpDir = -perpDir;
+			}
+
+			return perpDir;
+		}
+
 		// Retrieves neighboring triangles sharing an edge
 		std::vector<cDelTriangle> getTriangleNeighbors(const cDelTriangle& tri)
 		{

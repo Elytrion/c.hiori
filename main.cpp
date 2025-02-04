@@ -182,13 +182,14 @@ void drawDelunay()
 
 cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, float screenWidth, float screenHeight)
 {
-    float tXMin = (direction.x > 0) ? (screenWidth - start.x) / direction.x : (0 - start.x) / direction.x;
-    float tYMin = (direction.y > 0) ? (screenHeight - start.y) / direction.y : (0 - start.y) / direction.y;
+    const cVec2 normDir = direction.normalized();
+    float tXMin = (normDir.x > 0) ? (screenWidth - start.x) / normDir.x : (0 - start.x) / normDir.x;
+    float tYMin = (normDir.y > 0) ? (screenHeight - start.y) / normDir.y : (0 - start.y) / normDir.y;
 
     // Get the smallest positive t-value
     float t = c_min(tXMin, tYMin);
 
-    return { start.x + direction.x * t, start.y + direction.y * t };
+    return { start.x + normDir.x * t, start.y + normDir.y * t };
 }
 
 void drawVoronoi()
@@ -203,11 +204,13 @@ void drawVoronoi()
     for (const auto& edge : voronoi.edges) {
         if (edge.infinite) {
             // Compute intersection with screen boundary
-            cVec2 endPoint = findScreenEdgeIntersection(edge.origin, edge.endDir, screenWidth, screenHeight);
+            CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255)); // Green for Voronoi edges
+            cVec2 endPoint = edge.origin + (edge.endDir.normalized() * 20.0f);// findScreenEdgeIntersection(edge.origin, edge.endDir, screenWidth, screenHeight);
             CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, endPoint.x, endPoint.y);
         }
         else {
             // Draw finite edge
+            CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Voronoi edges
             CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, edge.endDir.x, edge.endDir.y);
         }
     }
@@ -263,7 +266,7 @@ void UpdateVoronoi()
 void SetupVoronoi()
 {
     // Generate random points for testing
-    int numPoints = 20;
+    int numPoints = 50;
     int bufferEdgeWidth = 200;
     for (int i = 0; i < numPoints; i++) {
         float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
