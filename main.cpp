@@ -7,7 +7,7 @@
 #include "uimanager.h"
 #include "scenemanager.h"
 #include "physicsWorld.h"
-
+//#include "delaunay.h"
 #include "voronoi.h"
 
 using namespace chiori;
@@ -19,8 +19,8 @@ CP_Color randomColors[] = {
     { 0,   128, 128, 255 },
     { 0,   0,   128, 255 },
     { 128, 0,   128, 255 } };
-float recommendedWidth = 1152.0f;
-float recommendedHeight = 648.0f;
+float recommendedWidth = 1600.0f;
+float recommendedHeight = 900.0f;
 bool drawFPS = true;
 cVec2 middle = cVec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
 
@@ -163,7 +163,8 @@ void UpdateChioriGUI()
 
 
 // Voronoi diagram instance
-cVoronoiDiagram* voronoi = nullptr;
+cVoronoiDiagram voronoi;
+//cDelaunayTriangulation triangulation;
 std::vector<cVec2> points;
 int voronoiDrawMode = 0;
 
@@ -172,7 +173,7 @@ void drawDelunay()
     CP_Settings_StrokeWeight(1);
     CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
 
-    for (const auto& tri : voronoi->delaunay.triangulation) {
+    for (const auto& tri : voronoi.delaunay.triangles) {
         CP_Graphics_DrawLine(tri.a.x, tri.a.y, tri.b.x, tri.b.y);
         CP_Graphics_DrawLine(tri.b.x, tri.b.y, tri.c.x, tri.c.y);
         CP_Graphics_DrawLine(tri.c.x, tri.c.y, tri.a.x, tri.a.y);
@@ -199,7 +200,7 @@ void drawVoronoi()
     float screenHeight = CP_System_GetWindowHeight();
 
 
-    for (const auto& edge : voronoi->edges) {
+    for (const auto& edge : voronoi.edges) {
         if (edge.infinite) {
             // Compute intersection with screen boundary
             cVec2 endPoint = findScreenEdgeIntersection(edge.origin, edge.endDir, screenWidth, screenHeight);
@@ -211,11 +212,11 @@ void drawVoronoi()
         }
     }
 
-    // Draw Voronoi sites
-    CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255)); // Yellow for sites
-    for (const auto& cell : voronoi->cells) {
-        CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
-    }
+    //// Draw Voronoi sites
+    //CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255)); // Yellow for sites
+    //for (const auto& cell : voronoi->cells) {
+    //    CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
+    //}
 }
 
 void UpdateVoronoi()
@@ -270,7 +271,10 @@ void SetupVoronoi()
         points.push_back({ x, y });
     }
     // Initialize Voronoi diagram
-    voronoi = new cVoronoiDiagram(points);
+    //voronoi = new cVoronoiDiagram(points);
+
+    //triangulation.triangulate(points.data(), points.size());
+    voronoi.CreateVoronoiDiagram(points.data(), points.size());
 }
 
 
@@ -323,9 +327,9 @@ void game_update(void)
 
 void game_exit(void)
 {
-    if (voronoi != nullptr) {
-		delete voronoi;
-	}
+ //   if (voronoi != nullptr) {
+	//	delete voronoi;
+	//}
 }
 
 int main(void){

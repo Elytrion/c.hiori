@@ -1,13 +1,18 @@
 #pragma once
 #include "chioriMath.h"
+#include "chioriAllocator.h"
 #include <vector>
-#include <unordered_map>
+
+
+// TODO: Optimize and convert to using allocators
 
 namespace chiori
 {
 	struct cDelTriangle
 	{
-		cVec2 a, b, c;
+		cDelTriangle(const cVec2& inA = cVec2::zero, const cVec2& inB = cVec2::zero, const cVec2& inC = cVec2::zero) :
+			a{ inA }, b{ inB }, c{ inC } {}
+
 		cVec2 circumcenter() const
 		{
 			float dA = a.dot(a);
@@ -17,167 +22,189 @@ namespace chiori
 			return { (dA * (b.y - c.y) + dB * (c.y - a.y) + dC * (a.y - b.y)) / det,
 								 (dA * (c.x - b.x) + dB * (a.x - c.x) + dC * (b.x - a.x)) / det };
 		}
-		bool isPointInCircumcircle(const cVec2& p) const
+		bool circumcircleContains(const cVec2& p) const
 		{
 			const cVec2 center = circumcenter();
 			float radiusSqr = distanceSqr(a, center);
 			float distSqr = distanceSqr(p, center);
 			return distSqr <= radiusSqr;
 		}
-		bool operator==(const cDelTriangle& other) const {
-			return (a == other.a && b == other.b && c == other.c) ||
-				(a == other.b && b == other.c && c == other.a) || // Handle cyclic order
-				(a == other.c && b == other.a && c == other.b);
+		
+		bool operator==(const cDelTriangle& other) const
+		{
+			// handle cyclic ordering
+			return	(a == other.a && b == other.b && c == other.c) ||
+					(a == other.b && b == other.c && c == other.a) ||
+					(a == other.c && b == other.a && c == other.b);
 		}
+
+		cVec2 a, b, c;
 	};
 
 	struct cDelEdge
 	{
-		cVec2 p1, p2;
+		cDelEdge(const cVec2& inP1 = cVec2::zero, const cVec2& inP2 = cVec2::zero) :
+			p1{ inP1 }, p2{ inP2 } {}
 
 		bool operator==(const cDelEdge& other) const {
 			return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
 		}
+
+		cVec2 p1, p2;
 	};
 
-}
-namespace std {
-	template <>
-	struct hash<chiori::cDelEdge> {
-		size_t operator()(const chiori::cDelEdge& e) const {
-			size_t h1 = hash<float>()(e.p1.x) ^ (hash<float>()(e.p1.y) << 1);
-			size_t h2 = hash<float>()(e.p2.x) ^ (hash<float>()(e.p2.y) << 1);
-			return h1 ^ h2; // Ensures (A, B) == (B, A)
-		}
-	};
-}
-namespace chiori
-{
 	class cDelaunayTriangulation
 	{
+		cDelTriangle getSuperTri(const cVec2* points, unsigned inCount)
+		{
+			// Find the maximum and minimum vertex bounds.
+			// This is to allow calculation of the bounding triangle
+			float xmin = points[0].x, xmax = xmin;
+			float ymin = points[0].y, ymax = ymin;
+			for (unsigned i = 1; i < inCount; ++i) {
+				if (points[i].x < xmin) xmin = points[i].x;
+				if (points[i].x > xmax) xmax = points[i].x;
+				if (points[i].y < ymin) ymin = points[i].y;
+				if (points[i].y > ymax) ymax = points[i].y;
+			}
+			float dx = xmax - xmin;
+			float dy = ymax - ymin;
+			float maxD = (dx > dy) ? dx : dy;
+			cVec2 mid{ (xmin + xmax) * 0.5f, (ymin + ymax) * 0.5f };
+
+			// Create a large super triangle
+			cVec2 p1 = { mid.x - 2 * maxD, mid.y - maxD };
+			cVec2 p2 = { mid.x, mid.y + 2 * maxD };
+			cVec2 p3 = { mid.x + 2 * maxD, mid.y - maxD };
+
+			return { p1,p2,p3 };
+		}
+
+		void filterTriangles(cDelTriangle inFilteredTri)
+		{
+			std::vector<cDelTriangle> filteredTris{};
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				// remove any triangles that share a vertex with the input filtered triangle (usually the super triangle)
+				if (
+					tri.a == inFilteredTri.a || tri.a == inFilteredTri.b || tri.a == inFilteredTri.c ||
+					tri.b == inFilteredTri.a || tri.b == inFilteredTri.b || tri.b == inFilteredTri.c ||
+					tri.c == inFilteredTri.a || tri.c == inFilteredTri.b || tri.c == inFilteredTri.c
+					)
+					continue;
+				
+				filteredTris.push_back(tri);
+			}
+			triangles = filteredTris;
+		}
+
+		void filterEdges(std::vector<cDelEdge>& edges)
+		{
+			std::vector<cDelEdge> uniqueEdges{};
+			for (int i = 0; i < edges.size(); ++i)
+			{
+				bool isUnique = true;
+				for (int j = 0; j < edges.size(); ++j)
+				{
+					if (i == j)
+						continue;
+					
+					if (edges[i] == edges[j])
+					{
+						isUnique = false;
+						break;
+					}
+				}
+				if (isUnique)
+				{
+					uniqueEdges.push_back(edges[i]);
+				}
+			}
+			edges = uniqueEdges;
+		}
+		
 	public:
-		std::vector<cDelTriangle> triangulation {};
+		std::vector<cDelTriangle> triangles{};
 
-		cDelaunayTriangulation(const std::vector<cVec2>& points = {}) {
-			if (!points.empty())
-				init(points);
+		void triangulate(const cVec2* points, unsigned inCount)
+		{
+			// check for valid input
+			cassert(points);
+			cassert(inCount > 0);
+			// Create bounding 'super' triangle
+			const cDelTriangle st = getSuperTri(points, inCount);
+			triangles = { st }; // Initialize triangles while adding bounding triangle
+			// Triangulate each vertex
+			for (unsigned i = 0; i < inCount; ++i)
+			{
+				insertPoint(points[i]);
+			}
+			// Remove triangles that share edges with super triangle
+			// (this auto includes the super triangle itself)
+			filterTriangles(st);
 		}
 
-		void init(const std::vector<cVec2>& points)
+		void insertPoint(const cVec2& inPoint)
 		{
-			cassert(points.size() >= 3);
-			initializeTriangulation(points);
-		}
-
-		void insertPoint(const cVec2& p)
-		{
-			cassert(triangulation.size() > 0);
-
-			std::vector<cDelTriangle> badTriangles;
-			std::unordered_map<cDelEdge, int> edgeCount;
-
-			// Step 1: Find bad triangles whose circumcircle contains p
-			for (const cDelTriangle& t : triangulation) {
-				if (t.isPointInCircumcircle(p)) {
-					badTriangles.push_back(t);
-					trackEdges(edgeCount, t);
+			std::vector<cDelEdge> edges{};
+			std::vector<cDelTriangle> n_tris{};
+			
+			// Remove triangles with circumcircles containing the vertex
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				if (tri.circumcircleContains(inPoint))
+				{
+					edges.emplace_back(tri.a, tri.b);
+					edges.emplace_back(tri.b, tri.c);
+					edges.emplace_back(tri.c, tri.a);
 				}
+				else
+					n_tris.push_back(tri);
 			}
-
-			// Step 2: Remove bad triangles from triangulation
-			removeTriangles(badTriangles);
-
-			// Step 3: Form new triangles using the polygonal cavity boundary
-			addNewTriangles(p, edgeCount);
+			// Get unique edges, removing duplicates
+			filterEdges(edges);
+			// Create new triangles from the unique edges and new vertex
+			for (int i = 0; i < edges.size(); ++i)
+			{
+				const cDelEdge& e = edges[i];
+				n_tris.emplace_back(e.p1, e.p2, inPoint);
+			}
+			// replace the old list of triangles with the new one
+			triangles = n_tris;
 		}
 
-		void removePoint(const cVec2& p)
-		{
-			cassert(triangulation.size() > 0);
-
-			std::vector<cDelTriangle> badTriangles;
-			std::unordered_map<cDelEdge, int> edgeCount;
-
-			// Step 1: Find all triangles containing the point
-			for (const cDelTriangle& t : triangulation) {
-				if (t.a == p || t.b == p || t.c == p) {
-					badTriangles.push_back(t);
-					trackEdges(edgeCount, t);
+		void removePoint(const cVec2& inPoint) // TODO: not working
+		{			
+			std::vector<cDelTriangle> unaffectedTris{};
+			std::vector<cDelEdge> boundaryEdges{};
+			
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				if (tri.a == inPoint || tri.b == inPoint || tri.c == inPoint)
+				{
+					boundaryEdges.emplace_back(tri.a, tri.b);
+					boundaryEdges.emplace_back(tri.b, tri.c);
+					boundaryEdges.emplace_back(tri.c, tri.a);
 				}
+				else
+					unaffectedTris.push_back(tri);
 			}
 
-			// Step 2: Remove affected triangles
-			removeTriangles(badTriangles);
+			if (unaffectedTris.size() == triangles.size())
+				return; // no triangles were affected, meaning either the point is invalid or not within the triangulation at all
+			
+			triangles = unaffectedTris;
 
-			// Step 3: Re-triangulate the hole
-			for (const auto& edge : edgeCount) {
-				if (edge.second == 1) { // Boundary edge
-					cVec2 mid = { (edge.first.p1.x + edge.first.p2.x) / 2,
-								  (edge.first.p1.y + edge.first.p2.y) / 2 };
-					addNewTriangles(mid, edgeCount);
-				}
-			}
-		}
+			filterEdges(boundaryEdges);
 
-	private:
-		float sTriFactor = 100.0f; // how much to grow the super triangle bounding box
-
-		// Initialize triangulation using a super-triangle
-		void initializeTriangulation(const std::vector<cVec2>& points) {
-			// Step 1: Create a super-triangle that encompasses all points
-			float minX = points[0].x, maxX = points[0].x;
-			float minY = points[0].y, maxY = points[0].y;
-			for (const auto& p : points) {
-				minX = c_min(minX, p.x);
-				maxX = c_max(maxX, p.x);
-				minY = c_min(minY, p.y);
-				maxY = c_max(maxY, p.y);
-			}
-
-			cVec2 p1 = { minX - sTriFactor, minY - sTriFactor };
-			cVec2 p2 = { maxX + sTriFactor, minY - sTriFactor };
-			cVec2 p3 = { (minX + maxX) / 2, maxY + sTriFactor };
-
-			cDelTriangle superTriangle = { p1, p2, p3 };
-			triangulation.push_back(superTriangle);
-
-			// Step 2: Insert all points dynamically
-			for (const auto& p : points) {
-				insertPoint(p);
-			}
-
-			// Step 3: Remove super-triangle-related edges
-			triangulation.erase(std::remove_if(triangulation.begin(), triangulation.end(),
-				[&](const cDelTriangle& t) {
-					return (t.a == superTriangle.a || t.b == superTriangle.a || t.c == superTriangle.a);
-				}), triangulation.end());
-		}
-		// Track edges of a triangle
-		void trackEdges(std::unordered_map<cDelEdge, int>& edgeCount, const cDelTriangle& t)
-		{
-			edgeCount[{t.a, t.b}]++;
-			edgeCount[{t.b, t.c}]++;
-			edgeCount[{t.c, t.a}]++;
-		}
-		// Remove bad triangles
-		void removeTriangles(const std::vector<cDelTriangle>&badTriangles)
-		{
-			for (const cDelTriangle& t : badTriangles) {
-				auto it = std::find(triangulation.begin(), triangulation.end(), t);
-				if (it != triangulation.end()) {
-					triangulation.erase(it);
-				}
-			}
-		}
-		// Add new triangles
-		void addNewTriangles(const cVec2& p, const std::unordered_map<cDelEdge, int>& edgeCount)
-		{
-			for (const auto& edge : edgeCount) {
-				if (edge.second == 1) { // Unique boundary edges
-					cDelTriangle newTriangle = { edge.first.p1, edge.first.p2, p };
-					triangulation.push_back(newTriangle);
-				}
-			}
+			for (int i = 0; i < boundaryEdges.size(); ++i)
+			{
+				const cDelEdge& e = boundaryEdges[i];
+				triangles.emplace_back(e.p1, e.p2, inPoint);
+			}	
 		}
 	};
 

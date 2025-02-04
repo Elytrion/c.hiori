@@ -43,4 +43,5 @@ namespace chiori
 			::operator delete(inPtr);
 		}
 	};
+	
 }
