@@ -54,9 +54,16 @@ namespace chiori
 	};
 
 	class cDelaunayTriangulation
-	{
-		cDelTriangle getSuperTri(const cVec2* points, unsigned inCount)
+	{		
+	public:
+		std::vector<cDelTriangle> triangles{};
+
+		void triangulate(const cVec2* points, unsigned inCount)
 		{
+			// check for valid input
+			cassert(points);
+			cassert(inCount > 0);
+			// Create bounding 'super' triangle
 			// Find the maximum and minimum vertex bounds.
 			// This is to allow calculation of the bounding triangle
 			float xmin = points[0].x, xmax = xmin;
@@ -76,64 +83,7 @@ namespace chiori
 			cVec2 p1 = { mid.x - 2 * maxD, mid.y - maxD };
 			cVec2 p2 = { mid.x, mid.y + 2 * maxD };
 			cVec2 p3 = { mid.x + 2 * maxD, mid.y - maxD };
-
-			return { p1,p2,p3 };
-		}
-
-		void filterTriangles(cDelTriangle inFilteredTri)
-		{
-			std::vector<cDelTriangle> filteredTris{};
-			for (int i = 0; i < triangles.size(); ++i)
-			{
-				const cDelTriangle& tri = triangles[i];
-				// remove any triangles that share a vertex with the input filtered triangle (usually the super triangle)
-				if (
-					tri.a == inFilteredTri.a || tri.a == inFilteredTri.b || tri.a == inFilteredTri.c ||
-					tri.b == inFilteredTri.a || tri.b == inFilteredTri.b || tri.b == inFilteredTri.c ||
-					tri.c == inFilteredTri.a || tri.c == inFilteredTri.b || tri.c == inFilteredTri.c
-					)
-					continue;
-				
-				filteredTris.push_back(tri);
-			}
-			triangles = filteredTris;
-		}
-
-		void filterEdges(std::vector<cDelEdge>& edges)
-		{
-			std::vector<cDelEdge> uniqueEdges{};
-			for (int i = 0; i < edges.size(); ++i)
-			{
-				bool isUnique = true;
-				for (int j = 0; j < edges.size(); ++j)
-				{
-					if (i == j)
-						continue;
-					
-					if (edges[i] == edges[j])
-					{
-						isUnique = false;
-						break;
-					}
-				}
-				if (isUnique)
-				{
-					uniqueEdges.push_back(edges[i]);
-				}
-			}
-			edges = uniqueEdges;
-		}
-		
-	public:
-		std::vector<cDelTriangle> triangles{};
-
-		void triangulate(const cVec2* points, unsigned inCount)
-		{
-			// check for valid input
-			cassert(points);
-			cassert(inCount > 0);
-			// Create bounding 'super' triangle
-			const cDelTriangle st = getSuperTri(points, inCount);
+			const cDelTriangle st = { p1, p2, p3 };
 			triangles = { st }; // Initialize triangles while adding bounding triangle
 			// Triangulate each vertex
 			for (unsigned i = 0; i < inCount; ++i)
@@ -141,16 +91,29 @@ namespace chiori
 				insertPoint(points[i]);
 			}
 			// Remove triangles that share edges with super triangle
-			// (this auto includes the super triangle itself)
-			filterTriangles(st);
+			// (this includes the super triangle itself)
+			std::vector<cDelTriangle> filteredTris{};
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				// remove any triangles that share a vertex with the super triangle
+				if (
+					tri.a == st.a || tri.a == st.b || tri.a == st.c ||
+					tri.b == st.a || tri.b == st.b || tri.b == st.c ||
+					tri.c == st.a || tri.c == st.b || tri.c == st.c
+					)
+					continue;
+
+				filteredTris.push_back(tri);
+			}
+			triangles.swap(filteredTris);
 		}
 
 		void insertPoint(const cVec2& inPoint)
 		{
 			std::vector<cDelEdge> edges{};
-			std::vector<cDelTriangle> n_tris{};
-			
-			// Remove triangles with circumcircles containing the vertex
+	
+			std::vector<cDelTriangle> bad_tris{};
 			for (int i = 0; i < triangles.size(); ++i)
 			{
 				const cDelTriangle& tri = triangles[i];
@@ -159,12 +122,33 @@ namespace chiori
 					edges.emplace_back(tri.a, tri.b);
 					edges.emplace_back(tri.b, tri.c);
 					edges.emplace_back(tri.c, tri.a);
+					bad_tris.push_back(tri);
 				}
-				else
-					n_tris.push_back(tri);
 			}
+			
+			std::vector<cDelTriangle> n_tris;
+			n_tris.reserve(triangles.size() - bad_tris.size());
+			for (const auto& tri : triangles) {
+				if (std::find(bad_tris.begin(), bad_tris.end(), tri) == bad_tris.end()) {
+					n_tris.push_back(tri);
+				}
+			}
+			
 			// Get unique edges, removing duplicates
-			filterEdges(edges);
+			std::sort(edges.begin(), edges.end());
+			std::vector<cDelEdge> uniqueEdges;
+			for (size_t i = 0; i < edges.size(); ++i) {
+				if (i + 1 < edges.size() && edges[i] ==
+					edges[i + 1])
+				{
+					++i;
+				}
+				else {
+					uniqueEdges.push_back(edges[i]);
+				}
+			}
+			edges.swap(uniqueEdges);
+
 			// Create new triangles from the unique edges and new vertex
 			for (int i = 0; i < edges.size(); ++i)
 			{
@@ -173,38 +157,6 @@ namespace chiori
 			}
 			// replace the old list of triangles with the new one
 			triangles = n_tris;
-		}
-
-		void removePoint(const cVec2& inPoint) // TODO: not working
-		{			
-			std::vector<cDelTriangle> unaffectedTris{};
-			std::vector<cDelEdge> boundaryEdges{};
-			
-			for (int i = 0; i < triangles.size(); ++i)
-			{
-				const cDelTriangle& tri = triangles[i];
-				if (tri.a == inPoint || tri.b == inPoint || tri.c == inPoint)
-				{
-					boundaryEdges.emplace_back(tri.a, tri.b);
-					boundaryEdges.emplace_back(tri.b, tri.c);
-					boundaryEdges.emplace_back(tri.c, tri.a);
-				}
-				else
-					unaffectedTris.push_back(tri);
-			}
-
-			if (unaffectedTris.size() == triangles.size())
-				return; // no triangles were affected, meaning either the point is invalid or not within the triangulation at all
-			
-			triangles = unaffectedTris;
-
-			filterEdges(boundaryEdges);
-
-			for (int i = 0; i < boundaryEdges.size(); ++i)
-			{
-				const cDelEdge& e = boundaryEdges[i];
-				triangles.emplace_back(e.p1, e.p2, inPoint);
-			}	
 		}
 	};
 
