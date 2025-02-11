@@ -11,8 +11,12 @@ namespace chiori
 	struct cDelTriangle
 	{
 		cDelTriangle(const cVec2& inA = cVec2::zero, const cVec2& inB = cVec2::zero, const cVec2& inC = cVec2::zero) :
-			a{ inA }, b{ inB }, c{ inC } {}
-
+			a{ inA }, b{ inB }, c{ inC }
+		{
+			if (!isCounterClockwise())
+				std::swap(b, c);
+		}
+		bool isCounterClockwise() const { return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y) > 0; }
 		cVec2 circumcenter() const
 		{
 			float dA = a.dot(a);
@@ -44,13 +48,28 @@ namespace chiori
 	struct cDelEdge
 	{
 		cDelEdge(const cVec2& inP1 = cVec2::zero, const cVec2& inP2 = cVec2::zero) :
-			p1{ inP1 }, p2{ inP2 } {}
+			p1{ inP1 }, p2{ inP2 }
+		{
+			if (p1.x > p2.x || (p1.x == p2.x && p1.y > p2.y))
+				std::swap(p1, p2);
+		}
 
 		bool operator==(const cDelEdge& other) const {
 			return (p1 == other.p1 && p2 == other.p2) || (p1 == other.p2 && p2 == other.p1);
 		}
 
 		cVec2 p1, p2;
+	};
+
+	struct EdgeHash {
+		size_t operator()(const cDelEdge& edge) const {
+			// Ensure order is consistent (unordered pair)
+			size_t h1 = std::hash<float>()(edge.p1.x) ^ (std::hash<float>()(edge.p1.y) << 1);
+			size_t h2 = std::hash<float>()(edge.p2.x) ^ (std::hash<float>()(edge.p2.y) << 1);
+
+			// Combine hashes ensuring the same hash for (p1, p2) and (p2, p1)
+			return h1 ^ h2;
+		}
 	};
 
 	class cDelaunayTriangulation
@@ -73,6 +92,26 @@ namespace chiori
 			cVec2 mid{ (xmin + xmax) * 0.5f, (ymin + ymax) * 0.5f };
 
 			// Create a large super triangle
+			cVec2 p1 = { mid.x - 2 * maxD, mid.y - maxD };
+			cVec2 p2 = { mid.x, mid.y + 2 * maxD };
+			cVec2 p3 = { mid.x + 2 * maxD, mid.y - maxD };
+
+			return { p1,p2,p3 };
+		}
+
+		cDelTriangle growSuperTriangle(const cDelTriangle& tri, const cVec2& pt)
+		{
+			float xmin = c_min(tri.a.x, c_min(tri.b.x, c_min(tri.c.x, pt.x)));
+			float ymin = c_min(tri.a.y, c_min(tri.b.y, c_min(tri.c.y, pt.y)));
+			float xmax = c_max(tri.a.x, c_max(tri.b.x, c_max(tri.c.x, pt.x)));
+			float ymax = c_max(tri.a.y, c_max(tri.b.y, c_max(tri.c.y, pt.y)));
+
+			float dx = xmax - xmin;
+			float dy = ymax - ymin;
+			float maxD = (dx > dy) ? dx : dy;
+			cVec2 mid{ (xmin + xmax) * 0.5f, (ymin + ymax) * 0.5f };
+
+			// Create a larger super triangle
 			cVec2 p1 = { mid.x - 2 * maxD, mid.y - maxD };
 			cVec2 p2 = { mid.x, mid.y + 2 * maxD };
 			cVec2 p3 = { mid.x + 2 * maxD, mid.y - maxD };
@@ -124,11 +163,14 @@ namespace chiori
 			edges = uniqueEdges;
 		}
 
+
 	public:
 		std::vector<cDelTriangle> triangles{};
+		std::vector<cVec2> vertices{};
 
 		void triangulate(const cVec2* points, unsigned inCount)
 		{
+			vertices.assign(points, points + inCount);
 			// check for valid input
 			cassert(points);
 			cassert(inCount > 0);
@@ -151,6 +193,7 @@ namespace chiori
 			std::vector<cDelTriangle> n_tris{};
 
 			// Remove triangles with circumcircles containing the vertex
+			bool withinBounds = false;
 			for (int i = 0; i < triangles.size(); ++i)
 			{
 				const cDelTriangle& tri = triangles[i];
@@ -159,10 +202,12 @@ namespace chiori
 					edges.emplace_back(tri.a, tri.b);
 					edges.emplace_back(tri.b, tri.c);
 					edges.emplace_back(tri.c, tri.a);
+					withinBounds = true; // the point was found within the circumcircle of a triangle in the list
 				}
 				else
 					n_tris.push_back(tri);
 			}
+
 			// Get unique edges, removing duplicates
 			filterEdges(edges);
 			// Create new triangles from the unique edges and new vertex
@@ -175,37 +220,6 @@ namespace chiori
 			triangles = n_tris;
 		}
 
-		void removePoint(const cVec2& inPoint) // TODO: not working
-		{
-			std::vector<cDelTriangle> unaffectedTris{};
-			std::vector<cDelEdge> boundaryEdges{};
-
-			for (int i = 0; i < triangles.size(); ++i)
-			{
-				const cDelTriangle& tri = triangles[i];
-				if (tri.a == inPoint || tri.b == inPoint || tri.c == inPoint)
-				{
-					boundaryEdges.emplace_back(tri.a, tri.b);
-					boundaryEdges.emplace_back(tri.b, tri.c);
-					boundaryEdges.emplace_back(tri.c, tri.a);
-				}
-				else
-					unaffectedTris.push_back(tri);
-			}
-
-			if (unaffectedTris.size() == triangles.size())
-				return; // no triangles were affected, meaning either the point is invalid or not within the triangulation at all
-
-			triangles = unaffectedTris;
-
-			filterEdges(boundaryEdges);
-
-			for (int i = 0; i < boundaryEdges.size(); ++i)
-			{
-				const cDelEdge& e = boundaryEdges[i];
-				triangles.emplace_back(e.p1, e.p2, inPoint);
-			}
-		}
 	};
 
 }

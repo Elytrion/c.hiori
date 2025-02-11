@@ -173,7 +173,7 @@ void drawDelunay()
     CP_Settings_StrokeWeight(1);
     CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
 
-    for (const auto& tri : voronoi.delaunay.triangles) {
+    for (const auto& tri : triangulation.triangles) {
         CP_Graphics_DrawLine(tri.a.x, tri.a.y, tri.b.x, tri.b.y);
         CP_Graphics_DrawLine(tri.b.x, tri.b.y, tri.c.x, tri.c.y);
         CP_Graphics_DrawLine(tri.c.x, tri.c.y, tri.a.x, tri.a.y);
@@ -235,7 +235,7 @@ void SetupVoronoi()
     for (int i = 0; i < numPoints; i++) {
         float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
         float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
-        if (i < 4)
+        if (i < 10)
         {
             currPtIndex = i;
             initPoints.push_back({ x, y });
@@ -243,8 +243,7 @@ void SetupVoronoi()
         points.push_back({ x, y });
         drawDiagramStep = true;
     }
-
-    triangulation.triangulate(initPoints.data(), initPoints.size());
+    triangulation.triangulate(points.data(), points.size());
 }
 
 void UpdateVoronoi()
@@ -256,40 +255,26 @@ void UpdateVoronoi()
 
     if (CP_Input_KeyTriggered(KEY_V))
     {
-        SetupVoronoi();
+        if (!drawDiagramStep)
+            SetupVoronoi();
     }
 
     if (drawDiagramStep)
     {
-        timer += CP_System_GetDt();
-		if (timer == timeBetweenDraw)
-		{
-			timer = 0.0f;
-            currPtIndex++;
-            triangulation.insertPoint(points[currPtIndex]);
-		}
-        if (currPtIndex + 1 == points.size())
-        {
-            drawDiagramStep = false;
-        }
+  //      timer += CP_System_GetDt();
+		//if (timer >= timeBetweenDraw)
+		//{
+		//	timer = 0.0f;
+  //          currPtIndex++;
+  //          triangulation.insertPoint(points[currPtIndex]);
+		//}
+  //      if (currPtIndex + 1 == points.size())
+  //      {
+  //          drawDiagramStep = false;
+  //      }
     }
- //   if (voronoiDrawMode == 0)
- //   {
- //       // Draw Voronoi diagram
- //       drawVoronoi();
-	//}
- //   else if (voronoiDrawMode == 1)
- //   {
- //       // Draw Delaunay triangles
- //       drawDelunay();
-	//}
- //   else if (voronoiDrawMode == 2)
- //   {
-	//	// Draw both
-	//	drawDelunay();
-	//	drawVoronoi();
-	//} 
- //   // else dont draw anything
+
+    drawDelunay();
 
 }
 
@@ -323,7 +308,6 @@ void game_update(void)
         UpdateChioriGUI();
     else
     {
-        SetupVoronoi();
         UpdateVoronoi();
     }
 
