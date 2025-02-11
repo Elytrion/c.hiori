@@ -111,27 +111,22 @@ namespace chiori
 
 		void insertPoint(const cVec2& inPoint)
 		{
+			//https://stackoverflow.com/questions/78747001/why-does-my-delaunay-triangulation-using-the-bowyer-watson-algorithm-not-work
 			std::vector<cDelEdge> edges{};
-	
-			std::vector<cDelTriangle> bad_tris{};
-			for (int i = 0; i < triangles.size(); ++i)
+
+			auto itr = triangles.begin();
+			while (itr != triangles.end())
 			{
-				const cDelTriangle& tri = triangles[i];
-				if (tri.circumcircleContains(inPoint))
+				if (itr->circumcircleContains(inPoint))
 				{
-					edges.emplace_back(tri.a, tri.b);
-					edges.emplace_back(tri.b, tri.c);
-					edges.emplace_back(tri.c, tri.a);
-					bad_tris.push_back(tri);
+					edges.emplace_back(itr->a, itr->b);
+					edges.emplace_back(itr->b, itr->c);
+					edges.emplace_back(itr->c, itr->a);
+					itr = triangles.erase(itr);
 				}
-			}
-			
-			std::vector<cDelTriangle> n_tris;
-			n_tris.reserve(triangles.size() - bad_tris.size());
-			for (const auto& tri : triangles) {
-				if (std::find(bad_tris.begin(), bad_tris.end(), tri) == bad_tris.end()) {
-					n_tris.push_back(tri);
-				}
+				else
+					++itr;
+				
 			}
 			
 			// Get unique edges, removing duplicates

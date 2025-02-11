@@ -164,7 +164,7 @@ void UpdateChioriGUI()
 
 // Voronoi diagram instance
 cVoronoiDiagram voronoi;
-//cDelaunayTriangulation triangulation;
+cDelaunayTriangulation triangulation;
 std::vector<cVec2> points;
 int voronoiDrawMode = 0;
 
@@ -222,6 +222,31 @@ void drawVoronoi()
     //}
 }
 
+bool drawDiagramStep = false;
+float timer = 0.0f;
+float timeBetweenDraw = 0.2f;
+int currPtIndex = 0;
+void SetupVoronoi()
+{
+    // Generate random points for testing
+    int numPoints = 50;
+    int bufferEdgeWidth = 200;
+    std::vector<cVec2> initPoints;
+    for (int i = 0; i < numPoints; i++) {
+        float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
+        float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
+        if (i < 4)
+        {
+            currPtIndex = i;
+            initPoints.push_back({ x, y });
+        }
+        points.push_back({ x, y });
+        drawDiagramStep = true;
+    }
+
+    triangulation.triangulate(initPoints.data(), initPoints.size());
+}
+
 void UpdateVoronoi()
 {
     for (const auto& p : points) {
@@ -231,54 +256,44 @@ void UpdateVoronoi()
 
     if (CP_Input_KeyTriggered(KEY_V))
     {
-        voronoiDrawMode = (voronoiDrawMode + 1) % 4;
+        SetupVoronoi();
     }
 
-    if (voronoiDrawMode == 0)
+    if (drawDiagramStep)
     {
-        // Draw Voronoi diagram
-        drawVoronoi();
-	}
-    else if (voronoiDrawMode == 1)
-    {
-        // Draw Delaunay triangles
-        drawDelunay();
-	}
-    else if (voronoiDrawMode == 2)
-    {
-		// Draw both
-		drawDelunay();
-		drawVoronoi();
-	} 
-    // else dont draw anything
-
-    //if (CP_Input_MouseClicked()) {
-    //    float mx = CP_Input_GetMouseX();
-    //    float my = CP_Input_GetMouseY();
-    //    cVec2 newPoint(mx, my);
-
-    //    //Add point to Voronoi
-    //    voronoi->insertPoint(newPoint);
-    //}
+        timer += CP_System_GetDt();
+		if (timer == timeBetweenDraw)
+		{
+			timer = 0.0f;
+            currPtIndex++;
+            triangulation.insertPoint(points[currPtIndex]);
+		}
+        if (currPtIndex + 1 == points.size())
+        {
+            drawDiagramStep = false;
+        }
+    }
+ //   if (voronoiDrawMode == 0)
+ //   {
+ //       // Draw Voronoi diagram
+ //       drawVoronoi();
+	//}
+ //   else if (voronoiDrawMode == 1)
+ //   {
+ //       // Draw Delaunay triangles
+ //       drawDelunay();
+	//}
+ //   else if (voronoiDrawMode == 2)
+ //   {
+	//	// Draw both
+	//	drawDelunay();
+	//	drawVoronoi();
+	//} 
+ //   // else dont draw anything
 
 }
 
-void SetupVoronoi()
-{
-    // Generate random points for testing
-    int numPoints = 50;
-    int bufferEdgeWidth = 200;
-    for (int i = 0; i < numPoints; i++) {
-        float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
-        float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
-        points.push_back({ x, y });
-    }
-    // Initialize Voronoi diagram
-    //voronoi = new cVoronoiDiagram(points);
 
-    //triangulation.triangulate(points.data(), points.size());
-    voronoi.CreateVoronoiDiagram(points.data(), points.size());
-}
 
 
 
@@ -307,7 +322,10 @@ void game_update(void)
     if (drawChiori)
         UpdateChioriGUI();
     else
+    {
+        SetupVoronoi();
         UpdateVoronoi();
+    }
 
 
     // Profiling info and frameRate testing
