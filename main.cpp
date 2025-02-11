@@ -162,23 +162,10 @@ void UpdateChioriGUI()
 #pragma endregion
 
 
-// Voronoi diagram instance
-cVoronoiDiagram voronoi;
-cDelaunayTriangulation triangulation;
 std::vector<cVec2> points;
+std::vector<std::vector<cVec2>> tris;
 int voronoiDrawMode = 0;
 
-void drawDelunay()
-{
-    CP_Settings_StrokeWeight(1);
-    CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
-
-    for (const auto& tri : triangulation.triangles) {
-        CP_Graphics_DrawLine(tri.a.x, tri.a.y, tri.b.x, tri.b.y);
-        CP_Graphics_DrawLine(tri.b.x, tri.b.y, tri.c.x, tri.c.y);
-        CP_Graphics_DrawLine(tri.c.x, tri.c.y, tri.a.x, tri.a.y);
-    }
-}
 
 cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, float screenWidth, float screenHeight)
 {
@@ -192,89 +179,47 @@ cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, flo
     return { start.x + normDir.x * t, start.y + normDir.y * t };
 }
 
-void drawVoronoi()
-{
-    CP_Settings_StrokeWeight(2);
-    CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Voronoi edges
 
-    float screenWidth = CP_System_GetWindowWidth();
-    float screenHeight = CP_System_GetWindowHeight();
-
-
-    for (const auto& edge : voronoi.edges) {
-        if (edge.infinite) {
-            // Compute intersection with screen boundary
-            CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255)); // Green for Voronoi edges
-            cVec2 endPoint = edge.origin + (edge.endDir.normalized() * 20.0f);// findScreenEdgeIntersection(edge.origin, edge.endDir, screenWidth, screenHeight);
-            CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, endPoint.x, endPoint.y);
-        }
-        else {
-            // Draw finite edge
-            CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Voronoi edges
-            CP_Graphics_DrawLine(edge.origin.x, edge.origin.y, edge.endDir.x, edge.endDir.y);
-        }
-    }
-
-    //// Draw Voronoi sites
-    //CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255)); // Yellow for sites
-    //for (const auto& cell : voronoi->cells) {
-    //    CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
-    //}
-}
-
-bool drawDiagramStep = false;
-float timer = 0.0f;
-float timeBetweenDraw = 0.2f;
-int currPtIndex = 0;
 void SetupVoronoi()
 {
     // Generate random points for testing
     int numPoints = 50;
     int bufferEdgeWidth = 200;
-    std::vector<cVec2> initPoints;
     for (int i = 0; i < numPoints; i++) {
         float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
         float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
-        if (i < 10)
-        {
-            currPtIndex = i;
-            initPoints.push_back({ x, y });
-        }
         points.push_back({ x, y });
-        drawDiagramStep = true;
     }
-    triangulation.triangulate(points.data(), points.size());
+    tris = triangulateDelaunator(points);
 }
 
 void UpdateVoronoi()
 {
-    for (const auto& p : points) {
-        CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255));
-		CP_Graphics_DrawCircle(p.x, p.y, 5);
-	}
 
     if (CP_Input_KeyTriggered(KEY_V))
     {
-        if (!drawDiagramStep)
-            SetupVoronoi();
+       points.clear();
+       SetupVoronoi();
     }
 
-    if (drawDiagramStep)
-    {
-  //      timer += CP_System_GetDt();
-		//if (timer >= timeBetweenDraw)
-		//{
-		//	timer = 0.0f;
-  //          currPtIndex++;
-  //          triangulation.insertPoint(points[currPtIndex]);
-		//}
-  //      if (currPtIndex + 1 == points.size())
-  //      {
-  //          drawDiagramStep = false;
-  //      }
+    { // delaunay drawing
+        CP_Settings_StrokeWeight(1);
+        CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
+
+        for (const auto& tri : tris) {
+            cVec2 a = tri[0];
+            cVec2 b = tri[1];
+            cVec2 c = tri[2];
+            CP_Graphics_DrawLine(a.x, a.y, b.x, b.y);
+            CP_Graphics_DrawLine(b.x, b.y, c.x, c.y);
+            CP_Graphics_DrawLine(c.x, c.y, a.x, a.y);
+        }
     }
 
-    drawDelunay();
+    for (const auto& p : points) {
+        CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255));
+        CP_Graphics_DrawCircle(p.x, p.y, 5);
+    }
 
 }
 
@@ -307,9 +252,8 @@ void game_update(void)
     if (drawChiori)
         UpdateChioriGUI();
     else
-    {
         UpdateVoronoi();
-    }
+    
 
 
     // Profiling info and frameRate testing

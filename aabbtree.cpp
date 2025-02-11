@@ -263,7 +263,7 @@ namespace chiori
 			cassert(child1 != null_node);
 			cassert(child2 != null_node);
 	
-			m_nodes[index].height = 1 + max(m_nodes[child1].height, m_nodes[child2].height);
+			m_nodes[index].height = 1 + c_max(m_nodes[child1].height, m_nodes[child2].height);
 			m_nodes[index].aabb.merge(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
 			index = m_nodes[index].parent;
@@ -314,7 +314,7 @@ namespace chiori
 				int child2 = m_nodes[index].child2;
 
 				m_nodes[index].aabb.merge(m_nodes[child1].aabb, m_nodes[child2].aabb);
-				m_nodes[index].height = 1 + max(m_nodes[child1].height, m_nodes[child2].height);
+				m_nodes[index].height = 1 + c_max(m_nodes[child1].height, m_nodes[child2].height);
 
 				index = m_nodes[index].parent;
 			}
@@ -388,8 +388,8 @@ namespace chiori
 				A->aabb.merge(B->aabb, G->aabb);
 				C->aabb.merge(A->aabb, F->aabb);
 
-				A->height = 1 + max(B->height, G->height);
-				C->height = 1 + max(A->height, F->height);
+				A->height = 1 + c_max(B->height, G->height);
+				C->height = 1 + c_max(A->height, F->height);
 			}
 			else
 			{
@@ -399,8 +399,8 @@ namespace chiori
 				A->aabb.merge(B->aabb, F->aabb);
 				C->aabb.merge(A->aabb, G->aabb);
 
-				A->height = 1 + max(B->height, F->height);
-				C->height = 1 + max(A->height, G->height);
+				A->height = 1 + c_max(B->height, F->height);
+				C->height = 1 + c_max(A->height, G->height);
 			}
 
 			return iC;
@@ -447,8 +447,8 @@ namespace chiori
 				A->aabb.merge(C->aabb, E->aabb);
 				B->aabb.merge(A->aabb, D->aabb);
 
-				A->height = 1 + max(C->height, E->height);
-				B->height = 1 + max(A->height, D->height);
+				A->height = 1 + c_max(C->height, E->height);
+				B->height = 1 + c_max(A->height, D->height);
 			}
 			else
 			{
@@ -458,8 +458,8 @@ namespace chiori
 				A->aabb.merge(C->aabb, D->aabb);
 				B->aabb.merge(A->aabb, E->aabb);
 
-				A->height = 1 + max(C->height, D->height);
-				B->height = 1 + max(A->height, E->height);
+				A->height = 1 + c_max(C->height, D->height);
+				B->height = 1 + c_max(A->height, E->height);
 			}
 
 			return iB;
@@ -515,7 +515,7 @@ namespace chiori
 
 		int height1 = ComputeHeight(node->child1);
 		int height2 = ComputeHeight(node->child2);
-		return 1 + max(height1, height2);
+		return 1 + c_max(height1, height2);
 	}
 
 	int cDynamicTree::ComputeHeight() const
@@ -540,7 +540,7 @@ namespace chiori
 			int child1 = node->child1;
 			int child2 = node->child2;
 			int balance = fabs(m_nodes[child2].height - m_nodes[child1].height);
-			maxBalance = max(maxBalance, balance);
+			maxBalance = c_max(maxBalance, balance);
 		}
 
 		return maxBalance;

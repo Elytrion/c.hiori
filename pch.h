@@ -1,5 +1,5 @@
 #pragma once
-
+#define NOMINMAX
 #include <iostream>
 #include <iomanip>
 #include <fstream>

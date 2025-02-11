@@ -380,7 +380,7 @@ namespace chiori
 				// the points move smoothly.
 				float rA = proxyA.m_radius;
 				float rB = proxyB.m_radius;
-				output.distance = max(0.0f, output.distance - rA - rB);
+				output.distance = c_max(0.0f, output.distance - rA - rB);
 				cVec2 normal = (output.pointB - output.pointA).normalized();
 				cVec2 offsetA { rA * normal.x, rA * normal.y };
 				cVec2 offsetB { rB * normal.x, rB * normal.y };

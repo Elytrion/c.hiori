@@ -161,5 +161,8 @@
     <ClInclude Include="voronoi.h">
       <Filter>Headers\Fracture</Filter>
     </ClInclude>
+    <ClInclude Include="delaunator.hpp">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

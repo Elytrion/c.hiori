@@ -94,8 +94,8 @@ namespace chiori
 			delete[] oldBuffer;
 		}
 
-		m_pairBuffer[m_pairCount].a = min(proxyId, m_queryProxyId);
-		m_pairBuffer[m_pairCount].b = max(proxyId, m_queryProxyId);
+		m_pairBuffer[m_pairCount].a = c_min(proxyId, m_queryProxyId);
+		m_pairBuffer[m_pairCount].b = c_max(proxyId, m_queryProxyId);
 		cPair test1 = m_pairBuffer[0];
 		cPair test2 = m_pairBuffer[1];
 		++m_pairCount;

@@ -1,6 +1,8 @@
 #pragma once
+#define NOMINMAX
 #include "chioriMath.h"
 #include "chioriAllocator.h"
+#include "delaunator.hpp"
 #include <vector>
 
 
@@ -222,5 +224,34 @@ namespace chiori
 
 	};
 
+
+	std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
+	{
+		if (points.size() < 3)
+			return {};
+
+		std::vector<float> coords;
+		std::vector<std::vector<cVec2>> triangles;
+
+		// Convert cVec2 points into flat double array
+		for (const auto& p : points) {
+			coords.push_back(p.x);
+			coords.push_back(p.y);
+		}
+
+		// Perform Delaunay triangulation
+		delaunator::Delaunator d(coords);
+
+		// Convert output triangles back into cVec2
+		for (std::size_t i = 0; i < d.triangles.size(); i += 3) {
+			cVec2 v0(d.coords[2 * d.triangles[i]], d.coords[2 * d.triangles[i] + 1]);
+			cVec2 v1(d.coords[2 * d.triangles[i + 1]], d.coords[2 * d.triangles[i + 1] + 1]);
+			cVec2 v2(d.coords[2 * d.triangles[i + 2]], d.coords[2 * d.triangles[i + 2] + 1]);
+
+			triangles.push_back({ v0, v1, v2 });
+		}
+
+		return triangles;
+	}
 }
 
