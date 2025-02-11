@@ -29,13 +29,13 @@ namespace chiori
 			float distSqr = distanceSqr(p, center);
 			return distSqr <= radiusSqr;
 		}
-		
+
 		bool operator==(const cDelTriangle& other) const
 		{
 			// handle cyclic ordering
 			return	(a == other.a && b == other.b && c == other.c) ||
-					(a == other.b && b == other.c && c == other.a) ||
-					(a == other.c && b == other.a && c == other.b);
+				(a == other.b && b == other.c && c == other.a) ||
+				(a == other.c && b == other.a && c == other.b);
 		}
 
 		cVec2 a, b, c;
@@ -54,16 +54,9 @@ namespace chiori
 	};
 
 	class cDelaunayTriangulation
-	{		
-	public:
-		std::vector<cDelTriangle> triangles{};
-
-		void triangulate(const cVec2* points, unsigned inCount)
+	{
+		cDelTriangle getSuperTri(const cVec2* points, unsigned inCount)
 		{
-			// check for valid input
-			cassert(points);
-			cassert(inCount > 0);
-			// Create bounding 'super' triangle
 			// Find the maximum and minimum vertex bounds.
 			// This is to allow calculation of the bounding triangle
 			float xmin = points[0].x, xmax = xmin;
@@ -83,7 +76,64 @@ namespace chiori
 			cVec2 p1 = { mid.x - 2 * maxD, mid.y - maxD };
 			cVec2 p2 = { mid.x, mid.y + 2 * maxD };
 			cVec2 p3 = { mid.x + 2 * maxD, mid.y - maxD };
-			const cDelTriangle st = { p1, p2, p3 };
+
+			return { p1,p2,p3 };
+		}
+
+		void filterTriangles(cDelTriangle inFilteredTri)
+		{
+			std::vector<cDelTriangle> filteredTris{};
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				// remove any triangles that share a vertex with the input filtered triangle (usually the super triangle)
+				if (
+					tri.a == inFilteredTri.a || tri.a == inFilteredTri.b || tri.a == inFilteredTri.c ||
+					tri.b == inFilteredTri.a || tri.b == inFilteredTri.b || tri.b == inFilteredTri.c ||
+					tri.c == inFilteredTri.a || tri.c == inFilteredTri.b || tri.c == inFilteredTri.c
+					)
+					continue;
+
+				filteredTris.push_back(tri);
+			}
+			triangles = filteredTris;
+		}
+
+		void filterEdges(std::vector<cDelEdge>& edges)
+		{
+			std::vector<cDelEdge> uniqueEdges{};
+			for (int i = 0; i < edges.size(); ++i)
+			{
+				bool isUnique = true;
+				for (int j = 0; j < edges.size(); ++j)
+				{
+					if (i == j)
+						continue;
+
+					if (edges[i] == edges[j])
+					{
+						isUnique = false;
+						break;
+					}
+				}
+				if (isUnique)
+				{
+					uniqueEdges.push_back(edges[i]);
+				}
+			}
+			edges = uniqueEdges;
+		}
+
+	public:
+		std::vector<cDelTriangle> triangles{};
+
+		void triangulate(const cVec2* points, unsigned inCount)
+		{
+			// check for valid input
+			cassert(points);
+			cassert(inCount > 0);
+			// Create bounding 'super' triangle
+			const cDelTriangle st = getSuperTri(points, inCount);
 			triangles = { st }; // Initialize triangles while adding bounding triangle
 			// Triangulate each vertex
 			for (unsigned i = 0; i < inCount; ++i)
@@ -91,59 +141,30 @@ namespace chiori
 				insertPoint(points[i]);
 			}
 			// Remove triangles that share edges with super triangle
-			// (this includes the super triangle itself)
-			std::vector<cDelTriangle> filteredTris{};
-			for (int i = 0; i < triangles.size(); ++i)
-			{
-				const cDelTriangle& tri = triangles[i];
-				// remove any triangles that share a vertex with the super triangle
-				if (
-					tri.a == st.a || tri.a == st.b || tri.a == st.c ||
-					tri.b == st.a || tri.b == st.b || tri.b == st.c ||
-					tri.c == st.a || tri.c == st.b || tri.c == st.c
-					)
-					continue;
-
-				filteredTris.push_back(tri);
-			}
-			triangles.swap(filteredTris);
+			// (this auto includes the super triangle itself)
+			filterTriangles(st);
 		}
 
 		void insertPoint(const cVec2& inPoint)
 		{
-			//https://stackoverflow.com/questions/78747001/why-does-my-delaunay-triangulation-using-the-bowyer-watson-algorithm-not-work
 			std::vector<cDelEdge> edges{};
+			std::vector<cDelTriangle> n_tris{};
 
-			auto itr = triangles.begin();
-			while (itr != triangles.end())
+			// Remove triangles with circumcircles containing the vertex
+			for (int i = 0; i < triangles.size(); ++i)
 			{
-				if (itr->circumcircleContains(inPoint))
+				const cDelTriangle& tri = triangles[i];
+				if (tri.circumcircleContains(inPoint))
 				{
-					edges.emplace_back(itr->a, itr->b);
-					edges.emplace_back(itr->b, itr->c);
-					edges.emplace_back(itr->c, itr->a);
-					itr = triangles.erase(itr);
+					edges.emplace_back(tri.a, tri.b);
+					edges.emplace_back(tri.b, tri.c);
+					edges.emplace_back(tri.c, tri.a);
 				}
 				else
-					++itr;
-				
+					n_tris.push_back(tri);
 			}
-			
 			// Get unique edges, removing duplicates
-			std::sort(edges.begin(), edges.end());
-			std::vector<cDelEdge> uniqueEdges;
-			for (size_t i = 0; i < edges.size(); ++i) {
-				if (i + 1 < edges.size() && edges[i] ==
-					edges[i + 1])
-				{
-					++i;
-				}
-				else {
-					uniqueEdges.push_back(edges[i]);
-				}
-			}
-			edges.swap(uniqueEdges);
-
+			filterEdges(edges);
 			// Create new triangles from the unique edges and new vertex
 			for (int i = 0; i < edges.size(); ++i)
 			{
@@ -152,6 +173,38 @@ namespace chiori
 			}
 			// replace the old list of triangles with the new one
 			triangles = n_tris;
+		}
+
+		void removePoint(const cVec2& inPoint) // TODO: not working
+		{
+			std::vector<cDelTriangle> unaffectedTris{};
+			std::vector<cDelEdge> boundaryEdges{};
+
+			for (int i = 0; i < triangles.size(); ++i)
+			{
+				const cDelTriangle& tri = triangles[i];
+				if (tri.a == inPoint || tri.b == inPoint || tri.c == inPoint)
+				{
+					boundaryEdges.emplace_back(tri.a, tri.b);
+					boundaryEdges.emplace_back(tri.b, tri.c);
+					boundaryEdges.emplace_back(tri.c, tri.a);
+				}
+				else
+					unaffectedTris.push_back(tri);
+			}
+
+			if (unaffectedTris.size() == triangles.size())
+				return; // no triangles were affected, meaning either the point is invalid or not within the triangulation at all
+
+			triangles = unaffectedTris;
+
+			filterEdges(boundaryEdges);
+
+			for (int i = 0; i < boundaryEdges.size(); ++i)
+			{
+				const cDelEdge& e = boundaryEdges[i];
+				triangles.emplace_back(e.p1, e.p2, inPoint);
+			}
 		}
 	};
 
