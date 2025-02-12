@@ -161,47 +161,30 @@ void UpdateChioriGUI()
 }
 #pragma endregion
 
-
+std::vector<cVec2> used_points;
 std::vector<cVec2> points;
 std::vector<std::vector<cVec2>> tris;
-int voronoiDrawMode = 0;
-
-
-cVec2 findScreenEdgeIntersection(const cVec2& start, const cVec2& direction, float screenWidth, float screenHeight)
-{
-    const cVec2 normDir = direction.normalized();
-    float tXMin = (normDir.x > 0) ? (screenWidth - start.x) / normDir.x : (0 - start.x) / normDir.x;
-    float tYMin = (normDir.y > 0) ? (screenHeight - start.y) / normDir.y : (0 - start.y) / normDir.y;
-
-    // Get the smallest positive t-value
-    float t = c_min(tXMin, tYMin);
-
-    return { start.x + normDir.x * t, start.y + normDir.y * t };
-}
+int numPoints = 70;
+int initialNumPoints = 10;
 
 
 void SetupVoronoi()
 {
     // Generate random points for testing
-    int numPoints = 50;
-    int bufferEdgeWidth = 200;
+    int bufferEdgeWidth = 100;
     for (int i = 0; i < numPoints; i++) {
         float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
         float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
-        points.push_back({ x, y });
+        if (i < initialNumPoints)
+            used_points.push_back({ x, y });
+        else
+            points.push_back({ x, y });
     }
-    tris = triangulateDelaunator(points);
+    tris = triangulateDelaunator(used_points);
 }
 
-void UpdateVoronoi()
+void DrawVoronoi()
 {
-
-    if (CP_Input_KeyTriggered(KEY_V))
-    {
-       points.clear();
-       SetupVoronoi();
-    }
-
     { // delaunay drawing
         CP_Settings_StrokeWeight(1);
         CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
@@ -215,10 +198,44 @@ void UpdateVoronoi()
             CP_Graphics_DrawLine(c.x, c.y, a.x, a.y);
         }
     }
-
-    for (const auto& p : points) {
+    
+    for (const auto& p : used_points) {
         CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255));
         CP_Graphics_DrawCircle(p.x, p.y, 5);
+    }
+
+	for (const auto& p : points) {
+        CP_Settings_Fill(CP_Color_Create(0, 255, 255, 255));
+        CP_Graphics_DrawCircle(p.x, p.y, 5);
+    }
+}
+
+float timer = 0.5f;
+void UpdateVoronoi()
+{
+
+    if (CP_Input_KeyTriggered(KEY_V))
+    {
+       used_points.clear();
+       points.clear();
+       SetupVoronoi();
+    }
+
+    DrawVoronoi();
+
+    if (used_points.size() < numPoints)
+    {
+        timer -= CP_System_GetDt();
+        if (timer <= 0.0f)
+        {
+            timer = 0.075f;
+            // move the last point of points to used_points
+            // then retriangulate
+            used_points.push_back(std::move(points.front()));
+            points.erase(points.begin());
+            tris.clear();
+            tris = triangulateDelaunator(used_points);
+        }
     }
 
 }
