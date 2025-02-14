@@ -3,6 +3,7 @@
 #include "physicsWorld.h"
 #include "graphics.h"
 #include "cprocessing.h"
+#include "uimanager.h"
 
 using namespace chiori;
 
@@ -589,8 +590,8 @@ public:
 #pragma endregion
 
 #pragma region Scene Manager
-SceneManager::SceneManager(DebugGraphics* drawer, void* world)
-    : drawer(drawer), world(world)
+SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world)
+    : drawer(drawer), uimanager(uimanager), world(world)
 {
 
     AddScene(new DefaultScene(drawer, world));
@@ -660,6 +661,10 @@ void SceneManager::Update(float dt)
     if (CP_Input_KeyTriggered(KEY_S))
     {
         drawStats = !drawStats;
+    }
+    if (CP_Input_KeyTriggered(KEY_U))
+    {
+        drawUI = !drawUI;
     }
     if (CP_Input_KeyTriggered(KEY_F1))
     {
@@ -745,6 +750,10 @@ void SceneManager::Update(float dt)
         drawer->DrawUIText(x, y, buffer, 15, textColor);
         y += 20;
 
+        snprintf(buffer, 64, "Press U to toggle UI");
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
+
         snprintf(buffer, 64, "Press F1 to toggle solvers");
         drawer->DrawUIText(x, y, buffer, 15, textColor);
         y += 20;
@@ -776,6 +785,12 @@ void SceneManager::Update(float dt)
         char nbuffer[100];
         sprintf_s(nbuffer, 100, "FPS: %f", CP_System_GetFrameRate());
         CP_Font_DrawText(nbuffer, 20, 20);
+    }
+
+    if (drawUI)
+    {
+        drawer->DrawUI();
+        uimanager->Update();
     }
 }
 

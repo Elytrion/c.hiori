@@ -337,8 +337,6 @@ void DebugGraphics::DrawFrame(void* world)
 
 		pworld->DebugDraw(&draw);
 	}
-
-	DrawUI();
 }
 
 

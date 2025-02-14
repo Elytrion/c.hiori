@@ -26,7 +26,7 @@ cVec2 middle = cVec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
 cPhysicsWorld world; // create an instance of the physics world
 DebugGraphics drawer{ recommendedWidth, recommendedHeight }; // create a graphics instance to draw the world and UI
 UIManager ui_manager{ &drawer }; // create a ui manager to handle UI input events
-SceneManager scene_manager{ &drawer, &world }; // create a scene manager to handle different scenes
+SceneManager scene_manager{ &drawer, &ui_manager, &world }; // create a scene manager to handle different scenes
 
 #pragma region c.hiori GUI
 void InitUI()
@@ -125,7 +125,7 @@ void InitUI()
     {
         // Define button configuration
         UIComponentConfig buttonConfig{
-            startX + spacing * i, y,                    // x, y position
+            startX + spacing * i, y,    // x, y position
             btnDim.x, btnDim.y,         // width, height
             0.9f, 0.9f, 0.9f, 1.0f,     // RGBA color
             buttonNames[i],      // Button text
@@ -149,7 +149,6 @@ void InitChioriGUI()
 
 void UpdateChioriGUI()
 {
-    ui_manager.Update();
     scene_manager.Update(CP_System_GetDt());
 
     if (CP_Input_KeyTriggered(KEY_EQUAL))

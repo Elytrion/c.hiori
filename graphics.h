@@ -29,7 +29,7 @@ private:
 	chiori::cVec2 initScreenDimensions{ 1600, 900 };
 	std::vector<UIElement> uiElements; // Cache of UI elements
 
-	void DrawUI();
+
 	
 public:
 	DebugGraphics(float screenWidth, float screenHeight) : screenDimensions(screenWidth, screenHeight), initScreenDimensions(screenWidth, screenHeight) {}
@@ -68,6 +68,7 @@ public:
 	void DrawUILine(float x1, float y1, float x2, float y2, CP_Color color);
 
 	void DrawFrame(void* world);
+	void DrawUI(); // always call this AFTER draw frame
 
 	std::vector<UIElement>& getUIElements() { return uiElements; }
 };

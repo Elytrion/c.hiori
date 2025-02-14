@@ -7,9 +7,9 @@ namespace chiori
 	struct cFractureMaterial
 	{
 		float toughness{ 0.5f };				// Toughness of the material
-		float elasticity{ 10.0f };             // Young's Modulus (elasticity)
+		float elasticity{ 10.0f };              // Young's Modulus (elasticity)
 		float brittleness{ 0.5f };              // Brittleness factor
-		cVec2 anisotropy{ cVec2::zero };			// Anisotropy direction
+		cVec2 anisotropy{ cVec2::zero };		// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
 		float k{ 1.0f };						// Scaling factor for fine tuning
 		float minPoints{ 1 };					// minimum number of fragments (1 means no fragmentation)

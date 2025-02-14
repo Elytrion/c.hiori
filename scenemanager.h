@@ -2,6 +2,7 @@
 
 
 class DebugGraphics;
+class UIManager;
 
 struct PhysicsSceneSettings
 {
@@ -42,20 +43,22 @@ class SceneManager
 {
 private:
 	DebugGraphics* drawer{ nullptr };
+	UIManager* uimanager{ nullptr };
 	void* world{ nullptr };
 	std::vector<PhysicsScene*> scenes{};
-
+	
 	bool isPaused{ true };
 	bool stepOnce{ false };
 public:
-	bool drawCamera{ true };
+	bool drawCamera{ false };
 	bool drawInstructions{ true };
-	bool drawStats{ true };
+	bool drawStats{ false };
+	bool drawUI{ false };
 
 	int currentScene{ -1 };
 	int sceneCount{ 0 };
 
-	SceneManager(DebugGraphics* drawer, void* world);
+	SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world);
 	~SceneManager();
 	
 	void ChangeScene(int sceneIndex);
