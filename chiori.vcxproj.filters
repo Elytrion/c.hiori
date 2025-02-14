@@ -162,7 +162,7 @@
       <Filter>Headers\Fracture</Filter>
     </ClInclude>
     <ClInclude Include="delaunator.hpp">
-      <Filter>Headers</Filter>
+      <Filter>Headers\Fracture</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

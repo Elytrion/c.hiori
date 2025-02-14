@@ -7,7 +7,6 @@
 #include "uimanager.h"
 #include "scenemanager.h"
 #include "physicsWorld.h"
-//#include "delaunay.h"
 #include "voronoi.h"
 
 using namespace chiori;
@@ -166,7 +165,7 @@ std::vector<cVec2> points;
 std::vector<std::vector<cVec2>> tris;
 int numPoints = 70;
 int initialNumPoints = 10;
-
+cVoronoiDiagram voronoi;
 
 void SetupVoronoi()
 {
@@ -180,11 +179,15 @@ void SetupVoronoi()
         else
             points.push_back({ x, y });
     }
-    tris = triangulateDelaunator(used_points);
+    voronoi.create(used_points.data(), used_points.size());
+    tris = cVoronoiDiagram::triangulateDelaunator(used_points);
 }
 
+bool drawTriangles = true;
+bool drawCells = false;
 void DrawVoronoi()
 {
+    if (drawTriangles)
     { // delaunay drawing
         CP_Settings_StrokeWeight(1);
         CP_Settings_Stroke(CP_Color_Create(255, 0, 0, 255)); // Red for Delaunay edges
@@ -196,6 +199,33 @@ void DrawVoronoi()
             CP_Graphics_DrawLine(a.x, a.y, b.x, b.y);
             CP_Graphics_DrawLine(b.x, b.y, c.x, c.y);
             CP_Graphics_DrawLine(c.x, c.y, a.x, a.y);
+        }
+    }
+
+    if (drawCells)
+    { // voronoi drawing
+        for (const auto& cell : voronoi.cells)
+        {
+            for (const auto& edge : cell.edges)
+            {
+                if (edge.infinite)
+                {
+                    //const cVec2& p1 = edge.origin;
+                    //const cVec2& p2 = edge.origin + edge.endDir * 1000;
+                    //CP_Settings_StrokeWeight(1);
+                    //CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Delaunay edges
+                    //CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
+                    continue;
+                }
+                const cVec2& p1 = edge.origin;
+                const cVec2& p2 = edge.endDir;
+                CP_Settings_StrokeWeight(1);
+                CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Delaunay edges
+                CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
+            }
+
+            //CP_Settings_Fill(CP_Color_Create(0, 255, 100, 255));
+            //CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
         }
     }
     
@@ -214,11 +244,21 @@ float timer = 0.5f;
 void UpdateVoronoi()
 {
 
-    if (CP_Input_KeyTriggered(KEY_V))
+    if (CP_Input_KeyTriggered(KEY_EQUAL))
     {
        used_points.clear();
        points.clear();
        SetupVoronoi();
+    }
+
+
+    if (CP_Input_KeyTriggered(KEY_D))
+    {
+        drawTriangles = !drawTriangles;
+    }
+    if (CP_Input_KeyTriggered(KEY_V))
+    {
+        drawCells = !drawCells;
     }
 
     DrawVoronoi();
@@ -228,13 +268,15 @@ void UpdateVoronoi()
         timer -= CP_System_GetDt();
         if (timer <= 0.0f)
         {
-            timer = 0.075f;
+            timer = 0.05f;
             // move the last point of points to used_points
             // then retriangulate
             used_points.push_back(std::move(points.front()));
             points.erase(points.begin());
             tris.clear();
-            tris = triangulateDelaunator(used_points);
+            voronoi.cells.clear();
+            tris = cVoronoiDiagram::triangulateDelaunator(used_points);
+            voronoi.create(used_points.data(), used_points.size());
         }
     }
 

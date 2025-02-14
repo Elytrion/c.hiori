@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include "commons.h"
+#include <bitset>
 
 namespace chiori
 {
@@ -216,6 +217,10 @@ namespace chiori
 		{
 			return { c_max(a.x, b.x), c_max(a.y,b.y) };
 		}
+
+		bool operator<(const cVec2& other) const {
+			return (x < other.x) || ((x == other.x) && (y < other.y));
+		}
 	};
 
 	inline constexpr cVec2 cVec2::zero = cVec2{ 0.0f, 0.0f };
@@ -324,4 +329,13 @@ namespace chiori
 		C.p = (B.p - A.p).rotated(-A.q);
 		return C;
 	}
+
+
+	struct cVec2Hash
+	{
+		size_t operator()(const cVec2& v) const noexcept
+		{
+			return std::hash<float>{}(v.x) ^ (std::hash<float>{}(v.y) << 1);
+		}
+	};
 }
