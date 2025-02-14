@@ -32,7 +32,8 @@ namespace chiori
 			
 			// Map each site (Delaunay point) to its Voronoi edges
 			std::unordered_map<cVec2, cVCell, cVec2Hash> voronoiCells;
-
+			cVec2 voronoiCentriod{ 0,0 };
+			size_t cc_count{ 0 };
 			// Compute circumcenters and construct Voronoi edges
 			std::unordered_map<size_t, cVec2> circumcenters;
 			for (size_t i = 0; i < triangles.size(); i++) {
@@ -42,6 +43,13 @@ namespace chiori
 
 				cVec2 circum = circumcenter(a, b, c);
 				circumcenters[i] = circum;
+				voronoiCentriod += circum;
+				cc_count++;
+			}
+
+			if (cc_count > 0)
+			{
+				voronoiCentriod /= cc_count;
 			}
 
 			// Generate Voronoi edges by connecting circumcenters of adjacent triangles
@@ -63,6 +71,12 @@ namespace chiori
 						cVec2 midpoint((triangles[i][edgeStart].x + triangles[i][edgeEnd].x) / 2,
 							(triangles[i][edgeStart].y + triangles[i][edgeEnd].y) / 2);
 						cVec2 dir = { circumcenters[t0].x - midpoint.x, circumcenters[t0].y - midpoint.y };
+
+						if (dir.dot(voronoiCentriod - midpoint) > 0)
+						{
+							dir = -dir;
+						}
+
 						voronoiCells[triangles[i][edgeStart]].edges.push_back(cVEdge(circumcenters[t0], dir, true));
 					}
 				}

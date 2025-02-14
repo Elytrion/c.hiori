@@ -155,9 +155,6 @@
     <ClInclude Include="scenemanager.h">
       <Filter>Headers\GUI</Filter>
     </ClInclude>
-    <ClInclude Include="delaunay.h">
-      <Filter>Headers\Fracture</Filter>
-    </ClInclude>
     <ClInclude Include="voronoi.h">
       <Filter>Headers\Fracture</Filter>
     </ClInclude>

@@ -239,7 +239,6 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="contact.h" />
     <ClInclude Include="cShape.h" />
     <ClInclude Include="delaunator.hpp" />
-    <ClInclude Include="delaunay.h" />
     <ClInclude Include="flag.h" />
     <ClInclude Include="fracture.h" />
     <ClInclude Include="geom.h" />

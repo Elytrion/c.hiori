@@ -183,8 +183,10 @@ void SetupVoronoi()
     tris = cVoronoiDiagram::triangulateDelaunator(used_points);
 }
 
-bool drawTriangles = true;
-bool drawCells = false;
+bool drawTriangles = false;
+bool drawCells = true;
+bool drawCentriod = false;
+bool drawPoints = true;
 void DrawVoronoi()
 {
     if (drawTriangles)
@@ -210,11 +212,11 @@ void DrawVoronoi()
             {
                 if (edge.infinite)
                 {
-                    //const cVec2& p1 = edge.origin;
-                    //const cVec2& p2 = edge.origin + edge.endDir * 1000;
-                    //CP_Settings_StrokeWeight(1);
-                    //CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Delaunay edges
-                    //CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
+                    const cVec2& p1 = edge.origin;
+                    const cVec2& p2 = edge.origin + edge.endDir * 100;
+                    CP_Settings_StrokeWeight(1);
+                    CP_Settings_Stroke(CP_Color_Create(0, 255, 0, 255)); // Green for Delaunay edges
+                    CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
                     continue;
                 }
                 const cVec2& p1 = edge.origin;
@@ -224,11 +226,17 @@ void DrawVoronoi()
                 CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
             }
 
-            //CP_Settings_Fill(CP_Color_Create(0, 255, 100, 255));
-            //CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 5);
+            if (drawCentriod)
+            {
+                CP_Settings_Fill(CP_Color_Create(0, 255, 100, 255));
+                CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 10);
+            }
         }
     }
-    
+
+    if (!drawPoints)
+        return;
+
     for (const auto& p : used_points) {
         CP_Settings_Fill(CP_Color_Create(255, 255, 0, 255));
         CP_Graphics_DrawCircle(p.x, p.y, 5);
@@ -260,7 +268,14 @@ void UpdateVoronoi()
     {
         drawCells = !drawCells;
     }
-
+    if (CP_Input_KeyTriggered(KEY_P))
+    {
+        drawPoints = !drawPoints;
+    }
+    if (CP_Input_KeyTriggered(KEY_C))
+    {
+        drawCentriod = !drawCentriod;
+    }
     DrawVoronoi();
 
     if (used_points.size() < numPoints)
