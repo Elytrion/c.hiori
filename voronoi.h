@@ -1,6 +1,5 @@
 #pragma once
 #include "delaunator.hpp"
-#include <unordered_map>
 
 
 namespace chiori
@@ -12,80 +11,88 @@ namespace chiori
 		bool infinite{ false }; // if true, the edge is infinite
 		cVEdge(const cVec2& inOrigin = cVec2::zero, const cVec2& inEndDir = cVec2::zero, bool inInfinite = false) :
 			origin{ inOrigin }, endDir{ inEndDir }, infinite{ inInfinite } {}
+
+		bool operator==(const cVEdge& other) const { return origin == other.origin && endDir == other.endDir; }
 	};
 
-	struct cVCell
+	struct cVVert
 	{
-		cVec2 site;					// the centriod/site of the cell
-		std::vector<cVEdge> edges;	// the edges that make up this cell
+		cVec2 site;							// the centriod/site of the vertex
+		std::vector<unsigned> edgeIndices;	// the indices of the edges that make up this vertex
 	};
+
 
 	class cVoronoiDiagram
 	{
 	public:
-		std::vector<cVCell> cells; // Each cell corresponds to a Voronoi region
+		std::vector<cVVert> vertices; // Each vertex corresponds to a Voronoi region
+		std::vector<cVEdge> edges; // All unique edges in the Voronoi diagram
 
 		void create(const cVec2* points, unsigned count)
 		{
 			std::vector<cVec2> pointsVec(points, points + count);
 			std::vector<std::vector<cVec2>> triangles = triangulateDelaunator(pointsVec);
-			
-			// Map each site (Delaunay point) to its Voronoi edges
-			std::unordered_map<cVec2, cVCell, cVec2Hash> voronoiCells;
-			cVec2 voronoiCentriod{ 0,0 };
-			size_t cc_count{ 0 };
-			// Compute circumcenters and construct Voronoi edges
-			std::unordered_map<size_t, cVec2> circumcenters;
-			for (size_t i = 0; i < triangles.size(); i++) {
-				cVec2 a = triangles[i][0];
-				cVec2 b = triangles[i][1];
-				cVec2 c = triangles[i][2];
 
-				cVec2 circum = circumcenter(a, b, c);
-				circumcenters[i] = circum;
-				voronoiCentriod += circum;
+			std::vector<cVec2> circumcenters;
+			cVec2 voronoiCentroid(0, 0);
+			size_t cc_count = 0;
+
+			for (size_t i = 0; i < triangles.size(); i++) {
+				cVec2 circum = circumcenter(triangles[i][0], triangles[i][1], triangles[i][2]);
+				circumcenters.push_back(circum);
+				voronoiCentroid += circum;
 				cc_count++;
 			}
 
-			if (cc_count > 0)
-			{
-				voronoiCentriod /= cc_count;
+			if (cc_count > 0) {
+				voronoiCentroid /= cc_count;
 			}
+			std::unordered_map<cVec2, std::vector<unsigned>, cVec2Hash> siteToEdges;
+			for (size_t i = 0; i < triangles.size(); i++) {
+				cVVert vertex;
+				vertex.site = circumcenters[i];
 
-			// Generate Voronoi edges by connecting circumcenters of adjacent triangles
-			for (size_t i = 0; i < triangles.size(); i++)
-			{
-				for (size_t j = 0; j < 3; j++)
-				{
+				for (size_t j = 0; j < 3; j++) {
 					size_t edgeStart = j;
 					size_t edgeEnd = (j + 1) % 3;
 
 					size_t t0 = i;
 					size_t t1 = findAdjacentTriangle(i, edgeStart, edgeEnd, triangles);
 
+					cVEdge edge;
 					if (t1 != std::numeric_limits<size_t>::max()) {
-						voronoiCells[triangles[i][edgeStart]].edges.push_back(cVEdge(circumcenters[t0], circumcenters[t1]));
+						edge = cVEdge(circumcenters[t0], circumcenters[t1]);
 					}
 					else {
-						// Infinite edge handling (convex hull edges)
-						cVec2 midpoint((triangles[i][edgeStart].x + triangles[i][edgeEnd].x) / 2,
-							(triangles[i][edgeStart].y + triangles[i][edgeEnd].y) / 2);
-						cVec2 dir = { circumcenters[t0].x - midpoint.x, circumcenters[t0].y - midpoint.y };
+						cVec2 midpoint = (triangles[i][edgeStart] + triangles[i][edgeEnd]) * 0.5f;
+						cVec2 dir = (circumcenters[t0] - midpoint);
 
-						if (dir.dot(voronoiCentriod - midpoint) > 0)
-						{
+						if (dir.dot(voronoiCentroid - midpoint) > 0) {
 							dir = -dir;
 						}
 
-						voronoiCells[triangles[i][edgeStart]].edges.push_back(cVEdge(circumcenters[t0], dir, true));
+						edge = cVEdge(circumcenters[t0], dir, true);
 					}
-				}
-			}
 
-			// Convert map to vector
-			for (auto& pair : voronoiCells) {
-				pair.second.site = centriod(pair.second);
-				cells.push_back(pair.second);
+					auto itr = std::find_if(edges.begin(), edges.end(), [&](const cVEdge& e) {
+						return e == edge;
+						});
+					int edgeIndex = -1;
+					if (itr != edges.end()) {
+						edgeIndex = std::distance(edges.begin(), itr);
+					}
+					else
+					{
+						edges.push_back(edge);
+						edgeIndex = edges.size() - 1;
+					}
+					vertex.edgeIndices.push_back(edgeIndex);
+
+					siteToEdges[triangles[i][edgeStart]].push_back(edgeIndex);
+					siteToEdges[triangles[i][edgeEnd]].push_back(edgeIndex);
+				}
+
+				vertices.push_back(vertex);
 			}
 		}
 
@@ -142,12 +149,13 @@ namespace chiori
 			return std::numeric_limits<size_t>::max();
 		}
 	
-		cVec2 centriod(cVCell cell)
+		cVec2 centriod(cVVert cell)
 		{
 			float sumX = 0, sumY = 0;
-			size_t count = cell.edges.size();
+			size_t count = cell.edgeIndices.size();
 
-			for (const auto& v : cell.edges) {
+			for (const auto& ei : cell.edgeIndices) {
+				const cVEdge& v = edges[ei];
 				sumX += v.origin.x;
 				sumY += v.origin.y;
 			}
@@ -155,4 +163,5 @@ namespace chiori
 			return cVec2(sumX / count, sumY / count);
 		}
 	};
+
 }

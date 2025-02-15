@@ -183,7 +183,7 @@ void SetupVoronoi()
 }
 
 bool drawTriangles = false;
-bool drawCells = true;
+bool drawVVerts = true;
 bool drawCentriod = false;
 bool drawPoints = true;
 void DrawVoronoi()
@@ -203,12 +203,15 @@ void DrawVoronoi()
         }
     }
 
-    if (drawCells)
+    if (drawVVerts)
     { // voronoi drawing
-        for (const auto& cell : voronoi.cells)
+
+        CP_Color cellColor = CP_Color_Create(255, 255, 255, 255);
+        for (const auto& vvertex : voronoi.vertices)
         {
-            for (const auto& edge : cell.edges)
+            for (const auto& edgeIndex : vvertex.edgeIndices)
             {
+                const cVEdge& edge = voronoi.edges[edgeIndex];
                 if (edge.infinite)
                 {
                     const cVec2& p1 = edge.origin;
@@ -228,7 +231,7 @@ void DrawVoronoi()
             if (drawCentriod)
             {
                 CP_Settings_Fill(CP_Color_Create(0, 255, 100, 255));
-                CP_Graphics_DrawCircle(cell.site.x, cell.site.y, 10);
+                CP_Graphics_DrawCircle(vvertex.site.x, vvertex.site.y, 10);
             }
         }
     }
@@ -265,7 +268,7 @@ void UpdateVoronoi()
     }
     if (CP_Input_KeyTriggered(KEY_V))
     {
-        drawCells = !drawCells;
+        drawVVerts = !drawVVerts;
     }
     if (CP_Input_KeyTriggered(KEY_P))
     {
@@ -288,7 +291,7 @@ void UpdateVoronoi()
             used_points.push_back(std::move(points.front()));
             points.erase(points.begin());
             tris.clear();
-            voronoi.cells.clear();
+            voronoi.vertices.clear();
             tris = cVoronoiDiagram::triangulateDelaunator(used_points);
             voronoi.create(used_points.data(), used_points.size());
         }
