@@ -1,6 +1,6 @@
 #pragma once
 #include "delaunator.hpp"
-
+#include "chioriMath.h"
 
 namespace chiori
 {
@@ -124,6 +124,8 @@ namespace chiori
 
 			return triangles;
 		}
+		static void SaveVoronoiDiagram(const std::string& filename, const cVoronoiDiagram& diagram);
+		static cVoronoiDiagram LoadVoronoiDiagram(const std::string& filename);
 	private:
 		cVec2 circumcenter(cVec2 a, cVec2 b, cVec2 c)
 		{
@@ -163,5 +165,94 @@ namespace chiori
 			return cVec2(sumX / count, sumY / count);
 		}
 	};
+
+	#define VORONOI_EXTENSION ".vdf"
+	#define CCCAST(x) reinterpret_cast<const char*>(x)
+	#define CCAST(x) reinterpret_cast<char*>(x)
+	namespace fs = std::filesystem;
+
+	static fs::path getProjectPath()
+	{
+		fs::path path = fs::current_path();
+
+		// **If "voronoi_data" was not found, create it in the current directory**
+		if (path.filename() != "voronoi_data") {
+			path = fs::current_path() / "voronoi_data";
+			fs::create_directories(path); // Creates the folder if it doesn't exist
+		}
+
+		return path;
+	}
+
+	inline void cVoronoiDiagram::SaveVoronoiDiagram(const std::string& filename, const cVoronoiDiagram& diagram)
+	{
+		fs::path filePath = getProjectPath() / (filename + VORONOI_EXTENSION);
+
+		std::ofstream file(filePath, std::ios::binary);
+		if (!file) {
+			std::cerr << "Error: Could not open file for writing: " << filePath << "\n";
+			return;
+		}
+
+		int numVerts = diagram.vertices.size();
+		int numEdges = diagram.edges.size();
+		file.write(CCCAST(&numVerts), sizeof(int));
+		file.write(CCCAST(&numEdges), sizeof(int));
+
+		for (const auto& vert : diagram.vertices)
+		{
+			file.write(CCCAST(&vert.site), sizeof(cVec2));
+			size_t edgeCount = vert.edgeIndices.size();
+			file.write(CCCAST(&edgeCount), sizeof(size_t));
+			file.write(CCCAST(vert.edgeIndices.data()), edgeCount * sizeof(size_t));
+		}
+
+		for (const auto& edge : diagram.edges)
+		{
+			file.write(CCCAST(&edge.origin), sizeof(cVec2));
+			file.write(CCCAST(&edge.endDir), sizeof(cVec2));
+			file.write(CCCAST(&edge.infinite), sizeof(bool));
+		}
+
+		file.close();
+	}
+
+	inline cVoronoiDiagram cVoronoiDiagram::LoadVoronoiDiagram(const std::string& filename)
+	{
+		fs::path filePath = getProjectPath() / (filename + VORONOI_EXTENSION);
+
+		std::ifstream file(filePath, std::ios::binary);
+		if (!file) {
+			std::cerr << "Error: Could not open file for reading: " << filePath << "\n";
+			return cVoronoiDiagram();
+		}
+
+		cVoronoiDiagram diagram;
+		int numVerts, numEdges;
+		file.read(CCAST(&numVerts), sizeof(int));
+		file.read(CCAST(&numEdges), sizeof(int));
+
+		diagram.vertices.resize(numVerts);
+		diagram.edges.resize(numEdges);
+
+		for (auto& vert : diagram.vertices)
+		{
+			file.read(CCAST(&vert.site), sizeof(cVec2));
+			size_t edgeCount;
+			file.read(CCAST(&edgeCount), sizeof(size_t));
+			vert.edgeIndices.resize(edgeCount);
+			file.read(CCAST(vert.edgeIndices.data()), edgeCount * sizeof(size_t));
+		}
+
+		for (auto& edge : diagram.edges)
+		{
+			file.read(CCAST(&edge.origin), sizeof(cVec2));
+			file.read(CCAST(&edge.endDir), sizeof(cVec2));
+			file.read(CCAST(&edge.infinite), sizeof(bool));
+		}
+
+		file.close();
+		return diagram;
+	}
 
 }

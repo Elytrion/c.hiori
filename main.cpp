@@ -180,6 +180,21 @@ void SetupVoronoi()
     }
     voronoi.create(used_points.data(), used_points.size());
     tris = cVoronoiDiagram::triangulateDelaunator(used_points);
+
+    cVoronoiDiagram vd;
+    vd.create(points.data(), points.size());
+
+    cVoronoiDiagram::SaveVoronoiDiagram("kringles", vd);
+    cVoronoiDiagram cvd = cVoronoiDiagram::LoadVoronoiDiagram("kringles");
+
+    if (vd.vertices.size() == cvd.vertices.size())
+    {
+        std::cout << "SAVED\n";
+    }
+    else
+    {
+		cassert(false);
+    }
 }
 
 bool drawTriangles = false;

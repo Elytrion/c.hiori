@@ -1,5 +1,5 @@
 #pragma once
-#define NOMINMAX
+
 #include <algorithm>
 #include <cmath>
 #include <exception>
