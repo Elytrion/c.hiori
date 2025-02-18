@@ -27,11 +27,14 @@ namespace chiori
 	public:
 		std::vector<cVVert> vertices; // Each vertex corresponds to a Voronoi region
 		std::vector<cVEdge> edges; // All unique edges in the Voronoi diagram
+		std::vector<cVec2> v_points;	// The original points used to triangulate
 
 		void create(const cVec2* points, unsigned count)
 		{
-			std::vector<cVec2> pointsVec(points, points + count);
-			std::vector<std::vector<cVec2>> triangles = triangulateDelaunator(pointsVec);
+			clear();
+			v_points.resize(count);
+			v_points.assign(points, points + count);
+			std::vector<std::vector<cVec2>> triangles = triangulateDelaunator(v_points);
 
 			std::vector<cVec2> circumcenters;
 			cVec2 voronoiCentroid(0, 0);
@@ -96,10 +99,11 @@ namespace chiori
 			}
 		}
 
-		static inline std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
+		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
 		{
 			if (points.size() < 3)
 				return {};
+
 
 			std::vector<float> coords;
 			std::vector<std::vector<cVec2>> triangles;
@@ -126,6 +130,43 @@ namespace chiori
 		}
 		static void SaveVoronoiDiagram(const std::string& filename, const cVoronoiDiagram& diagram);
 		static cVoronoiDiagram LoadVoronoiDiagram(const std::string& filename);
+
+		void add(const cVec2& point, bool recreate = true)
+		{
+			auto itr = std::find_if(v_points.begin(), v_points.end(), [&](const cVec2& p) {
+				return p == point;
+				});
+			if (itr != v_points.end())
+				return; // duplicate point, ignore
+			
+			std::vector<cVec2> new_points = v_points;
+			new_points.push_back(point);
+			if (recreate)
+				create(new_points.data(), new_points.size());
+		}
+
+		void remove(const cVec2& point, bool recreate = true)
+		{
+			auto itr = std::find_if(v_points.begin(), v_points.end(), [&](const cVec2& p) {
+				return p == point;
+				});
+			if (itr == v_points.end())
+				return; // point not in diagram, ignore
+
+			v_points.erase(itr);
+			std::vector<cVec2> new_points = v_points;
+			if (recreate)
+				create(new_points.data(), new_points.size());
+		}
+		
+		void clear()
+		{
+			vertices.clear();
+			edges.clear();
+			v_points.clear();
+		}
+
+		
 	private:
 		cVec2 circumcenter(cVec2 a, cVec2 b, cVec2 c)
 		{
@@ -254,5 +295,6 @@ namespace chiori
 		file.close();
 		return diagram;
 	}
+
 
 }

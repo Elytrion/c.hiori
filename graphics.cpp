@@ -329,7 +329,7 @@ void DebugGraphics::DrawUI()
 	}
 }
 
-void DebugGraphics::DrawFrame(void* world)
+void DebugGraphics::DrawPhysicsWorld(void* world)
 {
 	if (world)
 	{

@@ -43,6 +43,9 @@
     <ClCompile Include="scenemanager.cpp">
       <Filter>Source\GUI</Filter>
     </ClCompile>
+    <ClCompile Include="voronoiscenemanager.cpp">
+      <Filter>Source\GUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -160,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="delaunator.hpp">
       <Filter>Headers\Fracture</Filter>
+    </ClInclude>
+    <ClInclude Include="voronoiscenemanager.h">
+      <Filter>Headers\GUI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

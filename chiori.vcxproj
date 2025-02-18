@@ -225,6 +225,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClCompile Include="scenemanager.cpp" />
     <ClCompile Include="solver.cpp" />
     <ClCompile Include="uimanager.cpp" />
+    <ClCompile Include="voronoiscenemanager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aabb.h" />
@@ -252,6 +253,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="solver.h" />
     <ClInclude Include="uimanager.h" />
     <ClInclude Include="voronoi.h" />
+    <ClInclude Include="voronoiscenemanager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

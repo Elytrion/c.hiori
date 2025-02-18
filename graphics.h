@@ -67,7 +67,7 @@ public:
 	int AddUILine(chiori::cVec2 start, chiori::cVec2 end, chiori::cDebugColor color);
 	void DrawUILine(float x1, float y1, float x2, float y2, CP_Color color);
 
-	void DrawFrame(void* world);
+	void DrawPhysicsWorld(void* world);
 	void DrawUI(); // always call this AFTER draw frame
 
 	std::vector<UIElement>& getUIElements() { return uiElements; }

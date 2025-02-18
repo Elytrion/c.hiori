@@ -684,7 +684,7 @@ void SceneManager::Update(float dt)
     }
 
     HandleCameraInput();
-    drawer->DrawFrame(world);
+    drawer->DrawPhysicsWorld(world);
     cVec2 displayDim = drawer->getScreenDimensions();
     // draw camera
     if (drawCamera)
