@@ -128,8 +128,8 @@ namespace chiori
 
 			return triangles;
 		}
-		static void SaveVoronoiDiagram(const std::string& filename, const cVoronoiDiagram& diagram);
-		static cVoronoiDiagram LoadVoronoiDiagram(const std::string& filename);
+		static void save(const std::string& filename, const cVoronoiDiagram& diagram);
+		static cVoronoiDiagram load(const std::string& filename);
 
 		void add(const cVec2& point, bool recreate = true)
 		{
@@ -225,7 +225,7 @@ namespace chiori
 		return path;
 	}
 
-	inline void cVoronoiDiagram::SaveVoronoiDiagram(const std::string& filename, const cVoronoiDiagram& diagram)
+	inline void cVoronoiDiagram::save(const std::string& filename, const cVoronoiDiagram& diagram)
 	{
 		fs::path filePath = getProjectPath() / (filename + VORONOI_EXTENSION);
 
@@ -237,8 +237,10 @@ namespace chiori
 
 		int numVerts = diagram.vertices.size();
 		int numEdges = diagram.edges.size();
+		int numPts = diagram.v_points.size();
 		file.write(CCCAST(&numVerts), sizeof(int));
 		file.write(CCCAST(&numEdges), sizeof(int));
+		file.write(CCCAST(&numPts), sizeof(int));
 
 		for (const auto& vert : diagram.vertices)
 		{
@@ -255,10 +257,15 @@ namespace chiori
 			file.write(CCCAST(&edge.infinite), sizeof(bool));
 		}
 
+		for (const auto& pt : diagram.v_points)
+		{
+			file.write(CCCAST(&pt), sizeof(cVec2));
+		}
+
 		file.close();
 	}
 
-	inline cVoronoiDiagram cVoronoiDiagram::LoadVoronoiDiagram(const std::string& filename)
+	inline cVoronoiDiagram cVoronoiDiagram::load(const std::string& filename)
 	{
 		fs::path filePath = getProjectPath() / (filename + VORONOI_EXTENSION);
 
@@ -269,12 +276,14 @@ namespace chiori
 		}
 
 		cVoronoiDiagram diagram;
-		int numVerts, numEdges;
+		int numVerts, numEdges, numPts;
 		file.read(CCAST(&numVerts), sizeof(int));
 		file.read(CCAST(&numEdges), sizeof(int));
+		file.read(CCAST(&numPts), sizeof(int));
 
 		diagram.vertices.resize(numVerts);
 		diagram.edges.resize(numEdges);
+		diagram.v_points.resize(numPts);
 
 		for (auto& vert : diagram.vertices)
 		{
@@ -290,6 +299,11 @@ namespace chiori
 			file.read(CCAST(&edge.origin), sizeof(cVec2));
 			file.read(CCAST(&edge.endDir), sizeof(cVec2));
 			file.read(CCAST(&edge.infinite), sizeof(bool));
+		}
+
+		for (auto& pt : diagram.v_points)
+		{
+			file.read(CCAST(&pt), sizeof(cVec2));
 		}
 
 		file.close();

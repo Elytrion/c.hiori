@@ -314,6 +314,7 @@ public:
                 voronoi.remove(originalPoint, false);
                 voronoi.add(*selectedPoint);
                 originalPoint = *selectedPoint;
+                tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
             }
         }
         else if (CP_Input_MouseReleased(MOUSE_BUTTON_2))
@@ -325,7 +326,7 @@ public:
             voronoi.add(*selectedPoint);
             originalPoint = cVec2::zero;
             selectedPoint = nullptr;
-
+            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
             return;
         }
 
@@ -345,9 +346,21 @@ public:
             points.erase(itr);
             voronoi.remove(fpoint);
         }
+
+        if (CP_Input_KeyTriggered(KEY_S))
+        {
+            cVoronoiDiagram::save("saved_scene", voronoi);
+        }
+        else if (CP_Input_KeyTriggered(KEY_L))
+        {
+            voronoi.clear();
+            points.clear();
+            voronoi = cVoronoiDiagram::load("saved_scene");
+            points = voronoi.v_points;
+            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+        }
     }
     
-
     void Unload() override
     {
         VoronoiScene::Unload();
