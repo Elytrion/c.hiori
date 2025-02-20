@@ -32,11 +32,14 @@ void VoronoiScene::Update(float dt)
                 const cVEdge& edge = voronoi.edges[edgeIndex];
                 if (edge.infinite)
                 {
-                    const cVec2& p1 = edge.origin;
-                    const cVec2& p2 = edge.origin + edge.endDir * 1000;
-                    CP_Settings_StrokeWeight(1);
-                    CP_Settings_Stroke(CP_Color_Create(255, 0, 255, 255)); // Green for Delaunay edges
-                    CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
+                    if (drawInfinite)
+                    {
+                        const cVec2& p1 = edge.origin;
+                        const cVec2& p2 = edge.origin + edge.endDir * 1000;
+                        CP_Settings_StrokeWeight(1);
+                        CP_Settings_Stroke(CP_Color_Create(255, 0, 255, 255)); // Green for Delaunay edges
+                        CP_Graphics_DrawLine(p1.x, p1.y, p2.x, p2.y);
+                    }
                     continue;
                 }
                 const cVec2& p1 = edge.origin;
@@ -369,6 +372,100 @@ public:
         originalPoint = cVec2::zero;
     }
 };
+
+class MovingScene : public VoronoiScene
+{
+    std::vector<cVec2> seeds; // not the points the diagram uses
+    std::vector<cVec2> points; // these are the actual points that will orbit the seeds
+    int numPoints = 55;
+
+    std::vector<float> times;
+    std::vector<cVec2> ellipses;
+    
+    float baseTimer = 0.025f;
+    float timer = 0.0f;
+    float speed = 1.0f;
+
+public:
+    MovingScene(DebugGraphics* drawer) : VoronoiScene(drawer) {}
+
+    void Load() override
+    {
+        drawVoronoi = false;
+        drawTriangles = false;
+        drawInfinite = false;
+        int bufferEdgeWidth = 200;
+        for (int i = 0; i < numPoints; i++) {
+            float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
+            float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
+            seeds.push_back({ x, y });
+            points.push_back({ x, y });
+
+            times.push_back(CP_Random_RangeFloat(0.0f, 2.0f * PI)); // random angle
+            int circle = CP_Random_RangeInt(0, 5);
+            float sm_a = CP_Random_RangeFloat(5.0f, 35.0f);
+            float sm_b = CP_Random_RangeFloat(5.0f, 35.0f);
+            if (circle < 2)
+            {
+                ellipses.push_back({ sm_a, sm_a });
+            }
+            else
+            {
+                ellipses.push_back({ sm_a, sm_b });
+            }
+        }
+    }
+    // Function to update a point's position along an elliptical path
+    cVec2 updateEllipticalPath(float t, float a, float b, float centerX, float centerY) {
+        return { centerX + a * cos(t), centerY + b * sin(t) };
+    }
+
+    void Update(float dt) override
+    {
+        if (CP_Input_KeyTriggered(KEY_N))
+        {
+            speed += 0.5f;
+        }
+        if (CP_Input_KeyTriggered(KEY_M))
+        {
+            speed -= 0.5f;
+        }
+
+        for (int i = 0; i < numPoints; ++i) {
+            float& time = times[i];
+			const cVec2& ellipse = ellipses[i];
+            time += dt;
+            if (time > 2 * PI)
+            {
+                time -= 2 * PI;
+            }
+            points[i] = updateEllipticalPath(time * speed, ellipse.x, ellipse.y, seeds[i].x, seeds[i].y);
+        }
+
+        VoronoiScene::Update(dt);
+
+        timer -= dt;
+        if (timer > 0.0f)
+            return;
+        
+        timer = baseTimer;
+        tris.clear();
+        voronoi.clear();
+        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        voronoi.create(points.data(), points.size());
+    }
+
+    void Unload() override
+    {
+        VoronoiScene::Unload();
+        seeds.clear();
+        points.clear();
+        times.clear();
+        ellipses.clear();
+        timer = baseTimer;
+        speed = 1.0f;
+    }
+};
 #pragma endregion
 
 VoronoiSceneManager::VoronoiSceneManager(DebugGraphics* drawer)
@@ -378,6 +475,7 @@ VoronoiSceneManager::VoronoiSceneManager(DebugGraphics* drawer)
     AddScene(new StaticScene(drawer));
     AddScene(new GrowingScene(drawer));
     AddScene(new ModifiableScene(drawer));
+    AddScene(new MovingScene(drawer));
 
     //ChangeScene(0);
 }
@@ -443,4 +541,26 @@ void VoronoiSceneManager::Update(float dt)
         scene->drawPoints = !scene->drawPoints;
     }
     scene->Update(dt);
+    cVec2 displayDim = { 1600, 900 };
+    char buffer[64];
+    CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
+    float x = displayDim.x - 250;
+    float y = 20;
+    snprintf(buffer, 64, "Press T to toggle Triangulation Overlay");
+    CP_Settings_Fill(textColor);
+    CP_Settings_TextSize(15);
+    CP_Font_DrawText(buffer, x, y);
+    y += 20;
+
+    snprintf(buffer, 64, "Press V to toggle Voronoi Overlay");
+    CP_Settings_Fill(textColor);
+    CP_Settings_TextSize(15);
+    CP_Font_DrawText(buffer, x, y);
+    y += 20;
+
+    snprintf(buffer, 64, "Press P to toggle Point overlay");
+    CP_Settings_Fill(textColor);
+    CP_Settings_TextSize(15);
+    CP_Font_DrawText(buffer, x, y);
+    y += 20;
 }

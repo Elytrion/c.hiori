@@ -15,6 +15,7 @@ public:
 	bool drawTriangles = false;
 	bool drawVoronoi = true;
 	bool drawPoints = true;
+	bool drawInfinite = true;
 
 	virtual void Load() = 0;
 	virtual void Update(float dt);

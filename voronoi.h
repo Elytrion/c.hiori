@@ -104,12 +104,13 @@ namespace chiori
 			if (points.size() < 3)
 				return {};
 
-
+			// this removes duplicate points
+			std::unordered_set<cVec2, cVec2Hash> pointSet{ points.begin(), points.end() };
 			std::vector<float> coords;
 			std::vector<std::vector<cVec2>> triangles;
 
 			// Convert cVec2 points into flat double array
-			for (const auto& p : points) {
+			for (const auto& p : pointSet) {
 				coords.push_back(p.x);
 				coords.push_back(p.y);
 			}
