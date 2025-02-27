@@ -43,10 +43,10 @@ namespace chiori
 
 		Flag_8 _flags = USE_GRAVITY | IS_DIRTY; // actor setting flags
 
-		cVec2 origin{ cVec2::zero }; // the body origin (not center of mass)
-		cVec2 position{ cVec2::zero }; // center of mass position in world space
+		cVec2 origin{ cVec2::zero };		// the body origin (not center of mass)
+		cVec2 position{ cVec2::zero };		// center of mass position in world space
 		cVec2 deltaPosition{ cVec2::zero }; // delta position for the whole time step
-		cVec2 localCenter{ cVec2::zero }; // location of center of mass relative to the body origin (local space)
+		cVec2 localCenter{ cVec2::zero };	// location of center of mass relative to the body origin (local space)
 		cRot rot{ cRot::iden };
 
 		cVec2 forces{ cVec2::zero };

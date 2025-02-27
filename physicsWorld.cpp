@@ -253,11 +253,8 @@ namespace chiori
 		m_broadphase.UpdatePairs(
 			[this](void* userDataA, void* userDataB)
 			{
-				//cShape* shapeA = reinterpret_cast<int>(userDataA);
-				//cShape* shapeB = reinterpret_cast<int>(userDataB);
-				int shapeAIndex = reinterpret_cast<int>(userDataA); // p_shapes.getIndex(shapeA);
-				int shapeBIndex = reinterpret_cast<int>(userDataB); //p_shapes.getIndex(shapeB);
-				//std::cout << shapeAIndex << " and " << shapeBIndex << " are a contact pair" << std::endl;
+				int shapeAIndex = reinterpret_cast<int>(userDataA);
+				int shapeBIndex = reinterpret_cast<int>(userDataB);
 				if (p_pairs.contains(shapeAIndex, shapeBIndex))
 					return; // no need to create a contact for these shapes since a contact already exists
 				CreateContact(this, p_shapes[shapeAIndex], p_shapes[shapeBIndex]);
@@ -315,8 +312,6 @@ namespace chiori
 			PGSSoftSolver(this, &context);
 		}
 		
-		//PGSSoftSolver(this, &context);
-		//PGSSolver(this, &context);
 	}
 
 

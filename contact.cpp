@@ -8,6 +8,8 @@ namespace chiori
 	void CreateContact(cPhysicsWorld* world, cShape* shapeA, cShape* shapeB)
 	{
 		cContact* contact = world->p_contacts.Alloc();
+		contact->flags.reset();
+		contact->flags.set(cContact::OVERLAP);
 		int contactIndex = world->p_contacts.getIndex(contact);
 		contact->shapeIndexA = world->p_shapes.getIndex(shapeA);
 		contact->shapeIndexB = world->p_shapes.getIndex(shapeB);
@@ -54,7 +56,10 @@ namespace chiori
 	void DestroyContact(cPhysicsWorld* world, cContact* contact)
 	{
 		world->p_pairs.erase(contact->shapeIndexA, contact->shapeIndexB);
-
+		
+		contact->flags.reset();
+		contact->flags = cContact::DISJOINT;
+		
 		cContactEdge* edgeA = contact->edges + 0;
 		cContactEdge* edgeB = contact->edges + 1;
 
@@ -124,15 +129,18 @@ namespace chiori
 
 		bool touching = false;
 		contact->manifold.pointCount = 0;
-
-		// bool wasTouching = (contact->flags & s2_contactTouchingFlag) == s2_contactTouchingFlag;
-
+		bool wasTouching = (contact->flags.isSet(cContact::ENTERED));
 
 		cTransform transformA = bodyA->getTransform();
 		cTransform transformB = bodyB->getTransform();
 		contact->manifold = CollideShapes(&shapeA->polygon, &shapeB->polygon, transformA, transformB, &contact->cache);
 
 		touching = contact->manifold.pointCount > 0;
+		if (!touching && wasTouching)
+		{
+			contact->flags.clear(cContact::ENTERED);
+			contact->flags.set(cContact::EXITED);
+		}
 
 		contact->manifold.frictionPersisted = true;
 
