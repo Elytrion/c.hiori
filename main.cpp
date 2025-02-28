@@ -7,6 +7,7 @@
 #include "uimanager.h"
 #include "scenemanager.h"
 #include "physicsWorld.h"
+#include "fractureWorld.h"
 #include "voronoiSceneManager.h"
 
 using namespace chiori;

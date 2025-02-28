@@ -4,7 +4,7 @@
 
 namespace chiori
 {
-	struct AABB
+	struct cAABB
 	{
 		cVec2 min{ cVec2::zero };
 		cVec2 max{ cVec2::zero };
@@ -24,13 +24,13 @@ namespace chiori
 			return 2.0f * ((max.x - min.x) + (max.y - min.y));
 		}
 
-		void merge(const AABB& inAABB)
+		void merge(const cAABB& inAABB)
 		{
 			min = cVec2::vmin(min, inAABB.min);
 			max = cVec2::vmax(max, inAABB.max);
 		}
 
-		void merge(const AABB& inAABB1, const AABB& inAABB2)
+		void merge(const cAABB& inAABB1, const cAABB& inAABB2)
 		{
 			min = cVec2::vmin(inAABB1.min, inAABB2.min);
 			max = cVec2::vmax(inAABB1.max, inAABB2.max);
@@ -45,12 +45,12 @@ namespace chiori
 				inPoint.y <= max.y);
 		}
 
-		bool contains(const AABB& inAABB) const
+		bool contains(const cAABB& inAABB) const
 		{
 			return contains(inAABB.min) && contains(inAABB.max);
 		}
 
-		bool intersects(const AABB& inAABB) const
+		bool intersects(const cAABB& inAABB) const
 		{			
 			bool xAxisColliding = (max.x > inAABB.min.x && inAABB.max.x > min.x);
 			bool yAxisColliding = (max.y > inAABB.min.y && inAABB.max.y > min.y);
@@ -65,7 +65,7 @@ namespace chiori
 		}
 	};
 
-	inline AABB CreateAABBHull(const cVec2* inVertices, int count, const cTransform& xf)
+	inline cAABB CreateAABBHull(const cVec2* inVertices, int count, const cTransform& xf)
 	{
 		cVec2 lower = cTransformVec(xf, inVertices[0]);
 		cVec2 upper = lower;

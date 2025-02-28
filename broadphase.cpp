@@ -23,7 +23,7 @@ namespace chiori
 		delete[] m_moveBuffer;
 	}
 
-	int cBroadphase::CreateProxy(const AABB& aabb, void* userData)
+	int cBroadphase::CreateProxy(const cAABB& aabb, void* userData)
 	{
 		int proxyId = m_tree.InsertProxy(aabb, userData);
 		++m_proxyCount;
@@ -38,7 +38,7 @@ namespace chiori
 		m_tree.DestroyProxy(proxyId);
 	}
 
-	void cBroadphase::MoveProxy(int proxyId, const AABB& aabb, const cVec2& displacement)
+	void cBroadphase::MoveProxy(int proxyId, const cAABB& aabb, const cVec2& displacement)
 	{
 		bool buffer = m_tree.MoveProxy(proxyId, aabb, displacement);
 		if (buffer)
@@ -120,7 +120,7 @@ namespace chiori
 
 			// We have to query the tree with the fat AABB so that
 			// we don't fail to create a pair that may touch later.
-			const AABB& fatAABB = m_tree.GetFattenedAABB(m_queryProxyId);
+			const cAABB& fatAABB = m_tree.GetFattenedAABB(m_queryProxyId);
 
 			// Query tree, create pairs and add them pair buffer.
 			auto q_callback = [this](unsigned int proxyId) -> bool {

@@ -35,7 +35,7 @@ namespace chiori
 		float restitution{ 0.1f };
 		float density{ 1.0f };
 		
-		AABB aabb;						// untransformed close fit AABB
+		cAABB aabb;						// untransformed close fit AABB
 		Flag_8 shapeFlags = SCENE_QUERYABLE;
 		
 		void* userData{ nullptr }; 			// to hold a pointer to any user specific data (user holds ownership of data)
@@ -48,7 +48,7 @@ namespace chiori
 		void getVertices(cVec2* inVertices, cTransform xf) const;
 		cMassData computeMass() const { return polygon.ComputeMass(density); }
 		
-		AABB ComputeAABB(const cTransform& xf)
+		cAABB ComputeAABB(const cTransform& xf)
 		{
 			return CreateAABBHull(polygon.vertices, polygon.count, xf);
 		}	

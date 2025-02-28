@@ -227,7 +227,7 @@ namespace chiori
 				cShape* shape = p_shapes[shapeIndex];
 				
 				shape->aabb = CreateAABBHull(shape->polygon.vertices, shape->polygon.count, xf);
-				AABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
+				cAABB fatAABB = m_broadphase.GetFattenedAABB(shape->broadphaseIndex);
 				if (!fatAABB.contains(shape->aabb) || actor->_flags.isSet(cActor::IS_DIRTY)) // moved out of broadphase AABB, significant enough movement to update broadphase
 				{
 					m_broadphase.MoveProxy(shape->broadphaseIndex, shape->aabb, cVec2::zero);
@@ -275,8 +275,8 @@ namespace chiori
 			cContact* contact = p_contacts[i];
 			cShape* shapeA = p_shapes[contact->shapeIndexA];
 			cShape* shapeB = p_shapes[contact->shapeIndexB];
-			AABB aabb_a = m_broadphase.GetFattenedAABB(shapeA->broadphaseIndex);
-			AABB aabb_b = m_broadphase.GetFattenedAABB(shapeB->broadphaseIndex);
+			cAABB aabb_a = m_broadphase.GetFattenedAABB(shapeA->broadphaseIndex);
+			cAABB aabb_b = m_broadphase.GetFattenedAABB(shapeB->broadphaseIndex);
 			bool overlaps = aabb_a.intersects(aabb_b);
 			if (overlaps)
 			{
@@ -392,7 +392,7 @@ namespace chiori
 				while (shapeIndex != NULL_INDEX)
 				{
 					cShape* shape = p_shapes[shapeIndex];
-					AABB aabb = shape->aabb;
+					cAABB aabb = shape->aabb;
 					
 					cVec2 verts[4] = {
 						{aabb.min.x, aabb.min.y},
@@ -411,7 +411,7 @@ namespace chiori
 		if (draw->drawTreeAABBs)
 		{
 			cDebugColor treeColor = cDebugColor::Magenta;
-			auto drawFunc = [&](int height, const AABB& aabb)
+			auto drawFunc = [&](int height, const cAABB& aabb)
 				{
 					cVec2 center = aabb.getCenter();
 					

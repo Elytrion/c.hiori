@@ -10,7 +10,7 @@ namespace chiori
 	
 	struct cTreeNode
 	{
-		AABB aabb;
+		cAABB aabb;
 		void* userData{nullptr}; // user data
 		union
 		{
@@ -33,15 +33,15 @@ namespace chiori
 		cDynamicTree();
 		~cDynamicTree();
 		
-		int InsertProxy(const AABB& inAABB, void* inUserData);
+		int InsertProxy(const cAABB& inAABB, void* inUserData);
 		int DestroyProxy(int inProxyID);
-		bool MoveProxy(int inProxyID, const AABB& inAABB, const cVec2& inDisplacement);
+		bool MoveProxy(int inProxyID, const cAABB& inAABB, const cVec2& inDisplacement);
 
 		void* GetUserData(int inProxyID) const;
 		
-		const AABB& GetFattenedAABB(int inProxyID) const;
+		const cAABB& GetFattenedAABB(int inProxyID) const;
 
-		void Query(const AABB& inAABB, QueryCallback callback) const;
+		void Query(const cAABB& inAABB, QueryCallback callback) const;
 
 		int GetHeight() const;
 		int GetMaxBalance() const;
@@ -50,7 +50,7 @@ namespace chiori
 		void ShiftOrigin(const cVec2& newOrigin);
 
 		// for testing
-		void DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const;
+		void DisplayTree(std::function<void(int height, const cAABB&)> drawFunc) const;
 		
 	private:
 		int AllocateNode();
@@ -83,7 +83,7 @@ namespace chiori
 		throw std::out_of_range("Index out of range for tree");
 	}
 
-	inline const AABB& cDynamicTree::GetFattenedAABB(int proxyId) const
+	inline const cAABB& cDynamicTree::GetFattenedAABB(int proxyId) const
 	{
 		if (0 <= proxyId && proxyId < m_nodeCapacity)
 		{
@@ -92,7 +92,7 @@ namespace chiori
 		throw std::out_of_range("Index out of range for tree");
 	}
 
-	inline void cDynamicTree::Query(const AABB& inAABB, QueryCallback callback) const
+	inline void cDynamicTree::Query(const cAABB& inAABB, QueryCallback callback) const
 	{
 		std::stack<int> stack;
 		stack.push(m_root);

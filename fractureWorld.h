@@ -8,15 +8,7 @@ namespace chiori
 	{
 	public:
 		cObjHeader header; // required for pool allocator
-	
-		cFracturePattern() { };
-		cFracturePattern(const std::string& filePath);
-
-		std::string filePath;
 		cVoronoiDiagram pattern;
-
-		void load(const std::string& inFilePath = "");
-		void save(const std::string& inFilePath = "");
 	};
 	
 	struct cFractureMaterial
@@ -47,14 +39,62 @@ namespace chiori
 
 	class cFractureWorld : public cPhysicsWorld
 	{
+	public:
+		template <typename Allocator = cDefaultAllocator>
+		explicit cFractureWorld(Allocator alloc = Allocator()) :
+			cPhysicsWorld(alloc),
+			f_patterns{ allocator.get() }, f_fractors{ allocator.get() }
+		{}
+
+		~cFractureWorld() = default;
+		
 		cPool<cFracturePattern> f_patterns;
 		cPool<cFracturable> f_fractors;
 
-		void f_step(float inFDT); // call this DIRECTLY after step to allow for fracture checks!
-		int MakeFracturable(int inActorIndex); // turn a regular actor into a fracturable object
-
+		int MakeFracturable(int inActorIndex, cFractureMaterial inMaterial); // turn a regular actor into a fracturable object
 		void SetFracturePattern(int inPatternIndex, int inFractorIndex);
-		int LoadFracturePattern(const std::string& inFilePath);
-		void SaveFracturePattern(int inPatternIndex, const std::string& inFilePath);
+		
+		static bool CreateFracturePattern(cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds);
+		int CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds = cAABB());
+	
+		// call this instead of step when using fractureWorld!
+		void f_step(float inFDT, int primaryIterations = 4, int secondaryIterations = 2, bool warmStart = true);
+	
+	private:
+		bool CheckDupePattern(const cVoronoiDiagram& inPattern)
+		{
+			// check if this pattern is already loaded in
+			for (int i = 0; i < f_patterns.size(); i++)
+			{
+				const cFracturePattern* f_pattern = f_patterns[i];
+				const cVoronoiDiagram& ovd = f_pattern->pattern;
+				const cVoronoiDiagram& vd = inPattern;
+
+				size_t ovd_v_size = ovd.vertices.size();
+				size_t vd_v_size = vd.vertices.size();
+				size_t ovd_e_size = ovd.edges.size();
+				size_t vd_e_size = vd.edges.size();
+				size_t ovd_p_size = ovd.v_points.size();
+				size_t vd_p_size = vd.v_points.size();
+
+				if (ovd_v_size == vd_v_size &&
+					ovd_e_size == vd_e_size &&
+					ovd_p_size == vd_p_size)
+				{
+					bool sameVerts = (ovd.vertices[0] == vd.vertices[0]) &&
+						(ovd.vertices[ovd_v_size - 1] == vd.vertices[ovd_v_size - 1]);
+
+					bool sameEdges = (ovd.edges[0] == vd.edges[0]) &&
+						(ovd.edges[ovd_e_size - 1] == vd.edges[ovd_e_size - 1]);
+
+					bool samePoints = (ovd.v_points[0] == vd.v_points[0]) &&
+						(ovd.v_points[ovd_p_size - 1] == vd.v_points[ovd_p_size - 1]);
+
+					if (sameVerts && sameEdges && samePoints)
+						return true; // duplicate
+				}
+			}
+			return false;
+		}
 	};
 }

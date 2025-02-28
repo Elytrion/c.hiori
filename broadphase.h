@@ -21,15 +21,15 @@ namespace chiori
 		cBroadphase();
 		~cBroadphase();
 		
-		int CreateProxy(const AABB& inAABB, void* inUserData);
+		int CreateProxy(const cAABB& inAABB, void* inUserData);
 		
 		void DestroyProxy(int proxyID);
 
-		void MoveProxy(int proxyID, const AABB& inAABB, const cVec2& inDisplacement);
+		void MoveProxy(int proxyID, const cAABB& inAABB, const cVec2& inDisplacement);
 		
 		void TouchProxy(int proxyID);
 		
-		const AABB& GetFattenedAABB(int proxyID) const;
+		const cAABB& GetFattenedAABB(int proxyID) const;
 		
 		void* GetUserData(int proxyID) const;
 
@@ -39,7 +39,7 @@ namespace chiori
 
 		void UpdatePairs(BroadphaseCallback callback);
 
-		void Query(const AABB& inAABB, QueryCallback callback);
+		void Query(const cAABB& inAABB, QueryCallback callback);
 
 		void ShiftOrigin(const cVec2& inNewOrigin);
 		
@@ -84,7 +84,7 @@ namespace chiori
 		return m_tree.GetUserData(proxyId);
 	}
 
-	inline const AABB& cBroadphase::GetFattenedAABB(int proxyId) const
+	inline const cAABB& cBroadphase::GetFattenedAABB(int proxyId) const
 	{
 		return m_tree.GetFattenedAABB(proxyId);
 	}
@@ -94,7 +94,7 @@ namespace chiori
 		return m_proxyCount;
 	}
 
-	inline void cBroadphase::Query(const AABB& inAABB, chiori::QueryCallback callback)
+	inline void cBroadphase::Query(const cAABB& inAABB, chiori::QueryCallback callback)
 	{
 		m_tree.Query(inAABB, callback);
 	}

@@ -77,7 +77,7 @@ namespace chiori
 		--m_nodeCount;
 	}
 	
-	int cDynamicTree::InsertProxy(const AABB& aabb, void* userData)
+	int cDynamicTree::InsertProxy(const cAABB& aabb, void* userData)
 	{
 		int pID = AllocateNode();
 		
@@ -101,7 +101,7 @@ namespace chiori
 		return proxyID;
 	}
 
-	bool cDynamicTree::MoveProxy(int proxyID, const AABB& aabb, const cVec2& disp)
+	bool cDynamicTree::MoveProxy(int proxyID, const cAABB& aabb, const cVec2& disp)
 	{
 		cassert(0 <= proxyID && proxyID < m_nodeCapacity);
 
@@ -115,7 +115,7 @@ namespace chiori
 		RemoveLeaf(proxyID);
 		
 		cVec2 fat{ commons::AABB_FATTEN_FACTOR, commons::AABB_FATTEN_FACTOR };
-		AABB b = aabb;
+		cAABB b = aabb;
 		b.min = b.min - fat;
 		b.max = b.max + fat;
 
@@ -156,7 +156,7 @@ namespace chiori
 			return;
 		}
 		// Find the best sibling for this node
-		AABB leafAABB = m_nodes[leaf].aabb;
+		cAABB leafAABB = m_nodes[leaf].aabb;
 		int index = m_root;
 		while (m_nodes[index].IsLeaf() == false)
 		{
@@ -165,7 +165,7 @@ namespace chiori
 
 			float area = m_nodes[index].aabb.perimeter();
 			
-			AABB combinedAABB;
+			cAABB combinedAABB;
 			combinedAABB.merge(m_nodes[index].aabb, leafAABB);
 			float combinedArea = combinedAABB.perimeter();
 			
@@ -178,13 +178,13 @@ namespace chiori
 			float costc1;
 			if (m_nodes[child1].IsLeaf())
 			{
-				AABB aabb;
+				cAABB aabb;
 				aabb.merge(leafAABB, m_nodes[child1].aabb);
 				costc1 = aabb.perimeter() + inheritCost;
 			}
 			else
 			{
-				AABB aabb;
+				cAABB aabb;
 				aabb.merge(leafAABB, m_nodes[child1].aabb);
 				float oldArea = m_nodes[child1].aabb.perimeter();
 				float newArea = aabb.perimeter();
@@ -195,13 +195,13 @@ namespace chiori
 			float costc2;
 			if (m_nodes[child2].IsLeaf())
 			{
-				AABB aabb;
+				cAABB aabb;
 				aabb.merge(leafAABB, m_nodes[child2].aabb);
 				costc2 = aabb.perimeter() + inheritCost;
 			}
 			else
 			{
-				AABB aabb;
+				cAABB aabb;
 				aabb.merge(leafAABB, m_nodes[child2].aabb);
 				float oldArea = m_nodes[child2].aabb.perimeter();
 				float newArea = aabb.perimeter();
@@ -556,7 +556,7 @@ namespace chiori
 		}
 	}
 
-	void cDynamicTree::DisplayTree(std::function<void(int height, const AABB&)> drawFunc) const
+	void cDynamicTree::DisplayTree(std::function<void(int height, const cAABB&)> drawFunc) const
 	{
 		if (m_root == null_node)
 		{

@@ -18,23 +18,29 @@ namespace chiori
 	struct cVVert
 	{
 		cVec2 site;							// the centriod/site of the vertex
-		std::vector<unsigned> edgeIndices;	// the indices of the edges that make up this vertex
+		std::vector<unsigned> edgeIndices{};	// the indices of the edges that make up this vertex
+
+		bool operator==(const cVVert& other) const
+		{
+			return (site == other.site) && (edgeIndices.size() == other.edgeIndices.size());
+		}
 	};
 
 
 	class cVoronoiDiagram
 	{
 	public:
-		std::vector<cVVert> vertices; // Each vertex corresponds to a Voronoi region
-		std::vector<cVEdge> edges; // All unique edges in the Voronoi diagram
-		std::vector<cVec2> v_points;	// The original points used to triangulate
-
+		std::vector<cVVert> vertices{}; // Each vertex corresponds to a Voronoi region
+		std::vector<cVEdge> edges{}; // All unique edges in the Voronoi diagram
+		std::vector<cVec2> v_points{};	// The original points used to triangulate
+		std::vector<std::vector<cVec2>> triangles{}; // the underlying triangulation of the v_points
+			
 		void create(const cVec2* points, unsigned count)
 		{
 			clear();
 			v_points.resize(count);
 			v_points.assign(points, points + count);
-			std::vector<std::vector<cVec2>> triangles = triangulateDelaunator(v_points);
+			triangles = triangulateDelaunator(v_points);
 
 			std::vector<cVec2> circumcenters;
 			cVec2 voronoiCentroid(0, 0);
@@ -99,39 +105,6 @@ namespace chiori
 			}
 		}
 
-		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
-		{
-			if (points.size() < 3)
-				return {};
-
-			// this removes duplicate points
-			std::unordered_set<cVec2, cVec2Hash> pointSet{ points.begin(), points.end() };
-			std::vector<float> coords;
-			std::vector<std::vector<cVec2>> triangles;
-
-			// Convert cVec2 points into flat double array
-			for (const auto& p : pointSet) {
-				coords.push_back(p.x);
-				coords.push_back(p.y);
-			}
-
-			// Perform Delaunay triangulation
-			delaunator::Delaunator d(coords);
-
-			// Convert output triangles back into cVec2
-			for (std::size_t i = 0; i < d.triangles.size(); i += 3) {
-				cVec2 v0(d.coords[2 * d.triangles[i]], d.coords[2 * d.triangles[i] + 1]);
-				cVec2 v1(d.coords[2 * d.triangles[i + 1]], d.coords[2 * d.triangles[i + 1] + 1]);
-				cVec2 v2(d.coords[2 * d.triangles[i + 2]], d.coords[2 * d.triangles[i + 2] + 1]);
-
-				triangles.push_back({ v0, v1, v2 });
-			}
-
-			return triangles;
-		}
-		static void save(const std::string& filename, const cVoronoiDiagram& diagram);
-		static cVoronoiDiagram load(const std::string& filename);
-
 		void add(const cVec2& point, bool recreate = true)
 		{
 			auto itr = std::find_if(v_points.begin(), v_points.end(), [&](const cVec2& p) {
@@ -165,9 +138,41 @@ namespace chiori
 			vertices.clear();
 			edges.clear();
 			v_points.clear();
+			triangles.clear();
 		}
 
-		
+		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
+		{
+			if (points.size() < 3)
+				return {};
+
+			// this removes duplicate points
+			std::unordered_set<cVec2, cVec2Hash> pointSet{ points.begin(), points.end() };
+			std::vector<float> coords;
+			std::vector<std::vector<cVec2>> triangles;
+
+			// Convert cVec2 points into flat double array
+			for (const auto& p : pointSet) {
+				coords.push_back(p.x);
+				coords.push_back(p.y);
+			}
+
+			// Perform Delaunay triangulation
+			delaunator::Delaunator d(coords);
+
+			// Convert output triangles back into cVec2
+			for (std::size_t i = 0; i < d.triangles.size(); i += 3) {
+				cVec2 v0(d.coords[2 * d.triangles[i]], d.coords[2 * d.triangles[i] + 1]);
+				cVec2 v1(d.coords[2 * d.triangles[i + 1]], d.coords[2 * d.triangles[i + 1] + 1]);
+				cVec2 v2(d.coords[2 * d.triangles[i + 2]], d.coords[2 * d.triangles[i + 2] + 1]);
+
+				triangles.push_back({ v0, v1, v2 });
+			}
+
+			return triangles;
+		}
+		static void save(const std::string& filename, const cVoronoiDiagram& diagram);
+		static cVoronoiDiagram load(const std::string& filename);
 	private:
 		cVec2 circumcenter(cVec2 a, cVec2 b, cVec2 c)
 		{
@@ -209,6 +214,7 @@ namespace chiori
 	};
 
 	#define VORONOI_EXTENSION ".vdf"
+	#define VORONOI_FOLDER_NAME "voronoi_data"
 	#define CCCAST(x) reinterpret_cast<const char*>(x)
 	#define CCAST(x) reinterpret_cast<char*>(x)
 	namespace fs = std::filesystem;
@@ -216,15 +222,14 @@ namespace chiori
 	static fs::path getProjectPath()
 	{
 		fs::path path = fs::current_path();
-
 		// **If "voronoi_data" was not found, create it in the current directory**
-		if (path.filename() != "voronoi_data") {
-			path = fs::current_path() / "voronoi_data";
+		if (path.filename() != VORONOI_FOLDER_NAME) {
+			path = fs::current_path() / VORONOI_FOLDER_NAME;
 			fs::create_directories(path); // Creates the folder if it doesn't exist
 		}
-
 		return path;
 	}
+
 
 	inline void cVoronoiDiagram::save(const std::string& filename, const cVoronoiDiagram& diagram)
 	{
@@ -310,6 +315,4 @@ namespace chiori
 		file.close();
 		return diagram;
 	}
-
-
 }
