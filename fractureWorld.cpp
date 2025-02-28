@@ -41,12 +41,12 @@ int cFractureWorld::CreateNewFracturePattern( const cVoronoiDiagram& inDiagram, 
 }
 
 bool cFractureWorld::CreateFracturePattern(
-	cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds)
+	cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds, bool shift)
 {
 	if (inBounds.perimeter() <= 0)
 	{
 		outPattern.pattern = inDiagram;
-		return; // save the entire pattern
+		return true; // save the entire pattern
 	}
 	
 	cVoronoiDiagram& vd = outPattern.pattern;
@@ -54,7 +54,7 @@ bool cFractureWorld::CreateFracturePattern(
 	std::unordered_map<unsigned, unsigned> edgeVertMap;
 	std::unordered_set<unsigned> keptEdges;
 	std::unordered_set<cVec2, cVec2Hash> keptPoints;
-	
+	std::unordered_set<cVec2, cVec2Hash> finalKeptPoints;
 	for (int i = 0; i < inDiagram.vertices.size(); ++i)
 	{
 		const cVVert& vt = inDiagram.vertices[i];
@@ -62,7 +62,8 @@ bool cFractureWorld::CreateFracturePattern(
 			continue; // ignore verts outside the bounds
 		cVec2 localPos = vt.site - center; // Transform to local space
 		cVVert newVt = vt;
-		newVt.site = localPos;
+		if (shift)
+			newVt.site = localPos;
 		vd.vertices.push_back(newVt);
 		unsigned index = vd.vertices.size() - 1;
 		
@@ -87,11 +88,13 @@ bool cFractureWorld::CreateFracturePattern(
 				break;
 			}
 		}
-		cassert(index > 0);
-
-		vedge.origin -= center;
-		if (!vedge.infinite)
-			vedge.endDir -= center;
+		cassert(index >= 0);
+		if (shift)
+		{
+			vedge.origin -= center;
+			if (!vedge.infinite)
+				vedge.endDir -= center;
+		}
 		vd.edges.push_back(vedge);
 		vt.edgeIndices[index] = vd.edges.size() - 1;
 	}
@@ -108,17 +111,19 @@ bool cFractureWorld::CreateFracturePattern(
 		{
 			if (keptPoints.count(tri[i]))
 			{
-				keptPoints.insert(tri[0]);
-				keptPoints.insert(tri[1]);
-				keptPoints.insert(tri[2]);
+				finalKeptPoints.insert(tri[0]);
+				finalKeptPoints.insert(tri[1]);
+				finalKeptPoints.insert(tri[2]);
 				break;
 			}
 		}
 	}
 
-	for (const auto& p : keptPoints)
-	{
+	for (auto& p : finalKeptPoints)
+	{		
 		vd.v_points.push_back(p);
+		if (shift)
+			vd.v_points[vd.v_points.size() - 1] -= center;
 	}
 	
 	vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);

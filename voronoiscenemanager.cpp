@@ -2,6 +2,8 @@
 #include "voronoiscenemanager.h"
 #include "cprocessing.h"
 #include "graphics.h"
+#include "aabb.h"
+#include "fractureWorld.h"
 using namespace chiori;
 
 
@@ -466,12 +468,75 @@ public:
         speed = 1.0f;
     }
 };
+
+class CutScene : public VoronoiScene
+{
+    std::vector<cVec2> points;
+    int numPoints = 100;
+    float extents = 80.0f;
+    cAABB aabb;
+    bool hasCut = false;
+
+public:
+    CutScene(DebugGraphics* drawer) : VoronoiScene(drawer) {}
+
+    void Load() override
+    {
+        int bufferEdgeWidth = 80;
+        for (int i = 0; i < numPoints; i++) {
+            float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
+            float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
+            points.push_back({ x,y });
+        }
+        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        voronoi.create(points.data(), points.size());
+
+        aabb = CreateAABB(extents, extents);
+        hasCut = false;
+    }
+
+    void Update(float dt) override
+    {
+        // update the position of the AABB
+        cVec2 mousePos { CP_Input_GetMouseX(), CP_Input_GetMouseY() };
+		aabb.min = mousePos - cVec2{ extents, extents };
+        aabb.max = mousePos + cVec2{ extents, extents };
+        cVec2 center = aabb.getCenter();
+        CP_Settings_StrokeWeight(2);
+        CP_Settings_Stroke(CP_Color_Create(255, 0, 255, 255)); // Green for Delaunay edges
+        CP_Graphics_DrawLine(aabb.min.x, aabb.min.y, aabb.min.x, aabb.max.y);
+        CP_Graphics_DrawLine(aabb.min.x, aabb.max.y, aabb.max.x, aabb.max.y);
+        CP_Graphics_DrawLine(aabb.max.x, aabb.max.y, aabb.max.x, aabb.min.y);
+        CP_Graphics_DrawLine(aabb.max.x, aabb.min.y, aabb.min.x, aabb.min.y);
+        CP_Graphics_DrawCircle(center.x, center.y, 3);
+
+        if (CP_Input_KeyTriggered(KEY_C) && !hasCut)
+        {
+            hasCut = true;
+            cFracturePattern fp;
+            cFractureWorld::CreateFracturePattern(fp, voronoi, aabb, false);
+            tris.clear();
+            voronoi.clear();
+            voronoi = fp.pattern;
+            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+        }
+
+        VoronoiScene::Update(dt);
+    }
+
+    void Unload() override
+    {
+        VoronoiScene::Unload();
+        points.clear();
+        hasCut = false;
+    }
+};
 #pragma endregion
 
 VoronoiSceneManager::VoronoiSceneManager(DebugGraphics* drawer)
     : drawer(drawer)
 {
-
+    AddScene(new CutScene(drawer));
     AddScene(new StaticScene(drawer));
     AddScene(new GrowingScene(drawer));
     AddScene(new ModifiableScene(drawer));

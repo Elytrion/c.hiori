@@ -84,4 +84,13 @@ namespace chiori
 
 		return { lower, upper };
 	}
+
+	inline cAABB CreateAABB(float hx, float hy)
+	{
+		cVec2 halfExtents = { hx / 2, hy / 2 };
+		cAABB aabb;
+		aabb.min = { -hx, -hy };
+		aabb.max = { hx, hy };
+		return aabb;
+	}
 }

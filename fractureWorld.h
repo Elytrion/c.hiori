@@ -54,7 +54,7 @@ namespace chiori
 		int MakeFracturable(int inActorIndex, cFractureMaterial inMaterial); // turn a regular actor into a fracturable object
 		void SetFracturePattern(int inPatternIndex, int inFractorIndex);
 		
-		static bool CreateFracturePattern(cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds);
+		static bool CreateFracturePattern(cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds, bool shift = true);
 		int CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds = cAABB());
 	
 		// call this instead of step when using fractureWorld!
