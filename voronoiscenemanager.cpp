@@ -499,16 +499,25 @@ public:
     {
         // update the position of the AABB
         cVec2 mousePos { CP_Input_GetMouseX(), CP_Input_GetMouseY() };
-		aabb.min = mousePos - cVec2{ extents, extents };
-        aabb.max = mousePos + cVec2{ extents, extents };
+        const cVec2 extent = cVec2{ extents, extents };
+		aabb.min = mousePos - extent;
+        aabb.max = mousePos + extent;
+        cAABB exaabb = aabb;
+        exaabb.min = aabb.min - (aabb.getExtents());
+        exaabb.max = aabb.max + (aabb.getExtents());
         cVec2 center = aabb.getCenter();
         CP_Settings_StrokeWeight(2);
-        CP_Settings_Stroke(CP_Color_Create(255, 0, 255, 255)); // Green for Delaunay edges
+        CP_Settings_Stroke(CP_Color_Create(255, 0, 255, 255));
         CP_Graphics_DrawLine(aabb.min.x, aabb.min.y, aabb.min.x, aabb.max.y);
         CP_Graphics_DrawLine(aabb.min.x, aabb.max.y, aabb.max.x, aabb.max.y);
         CP_Graphics_DrawLine(aabb.max.x, aabb.max.y, aabb.max.x, aabb.min.y);
         CP_Graphics_DrawLine(aabb.max.x, aabb.min.y, aabb.min.x, aabb.min.y);
         CP_Graphics_DrawCircle(center.x, center.y, 3);
+        CP_Settings_Stroke(CP_Color_Create(200, 100, 255, 255));
+        CP_Graphics_DrawLine(exaabb.min.x, exaabb.min.y, exaabb.min.x, exaabb.max.y);
+        CP_Graphics_DrawLine(exaabb.min.x, exaabb.max.y, exaabb.max.x, exaabb.max.y);
+        CP_Graphics_DrawLine(exaabb.max.x, exaabb.max.y, exaabb.max.x, exaabb.min.y);
+        CP_Graphics_DrawLine(exaabb.max.x, exaabb.min.y, exaabb.min.x, exaabb.min.y);
 
         if (CP_Input_KeyTriggered(KEY_C) && !hasCut)
         {

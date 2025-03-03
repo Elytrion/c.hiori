@@ -46,11 +46,17 @@ bool cFractureWorld::CreateFracturePattern(
 	if (inBounds.perimeter() <= 0)
 	{
 		outPattern.pattern = inDiagram;
-		return true; // save the entire pattern
+		return true; // save the entire pattern if no bounds provided
 	}
 	
+	// we expand the bounds to encapsulate all points that could end up in the provided
+	// bounds if the center of those bounds was shifted to its edges
+	cAABB exBounds = inBounds;
+	exBounds.min = inBounds.min - (inBounds.getExtents());
+	exBounds.max = inBounds.max + (inBounds.getExtents());
+	
 	cVoronoiDiagram& vd = outPattern.pattern;
-	cVec2 center = inBounds.getCenter();
+	cVec2 center = exBounds.getCenter();
 	std::unordered_map<unsigned, unsigned> edgeVertMap;
 	std::unordered_set<unsigned> keptEdges;
 	std::unordered_set<cVec2, cVec2Hash> keptPoints;
@@ -58,7 +64,7 @@ bool cFractureWorld::CreateFracturePattern(
 	for (int i = 0; i < inDiagram.vertices.size(); ++i)
 	{
 		const cVVert& vt = inDiagram.vertices[i];
-		if (!inBounds.contains(vt.site))
+		if (!exBounds.contains(vt.site))
 			continue; // ignore verts outside the bounds
 		cVec2 localPos = vt.site - center; // Transform to local space
 		cVVert newVt = vt;
@@ -96,12 +102,26 @@ bool cFractureWorld::CreateFracturePattern(
 				vedge.endDir -= center;
 		}
 		
+		if (!exBounds.contains(vedge.origin) && !vedge.infinite)
+		{
+			std::swap(vedge.origin, vedge.endDir);
+			cVec2 nDir = vedge.endDir - vedge.origin;
+			vedge.endDir = nDir;
+			vedge.infinite = true;
+		}
+		else if (!exBounds.contains(vedge.endDir) && !vedge.infinite)
+		{
+			cVec2 nDir = vedge.endDir - vedge.origin;
+			vedge.endDir = nDir;
+			vedge.infinite = true;
+		}
+
 		vd.edges.push_back(vedge);
 		vt.edgeIndices[index] = vd.edges.size() - 1;
 	}
 	
 	for (unsigned i = 0; i < inDiagram.v_points.size(); i++) {
-		if (!inBounds.contains(inDiagram.v_points[i]))
+		if (!exBounds.contains(inDiagram.v_points[i]))
 			continue;
 		keptPoints.insert(inDiagram.v_points[i]);
 	}

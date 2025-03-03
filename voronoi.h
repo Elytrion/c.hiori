@@ -68,6 +68,8 @@ namespace chiori
 						cVec2 dir = -(triangles[i][edgeEnd] - triangles[i][edgeStart]).tangent();
 						// outward pointing normal is used to create dir, while not 100% accurate, it
 						// is very quick to compute and creates viable to use results
+						// we also avoid normalization since this is an infinite edge
+						// we only care about the direction of the vector
 						edge = cVEdge(circumcenters[t0], dir, true);
 					}
 
