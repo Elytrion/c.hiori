@@ -33,6 +33,7 @@ namespace chiori
 		int CreateActor(const ActorConfig& inConfig);
 		int CreateShape(int inActorIndex, const ShapeConfig& inConfig, cPolygon* inGeom);
 		void RemoveActor(int inActorIndex);
+		cAABB GetActorAABB(int inActorIndex); // computes the AABB of an actor from its sum of shapes
 
 		float fontSize = 14.0f;
 		void DebugDraw(cDebugDraw* draw);

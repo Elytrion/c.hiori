@@ -201,6 +201,26 @@ namespace chiori
 		return shapeIndex;
 	}
 
+	cAABB cPhysicsWorld::GetActorAABB(int inActorIndex)
+	{
+		cassert(p_actors.isValid(inActorIndex));
+		cActor* actor = p_actors[inActorIndex];
+		cAABB totalAABB;
+		int shapeIndex = actor->shapeList;
+		if (shapeIndex != NULL_INDEX)
+			totalAABB = p_shapes[shapeIndex]->aabb;
+
+		while (shapeIndex != NULL_INDEX)
+		{
+			cShape* shape = p_shapes[shapeIndex];
+			const cAABB& sAABB = shape->aabb;
+			totalAABB.min = cVec2::vmin(sAABB.min, totalAABB.min);
+			totalAABB.max = cVec2::vmax(sAABB.max, totalAABB.max);
+			shapeIndex = shape->nextShapeIndex;
+		}
+		return totalAABB;
+	}
+
 	void cPhysicsWorld::step(float inFDT, int primaryIterations, int secondaryIterations, bool warmStart)
 	{
 		int actorCapacity = p_actors.capacity();

@@ -36,6 +36,7 @@ namespace chiori
 			cVec2 tangent = { normal.y, -normal.x };
 			float friction = constraint->friction;
 
+			// calculate normal impulse
 			for (int j = 0; j < pointCount; ++j)
 			{
 				ContactConstraintPoint* cp = constraint->points + j;
@@ -81,6 +82,7 @@ namespace chiori
 				wB += iB * cross(rB, P);
 			}
 
+			// calculate friction/tangent impulses
 			for (int j = 0; j < pointCount; ++j)
 			{
 				ContactConstraintPoint* cp = constraint->points + j;
@@ -411,6 +413,7 @@ namespace chiori
 
 	void StoreContactImpluses(ContactConstraint* constraints, int constraintCount)
 	{
+		// Store impulses for warm-starting
 		for (int i = 0; i < constraintCount; ++i)
 		{
 			ContactConstraint* constraint = constraints + i;

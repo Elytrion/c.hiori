@@ -19,6 +19,12 @@ int cFractureWorld::MakeFracturable(int inActorIndex, cFractureMaterial inMateri
 	return f_fractors.getIndex(n_fractor);
 }
 
+void cFractureWorld::MakeUnfracturable(int inFractorIndex)
+{
+	cassert(f_fractors.isValid(inFractorIndex));
+	f_fractors.Free(f_fractors[inFractorIndex]);
+}
+
 void cFractureWorld::SetFracturePattern(int inPatternIndex, int inFractorIndex)
 {
 	cassert(f_patterns.isValid(inPatternIndex));
@@ -36,7 +42,7 @@ int cFractureWorld::CreateNewFracturePattern( const cVoronoiDiagram& inDiagram, 
 	bool success =
 		CreateFracturePattern(*n_pattern, inDiagram, inBounds);
 	if (!success)
-		return -1;
+		return -1; // failed clip
 	return f_patterns.getIndex(n_pattern);
 }
 
@@ -155,4 +161,136 @@ bool cFractureWorld::CreateFracturePattern(
 void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIterations, bool warmStart)
 {
 	step(inFDT, primaryIterations, secondaryIterations, warmStart);
+
+	// fractor broadphase collision check, ignore all fractors unable to fracture this frame
+	std::unordered_map<int, std::vector<int>> fractorContactsMap;
+	for (int i = 0; i < f_fractors.size(); ++i)
+	{
+		cFracturable* fractor = f_fractors[i];
+		cassert(p_actors.isValid(fractor->actorIndex));
+		cActor* actor = p_actors[fractor->actorIndex];
+		if (actor->contactCount < 1)
+			continue; // no collision here, we continue
+
+		// loop through all the contacts this fractor is in
+		int contactKey = actor->contactList;
+		while (contactKey != NULL_INDEX)
+		{
+			cContact* contact = p_contacts[(contactKey >> 1)];
+			const cManifold& manifold = contact->manifold;
+			if (manifold.pointCount > 0)
+			{
+				fractorContactsMap[i].push_back((contactKey >> 1));
+			}
+			contactKey = contact->edges[contactKey & 1].nextKey;
+		}
+	}
+	
+	std::unordered_map<int, cVec2> fractorPointsMap;
+	// fractor narrowphase fracture check, check if a fracture is possible given the force of collision;
+	for (const auto& [fractorID, contactIDs] : fractorContactsMap)
+	{
+		cassert(f_fractors.isValid(fractorID));
+		cFracturable* fractor = f_fractors[fractorID];
+		cassert(p_actors.isValid(fractor->actorIndex));
+		cActor* actor = p_actors[fractor->actorIndex];
+		cFractureMaterial& mat = fractor->f_material;
+		
+		const cAABB& actorAABB = GetActorAABB(fractor->actorIndex);
+		cVec2 extents = actorAABB.getExtents();
+		float boundingRadius = extents.magnitude(); // AABB diagonal
+		float estimatedThickness = c_min(extents.x, extents.y); // Use smallest dimension
+		float estimatedMinArea = PI * pow(0.1f * c_max(extents.x, extents.y), 2); // Prevents zero area
+		
+		cVec2 fracturePointSum = cVec2::zero;
+		float totalForceMag = 0.0f;
+		for (auto& cid : contactIDs)
+		{
+			const cContact* contact = p_contacts[cid];
+			const cManifold& manifold = contact->manifold;
+			float impactArea = -1.0f; // we need to determine fracture threshold
+			cVec2 normalForce = cVec2::zero;
+			cVec2 mp1impulse, mp2impulse;
+			if (manifold.pointCount == 1)
+			{
+				const cManifoldPoint& mpt1 = manifold.points[0];
+				impactArea = c_max(estimatedMinArea, PI * boundingRadius * boundingRadius);
+				normalForce = mp1impulse = (mpt1.normalImpulse / inFDT) * manifold.normal;
+			}
+			else
+			{
+				cassert(manifold.pointCount == 2);
+				const cManifoldPoint& mpt1 = manifold.points[0];
+				const cManifoldPoint& mpt2 = manifold.points[1];
+				
+				float contactSpan = distance(mpt1.localAnchorA, mpt2.localAnchorA);
+				impactArea = contactSpan * estimatedThickness;
+				mp1impulse = (mpt1.normalImpulse / inFDT) * manifold.normal;
+				mp2impulse = (mpt2.normalImpulse / inFDT) * manifold.normal;
+				normalForce = mp1impulse + mp2impulse;
+			}
+			float appliedStress = normalForce.magnitude() / impactArea;
+			float fractureStress = (mat.elasticity / (1.0f + mat.brittleness)) * (1.0f / mat.toughness);
+			// Adjust for anisotropy
+			cVec2 impactDirection = normalForce.normalized();
+			float angle = acos(dot(impactDirection, mat.anisotropy.normalized()));
+			float anisotropyMultiplier = 1.0f + mat.anisotropyFactor * cos(angle);
+			fractureStress *= anisotropyMultiplier;
+			
+			// Fracture condition check
+			if (appliedStress >= fractureStress)
+			{
+				// we need to get the collision points in a sum for this fractor,
+				// skewed via the normal forces
+				float mp1mag = mp1impulse.magnitude();
+				float mp2mag = mp2impulse.magnitude();
+				if (manifold.pointCount == 1)
+				{
+					fracturePointSum += (manifold.points[0].localAnchorA * mp1mag);
+					totalForceMag += mp1mag;
+				}
+				else
+				{
+					cassert(manifold.pointCount == 2);
+					fracturePointSum += (manifold.points[0].localAnchorA * mp1impulse.magnitude());
+					fracturePointSum += (manifold.points[1].localAnchorA * mp2impulse.magnitude());
+					totalForceMag += (mp1mag + mp2mag);
+				}
+			}
+		}
+
+		if (totalForceMag <= 0.0f) // no fracture was detected
+			continue;
+		
+		// we have the fracture point for this fractor!
+		fractorPointsMap[fractorID] = fracturePointSum / totalForceMag;
+	}
+
+	for (const auto& [fractorID, fracturePoint] : fractorPointsMap)
+	{
+		cassert(f_fractors.isValid(fractorID));
+		cFracturable* fractor = f_fractors[fractorID];
+		cassert(p_actors.isValid(fractor->actorIndex));
+		cActor* actor = p_actors[fractor->actorIndex];
+		cFractureMaterial& mat = fractor->f_material;
+
+		//  If required, create fracture pattern from material properties, else use fracture pattern provided!
+		//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
+		//  create fragments by overlaying pattern onto actual shape polygon
+		//  Reset the new COMs and masses to the individual fragments, including original fractor (resized to the largest piece)			//  Add additional fragments as fractors/actors (depending on if allow deep fractures) into system
+		//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
+	}
+
+	
+	// loop through all fracturing fractors, as above
+	//  loop through each collision manifold
+	//   merge all the collision points to find 1 primary collision position, skewing the average based on the points with the most impact force
+	//  end loop
+	//  If required, create fracture pattern from material properties, else use fracture pattern provided!
+	//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
+	//  create fragments by overlaying pattern onto actual shape polygon
+	//  Reset the new COMs and masses to the individual fragments, including original fractor (resized to the largest piece)
+	//  Add additional fragments as fractors/actors (depending on if allow deep fractures) into system
+	//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
+	// repeat loop until we checked all fracturing fractors
 }
