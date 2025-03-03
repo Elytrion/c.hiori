@@ -43,20 +43,11 @@ namespace chiori
 			triangles = triangulateDelaunator(v_points);
 
 			std::vector<cVec2> circumcenters;
-			cVec2 voronoiCentroid(0, 0);
-			size_t cc_count = 0;
-
+	
 			for (size_t i = 0; i < triangles.size(); i++) {
 				cVec2 circum = circumcenter(triangles[i][0], triangles[i][1], triangles[i][2]);
 				circumcenters.push_back(circum);
-				voronoiCentroid += circum;
-				cc_count++;
 			}
-
-			if (cc_count > 0) {
-				voronoiCentroid /= cc_count;
-			}
-			std::unordered_map<cVec2, std::vector<unsigned>, cVec2Hash> siteToEdges;
 			for (size_t i = 0; i < triangles.size(); i++) {
 				cVVert vertex;
 				vertex.site = circumcenters[i];
@@ -74,12 +65,9 @@ namespace chiori
 					}
 					else {
 						cVec2 midpoint = (triangles[i][edgeStart] + triangles[i][edgeEnd]) * 0.5f;
-						cVec2 dir = (circumcenters[t0] - midpoint);
-
-						if (dir.dot(voronoiCentroid - midpoint) > 0) {
-							dir = -dir;
-						}
-
+						cVec2 dir = -(triangles[i][edgeEnd] - triangles[i][edgeStart]).tangent();
+						// outward pointing normal is used to create dir, while not 100% accurate, it
+						// is very quick to compute and creates viable to use results
 						edge = cVEdge(circumcenters[t0], dir, true);
 					}
 
@@ -96,9 +84,6 @@ namespace chiori
 						edgeIndex = edges.size() - 1;
 					}
 					vertex.edgeIndices.push_back(edgeIndex);
-
-					siteToEdges[triangles[i][edgeStart]].push_back(edgeIndex);
-					siteToEdges[triangles[i][edgeEnd]].push_back(edgeIndex);
 				}
 
 				vertices.push_back(vertex);
@@ -196,20 +181,6 @@ namespace chiori
 				}
 			}
 			return std::numeric_limits<size_t>::max();
-		}
-	
-		cVec2 centriod(cVVert cell)
-		{
-			float sumX = 0, sumY = 0;
-			size_t count = cell.edgeIndices.size();
-
-			for (const auto& ei : cell.edgeIndices) {
-				const cVEdge& v = edges[ei];
-				sumX += v.origin.x;
-				sumY += v.origin.y;
-			}
-
-			return cVec2(sumX / count, sumY / count);
 		}
 	};
 

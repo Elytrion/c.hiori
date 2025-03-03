@@ -95,6 +95,7 @@ bool cFractureWorld::CreateFracturePattern(
 			if (!vedge.infinite)
 				vedge.endDir -= center;
 		}
+		
 		vd.edges.push_back(vedge);
 		vt.edgeIndices[index] = vd.edges.size() - 1;
 	}

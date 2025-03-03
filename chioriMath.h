@@ -130,6 +130,7 @@ namespace chiori
 		float sqrMagnitude() const { return x * x + y * y; }									// square magnitude (self dot product)
 		float magnitude() const { return sqrtf(sqrMagnitude()); }							// magnitude (square root of square magnitude, length of the vector)
 		cVec2 normalized() const { float m = magnitude();  return (m > 0) ? (*this / m) : cVec2(); }	// normalized version of this vector
+		cVec2 tangent() const { return { y, -x }; }
 		cVec2& normalize() {																		// normalize this vector in place
 			float m = magnitude();
 			if (m > 0) {
