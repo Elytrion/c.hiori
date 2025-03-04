@@ -502,7 +502,6 @@ namespace chiori
 				{
 					cManifoldPoint* point = contact->manifold.points + j;
 					cVec2 worldPoint = cTransformVec(xfA, point->localAnchorA);
-
 					if (point->separation > commons::LINEAR_SLOP)
 					{
 						// draw speculative point

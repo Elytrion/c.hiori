@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "scenemanager.h"
-#include "physicsWorld.h"
+//#include "physicsWorld.h"
+#include "fractureWorld.h"
 #include "graphics.h"
 #include "cprocessing.h"
 #include "uimanager.h"
@@ -9,7 +10,7 @@ using namespace chiori;
 
 void PhysicsScene::Unload()
 {
-    cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+    cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
     int capacity = pWorld->p_actors.capacity();
     for (int i = capacity - 1; i >= 0; i--)
     {
@@ -38,9 +39,9 @@ void PhysicsScene::Update(float dt)
 
 void PhysicsScene::Step(float fdt)
 {
-    cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+    cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
     pWorld->runBasicSolver = settings.runBasicSolver;
-    pWorld->step(
+    pWorld->f_step(
         settings.physicsStepTime,
         settings.primaryIterations,
         settings.secondaryIterations,
@@ -58,7 +59,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Create a floor
         ActorConfig a_config;
@@ -100,7 +101,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Create a floor
         ActorConfig a_config;
@@ -165,7 +166,7 @@ public:
 
     void Load() override
     {
-		cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+		cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
 		// Create a floor
 		ActorConfig a_config;
@@ -215,7 +216,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Create a floor
         ActorConfig a_config;
@@ -264,7 +265,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Create a floor
         ActorConfig a_config;
@@ -328,7 +329,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Configure camera
         {
@@ -427,7 +428,7 @@ public:
 
     void Load() override
     {
-		cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+		cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
 		// Create a confining box
 		ActorConfig a_config;
@@ -470,7 +471,7 @@ public:
         PhysicsScene::Update(dt);
 
         // Pick a random polygon and apply a random force
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
         if (CP_Input_KeyTriggered(KEY_R))
         {
             int bodyID = -1;
@@ -490,7 +491,6 @@ public:
 
 };
 
-
 class SelfBalancingBoxScene : public PhysicsScene
 {
     int boxID{ -1 };
@@ -500,7 +500,7 @@ public:
 
     void Load() override
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         // Create a floor
         ActorConfig a_config;
@@ -542,7 +542,7 @@ public:
 		PhysicsScene::Update(dt);
 
         // Apply a force to the box to keep it balanced on its tip everytime it collides with the ground on one side
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
         cActor* boxActor = pWorld->p_actors[boxID];
         if (boxActor)
         {
@@ -587,6 +587,54 @@ public:
         }
 	}
 };
+
+class FractureTestScene : public PhysicsScene
+{
+    int fractorID{ -1 };
+public:
+    FractureTestScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
+
+        // Create a floor
+        ActorConfig a_config;
+        a_config.type = cActorType::STATIC;
+        int floorID = pWorld->CreateActor(a_config);
+
+        ShapeConfig s_config;
+        s_config.friction = 0.2f;
+        cPolygon floorShape = GeomMakeBox(10.0f, 0.25f);
+        pWorld->CreateShape(floorID, s_config, &floorShape);
+
+        // Create Walls
+        int wallID = pWorld->CreateActor(a_config);
+        cPolygon wallShape = GeomMakeOffsetBox(0.25f, 10.0f, { -7.0f, 0.0f });
+        pWorld->CreateShape(wallID, s_config, &wallShape);
+        wallShape = GeomMakeOffsetBox(0.25f, 10.0f, { 7.0f, 0.0f });
+        pWorld->CreateShape(wallID, s_config, &wallShape);
+
+        // Create the ground box
+        a_config.type = cActorType::DYNAMIC;
+        a_config.position = { 0.0f, 3.0f };
+        a_config.angle = 45.1f * DEG2RAD;
+        a_config.angularDamping = 0.75f;
+        int boxID = pWorld->CreateActor(a_config);
+        cPolygon box = GeomMakeBox(0.5f, 0.5f);
+        int boxShapeIndex = pWorld->CreateShape(boxID, s_config, &box);
+        cFractureMaterial fmat;
+        fmat.k = 0.0f;
+        fractorID = pWorld->MakeFracturable(boxID, fmat);
+
+        // configure camera
+        {
+            currentZoom = 90.0f;
+            drawer->ChangeZoom(currentZoom);
+            drawer->SetCamera({ 0.0f, 3.0f });
+        }
+    }
+};
 #pragma endregion
 
 #pragma region Scene Manager
@@ -594,6 +642,7 @@ SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* wo
     : drawer(drawer), uimanager(uimanager), world(world)
 {
 
+    AddScene(new FractureTestScene(drawer, world));
     AddScene(new DefaultScene(drawer, world));
     AddScene(new StackScene(drawer, world));
     AddScene(new RampScene(drawer, world));
@@ -689,7 +738,7 @@ void SceneManager::Update(float dt)
     // draw camera
     if (drawCamera)
     {
-        cPhysicsWorld* pWorld = static_cast<cPhysicsWorld*>(world);
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
 
         char buffer[64];
         CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
@@ -766,12 +815,12 @@ void SceneManager::Update(float dt)
         snprintf(buffer, 64, "Running %s", scenes[currentScene]->settings.runBasicSolver ? "PGS Basic" : "PGS Soft");
         drawer->DrawUIText(20, displayDim.y - 20, buffer, 15, textColor);
 
-        int actorCapacity = static_cast<cPhysicsWorld*>(world)->p_actors.capacity();
-        int actorCount = static_cast<cPhysicsWorld*>(world)->p_actors.size();
+        int actorCapacity = static_cast<cFractureWorld*>(world)->p_actors.capacity();
+        int actorCount = static_cast<cFractureWorld*>(world)->p_actors.size();
         snprintf(buffer, 64, "Actors: %d/%d", actorCount, actorCapacity);
         drawer->DrawUIText(20, displayDim.y - 40, buffer, 15, textColor);
 
-        int shapeCapacity = static_cast<cPhysicsWorld*>(world)->p_shapes.capacity();
+        int shapeCapacity = static_cast<cFractureWorld*>(world)->p_shapes.capacity();
         int shapeCount = static_cast<cPhysicsWorld*>(world)->p_shapes.size();
         snprintf(buffer, 64, "Shapes: %d/%d", shapeCount, shapeCapacity);
         drawer->DrawUIText(20, displayDim.y - 60, buffer, 15, textColor);
@@ -791,6 +840,16 @@ void SceneManager::Update(float dt)
     {
         drawer->DrawUI();
         uimanager->Update();
+    }
+
+    cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
+    for (const auto& [fID, fracturePoint] : pWorld->fractorPointsMap)
+    {
+        int actorIndex = pWorld->f_fractors[fID]->actorIndex;
+        const cActor* actor = pWorld->p_actors[actorIndex];
+        const cVec2& transformedPoint = cTransformVec(actor->getTransform(), fracturePoint);
+        std::cout << actorIndex  << " | " << fID << " | " << fracturePoint << std::endl;
+        drawer->DrawCircle(transformedPoint, 0.1f, cDebugColor::Blue);
     }
 }
 

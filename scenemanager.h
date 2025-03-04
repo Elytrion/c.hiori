@@ -53,7 +53,7 @@ public:
 	bool drawCamera{ false };
 	bool drawInstructions{ true };
 	bool drawStats{ false };
-	bool drawUI{ false };
+	bool drawUI{ true };
 
 	int currentScene{ -1 };
 	int sceneCount{ 0 };

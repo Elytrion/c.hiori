@@ -50,6 +50,7 @@ namespace chiori
 		
 		cPool<cFracturePattern> f_patterns;
 		cPool<cFracturable> f_fractors;
+		std::unordered_map<int, cVec2> fractorPointsMap;
 
 		int MakeFracturable(int inActorIndex, cFractureMaterial inMaterial); // turn a regular actor into a fracturable object
 		void MakeUnfracturable(int inFractorIndex);

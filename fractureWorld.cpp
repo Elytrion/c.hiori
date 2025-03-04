@@ -34,7 +34,7 @@ void cFractureWorld::SetFracturePattern(int inPatternIndex, int inFractorIndex)
 	fractor->patternIndex = inPatternIndex;
 }
 
-int cFractureWorld::CreateNewFracturePattern( const cVoronoiDiagram& inDiagram, const cAABB& inBounds)
+int cFractureWorld::CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds)
 {
 	if (CheckDupePattern(inDiagram))
 		return -1; // duplicate
@@ -54,13 +54,13 @@ bool cFractureWorld::CreateFracturePattern(
 		outPattern.pattern = inDiagram;
 		return true; // save the entire pattern if no bounds provided
 	}
-	
+
 	// we expand the bounds to encapsulate all points that could end up in the provided
 	// bounds if the center of those bounds was shifted to its edges
 	cAABB exBounds = inBounds;
 	exBounds.min = inBounds.min - (inBounds.getExtents());
 	exBounds.max = inBounds.max + (inBounds.getExtents());
-	
+
 	cVoronoiDiagram& vd = outPattern.pattern;
 	cVec2 center = exBounds.getCenter();
 	std::unordered_map<unsigned, unsigned> edgeVertMap;
@@ -78,7 +78,7 @@ bool cFractureWorld::CreateFracturePattern(
 			newVt.site = localPos;
 		vd.vertices.push_back(newVt);
 		unsigned index = vd.vertices.size() - 1;
-		
+
 		for (unsigned edge : vt.edgeIndices) // add connected edges
 		{
 			keptEdges.insert(edge);
@@ -87,7 +87,7 @@ bool cFractureWorld::CreateFracturePattern(
 	}
 
 	for (const unsigned& i : keptEdges)
-	{	
+	{
 		cVEdge vedge = inDiagram.edges[i];
 		cVVert& vt = vd.vertices[edgeVertMap[i]];
 
@@ -107,7 +107,7 @@ bool cFractureWorld::CreateFracturePattern(
 			if (!vedge.infinite)
 				vedge.endDir -= center;
 		}
-		
+
 		if (!exBounds.contains(vedge.origin) && !vedge.infinite)
 		{
 			std::swap(vedge.origin, vedge.endDir);
@@ -125,7 +125,7 @@ bool cFractureWorld::CreateFracturePattern(
 		vd.edges.push_back(vedge);
 		vt.edgeIndices[index] = vd.edges.size() - 1;
 	}
-	
+
 	for (unsigned i = 0; i < inDiagram.v_points.size(); i++) {
 		if (!exBounds.contains(inDiagram.v_points[i]))
 			continue;
@@ -147,12 +147,12 @@ bool cFractureWorld::CreateFracturePattern(
 	}
 
 	for (auto& p : finalKeptPoints)
-	{		
+	{
 		vd.v_points.push_back(p);
 		if (shift)
 			vd.v_points[vd.v_points.size() - 1] -= center;
 	}
-	
+
 	vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);
 
 	return true;
@@ -185,28 +185,27 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			contactKey = contact->edges[contactKey & 1].nextKey;
 		}
 	}
-	
-	std::unordered_map<int, cVec2> fractorPointsMap;
+
 	// fractor narrowphase fracture check, check if a fracture is possible given the force of collision;
 	for (const auto& [fractorID, contactIDs] : fractorContactsMap)
 	{
 		cassert(f_fractors.isValid(fractorID));
 		cFracturable* fractor = f_fractors[fractorID];
-		cassert(p_actors.isValid(fractor->actorIndex));
-		cActor* actor = p_actors[fractor->actorIndex];
+		int aid = fractor->actorIndex;
+		cassert(p_actors.isValid(aid));
+		cActor* actor = p_actors[aid];
 		cFractureMaterial& mat = fractor->f_material;
-		
-		const cAABB& actorAABB = GetActorAABB(fractor->actorIndex);
+
+		const cAABB& actorAABB = GetActorAABB(aid);
 		cVec2 extents = actorAABB.getExtents();
 		float boundingRadius = extents.magnitude(); // AABB diagonal
 		float estimatedThickness = c_min(extents.x, extents.y); // Use smallest dimension
 		float estimatedMinArea = PI * pow(0.1f * c_max(extents.x, extents.y), 2); // Prevents zero area
-		
-		cVec2 fracturePointSum = cVec2::zero;
-		float totalForceMag = 0.0f;
+
 		for (auto& cid : contactIDs)
 		{
 			const cContact* contact = p_contacts[cid];
+			bool flip = (contact->edges[0].bodyIndex != aid);
 			const cManifold& manifold = contact->manifold;
 			float impactArea = -1.0f; // we need to determine fracture threshold
 			cVec2 normalForce = cVec2::zero;
@@ -222,8 +221,12 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 				cassert(manifold.pointCount == 2);
 				const cManifoldPoint& mpt1 = manifold.points[0];
 				const cManifoldPoint& mpt2 = manifold.points[1];
-				
-				float contactSpan = distance(mpt1.localAnchorA, mpt2.localAnchorA);
+				float contactSpan = -1.0f;
+				if (flip)
+					contactSpan = distance(mpt1.localAnchorB, mpt2.localAnchorB);
+				else
+					contactSpan = distance(mpt1.localAnchorA, mpt2.localAnchorA);
+
 				impactArea = contactSpan * estimatedThickness;
 				mp1impulse = (mpt1.normalImpulse / inFDT) * manifold.normal;
 				mp2impulse = (mpt2.normalImpulse / inFDT) * manifold.normal;
@@ -236,7 +239,8 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			float angle = acos(dot(impactDirection, mat.anisotropy.normalized()));
 			float anisotropyMultiplier = 1.0f + mat.anisotropyFactor * cos(angle);
 			fractureStress *= anisotropyMultiplier;
-			
+			fractureStress *= mat.k;
+
 			// Fracture condition check
 			if (appliedStress >= fractureStress)
 			{
@@ -246,34 +250,43 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 				float mp2mag = mp2impulse.magnitude();
 				if (manifold.pointCount == 1)
 				{
-					fracturePointSum += (manifold.points[0].localAnchorA * mp1mag);
-					totalForceMag += mp1mag;
+					fractorPointsMap[fractorID] = (flip) ? manifold.points[0].localAnchorB : manifold.points[0].localAnchorA;
 				}
 				else
 				{
 					cassert(manifold.pointCount == 2);
-					fracturePointSum += (manifold.points[0].localAnchorA * mp1impulse.magnitude());
-					fracturePointSum += (manifold.points[1].localAnchorA * mp2impulse.magnitude());
-					totalForceMag += (mp1mag + mp2mag);
+					if (mp1mag < mp2mag)
+						fractorPointsMap[fractorID] = (flip) ? manifold.points[1].localAnchorB : manifold.points[1].localAnchorA;
+					else
+						fractorPointsMap[fractorID] = (flip) ? manifold.points[0].localAnchorB : manifold.points[0].localAnchorA;
 				}
 			}
 		}
-
-		if (totalForceMag <= 0.0f) // no fracture was detected
-			continue;
-		
-		// we have the fracture point for this fractor!
-		fractorPointsMap[fractorID] = fracturePointSum / totalForceMag;
 	}
 
 	for (const auto& [fractorID, fracturePoint] : fractorPointsMap)
 	{
 		cassert(f_fractors.isValid(fractorID));
 		cFracturable* fractor = f_fractors[fractorID];
-		cassert(p_actors.isValid(fractor->actorIndex));
-		cActor* actor = p_actors[fractor->actorIndex];
+		int aid = fractor->actorIndex;
+		cassert(p_actors.isValid(aid));
+		cActor* actor = p_actors[aid];
 		cFractureMaterial& mat = fractor->f_material;
 
+		const cAABB& actorAABB = GetActorAABB(aid);
+		const cVec2 extents = actorAABB.getExtents();
+
+		cVoronoiDiagram overlayPattern;
+		if (fractor->patternIndex < 0)
+		{
+			// no pattern create one!
+		}
+		else
+		{
+			// use fracture pattern provided
+			//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
+		}
+		
 		//  If required, create fracture pattern from material properties, else use fracture pattern provided!
 		//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
 		//  create fragments by overlaying pattern onto actual shape polygon
@@ -281,7 +294,7 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
 	}
 
-	
+
 	// loop through all fracturing fractors, as above
 	//  loop through each collision manifold
 	//   merge all the collision points to find 1 primary collision position, skewing the average based on the points with the most impact force

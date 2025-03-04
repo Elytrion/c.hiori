@@ -24,7 +24,7 @@ float recommendedHeight = 900.0f;
 bool drawFPS = true;
 cVec2 middle = cVec2{ recommendedWidth / 2.0f, recommendedHeight - 100.0f };
 
-cPhysicsWorld world; // create an instance of the physics world
+cFractureWorld world; // create an instance of the physics world
 DebugGraphics p_drawer{ recommendedWidth, recommendedHeight }; // create a graphics instance to draw the world and UI
 UIManager ui_manager{ &p_drawer }; // create a ui manager to handle UI input events
 SceneManager scene_manager{ &p_drawer, &ui_manager, &world }; // create a scene manager to handle different scenes
