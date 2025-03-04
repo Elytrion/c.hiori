@@ -590,7 +590,6 @@ public:
 
 class FractureTestScene : public PhysicsScene
 {
-    int fractorID{ -1 };
 public:
     FractureTestScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
 
@@ -625,8 +624,13 @@ public:
         int boxShapeIndex = pWorld->CreateShape(boxID, s_config, &box);
         cFractureMaterial fmat;
         fmat.k = 0.0f;
-        fractorID = pWorld->MakeFracturable(boxID, fmat);
+        pWorld->MakeFracturable(boxID, fmat);
 
+        a_config.position = { 3.0f, 3.0f };
+        int box2ID = pWorld->CreateActor(a_config);
+        int boxShape2Index = pWorld->CreateShape(box2ID, s_config, &box);
+        pWorld->MakeFracturable(box2ID, fmat);
+            
         // configure camera
         {
             currentZoom = 90.0f;

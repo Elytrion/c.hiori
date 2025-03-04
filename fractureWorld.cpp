@@ -55,6 +55,9 @@ bool cFractureWorld::CreateFracturePattern(
 		return true; // save the entire pattern if no bounds provided
 	}
 
+	outPattern.min_extent = inBounds.min;
+	outPattern.max_extent = inBounds.max;
+
 	// we expand the bounds to encapsulate all points that could end up in the provided
 	// bounds if the center of those bounds was shifted to its edges
 	cAABB exBounds = inBounds;
@@ -273,18 +276,25 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		cActor* actor = p_actors[aid];
 		cFractureMaterial& mat = fractor->f_material;
 
-		const cAABB& actorAABB = GetActorAABB(aid);
+		const cAABB& actorAABB = GetActorAABB(aid); // in world space!
 		const cVec2 extents = actorAABB.getExtents();
 
 		cVoronoiDiagram overlayPattern;
 		if (fractor->patternIndex < 0)
 		{
 			// no pattern create one!
+			// ignore for now
 		}
 		else
 		{
-			// use fracture pattern provided
-			//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
+			cassert(f_patterns.isValid(fractor->patternIndex));
+			cFracturePattern* fpat = f_patterns[fractor->patternIndex];
+
+			const cVec2 f_extents = (fpat->max_extent - fpat->min_extent) * 0.5f;
+			const cVec2 scaleFactor = extents.cdiv(f_extents);
+			cVec2 translation = fracturePoint;
+			cRot rotation = actor->rot;
+			cTransform xf{ translation , rotation };
 		}
 		
 		//  If required, create fracture pattern from material properties, else use fracture pattern provided!

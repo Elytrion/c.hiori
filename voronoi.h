@@ -128,6 +128,8 @@ namespace chiori
 			triangles.clear();
 		}
 
+		void transform(const cVec2& translation, const cRot& rotation, const cVec2& scale = cVec2::one);
+
 		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
 		{
 			if (points.size() < 3)
@@ -186,6 +188,11 @@ namespace chiori
 		}
 	};
 
+	inline void cVoronoiDiagram::transform(const cVec2& translation, const cRot& rotation, const cVec2& scale)
+	{
+
+	}
+	
 	#define VORONOI_EXTENSION ".vdf"
 	#define VORONOI_FOLDER_NAME "voronoi_data"
 	#define CCCAST(x) reinterpret_cast<const char*>(x)

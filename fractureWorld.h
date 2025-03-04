@@ -8,6 +8,7 @@ namespace chiori
 	{
 	public:
 		cObjHeader header; // required for pool allocator
+		cVec2 min_extent, max_extent;
 		cVoronoiDiagram pattern;
 	};
 	
