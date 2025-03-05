@@ -226,6 +226,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClCompile Include="scenemanager.cpp" />
     <ClCompile Include="solver.cpp" />
     <ClCompile Include="uimanager.cpp" />
+    <ClCompile Include="voronoi.cpp" />
     <ClCompile Include="voronoiscenemanager.cpp" />
   </ItemGroup>
   <ItemGroup>

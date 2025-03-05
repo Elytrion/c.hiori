@@ -77,8 +77,6 @@ bool cFractureWorld::CreateFracturePattern(
 			continue; // ignore verts outside the bounds
 		cVec2 localPos = vt.site - center; // Transform to local space
 		cVVert newVt = vt;
-		if (shift)
-			newVt.site = localPos;
 		vd.vertices.push_back(newVt);
 		unsigned index = vd.vertices.size() - 1;
 
@@ -104,13 +102,6 @@ bool cFractureWorld::CreateFracturePattern(
 			}
 		}
 		cassert(index >= 0);
-		if (shift)
-		{
-			vedge.origin -= center;
-			if (!vedge.infinite)
-				vedge.endDir -= center;
-		}
-
 		if (!exBounds.contains(vedge.origin) && !vedge.infinite)
 		{
 			std::swap(vedge.origin, vedge.endDir);
@@ -152,11 +143,16 @@ bool cFractureWorld::CreateFracturePattern(
 	for (auto& p : finalKeptPoints)
 	{
 		vd.v_points.push_back(p);
-		if (shift)
-			vd.v_points[vd.v_points.size() - 1] -= center;
 	}
 
 	vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);
+
+	if (shift)
+	{
+		outPattern.min_extent -= center;
+		outPattern.max_extent -= center;
+		vd.transform(-center, cRot::iden);
+	}
 
 	return true;
 }
@@ -292,14 +288,13 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 
 			const cVec2 f_extents = (fpat->max_extent - fpat->min_extent) * 0.5f;
 			const cVec2 scaleFactor = extents.cdiv(f_extents);
-			cVec2 translation = fracturePoint;
-			cRot rotation = actor->rot;
-			cTransform xf{ translation , rotation };
+			overlayPattern = fpat->pattern; // copy
+			overlayPattern.transform(fracturePoint, actor->rot, scaleFactor);
 		}
 		
-		//  If required, create fracture pattern from material properties, else use fracture pattern provided!
-		//  translate fracture pattern to found collision point by scaling up bounds to be the bounds of the actor shape(s)
-		//  create fragments by overlaying pattern onto actual shape polygon
+		
+		
+		//  create fragments by overlaying pattern (which is on local actor space) onto actual shape polygon
 		//  Reset the new COMs and masses to the individual fragments, including original fractor (resized to the largest piece)			//  Add additional fragments as fractors/actors (depending on if allow deep fractures) into system
 		//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
 	}

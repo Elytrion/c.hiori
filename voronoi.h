@@ -190,9 +190,32 @@ namespace chiori
 
 	inline void cVoronoiDiagram::transform(const cVec2& translation, const cRot& rotation, const cVec2& scale)
 	{
+		cTransform xf{ translation, rotation };
+		xf.scale = scale;
+		for (cVVert& vert : vertices)
+		{
+			// scale, rotate, translate
+			vert.site = cTransformVec(xf, vert.site);
+		}
 
+		for (cVEdge& edge : edges)
+		{
+			edge.origin = cTransformVec(xf, edge.origin);
+			if (!edge.infinite)
+				edge.endDir = cTransformVec(xf, edge.endDir);
+		}
+
+		for (cVec2& pt : v_points)
+		{
+			pt = cTransformVec(xf, pt);
+		}
 	}
 	
+	std::vector<cVec2> ClipVoronoiWithPolygon(
+		const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count);
+
+	//static std::vector<std::vector<cVec2>> FracturePolygon(const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count);
+
 	#define VORONOI_EXTENSION ".vdf"
 	#define VORONOI_FOLDER_NAME "voronoi_data"
 	#define CCCAST(x) reinterpret_cast<const char*>(x)
@@ -209,8 +232,7 @@ namespace chiori
 		}
 		return path;
 	}
-
-
+	
 	inline void cVoronoiDiagram::save(const std::string& filename, const cVoronoiDiagram& diagram)
 	{
 		fs::path filePath = getProjectPath() / (filename + VORONOI_EXTENSION);

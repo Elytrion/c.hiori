@@ -49,6 +49,9 @@
     <ClCompile Include="fractureWorld.cpp">
       <Filter>Source\Fracture</Filter>
     </ClCompile>
+    <ClCompile Include="voronoi.cpp">
+      <Filter>Source\Fracture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">

@@ -477,6 +477,8 @@ class CutScene : public VoronoiScene
     cAABB aabb;
     bool hasCut = false;
 
+    std::vector<cVec2> clippedVerts{};
+
 public:
     CutScene(DebugGraphics* drawer) : VoronoiScene(drawer) {}
 
@@ -527,16 +529,29 @@ public:
             tris.clear();
             voronoi.clear();
             voronoi = fp.pattern;
+            cPolygon poly = GeomMakeBox(aabb.min, aabb.max);
+            clippedVerts = ClipVoronoiWithPolygon(voronoi, poly.vertices, poly.normals, poly.count);
             tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
         }
 
         VoronoiScene::Update(dt);
+
+        if (clippedVerts.size() > 0)
+        {
+            for (auto& v : clippedVerts)
+            {
+                CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
+                CP_Settings_Fill(CP_Color_Create(0, 0, 255, 255));
+                CP_Graphics_DrawCircle(v.x, v.y, 5);
+            }
+        }
     }
 
     void Unload() override
     {
         VoronoiScene::Unload();
         points.clear();
+        clippedVerts.clear();
         hasCut = false;
     }
 };

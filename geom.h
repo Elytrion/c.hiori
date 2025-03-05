@@ -3,7 +3,7 @@
 
 namespace chiori
 {
-	#define MAX_POLYGON_VERTICES 8
+	#define MAX_POLYGON_VERTICES 16
 
 	/// This holds the mass data computed for a shape.
 	struct cMassData
@@ -46,5 +46,6 @@ namespace chiori
 	cPolygon GeomMakeRegularPolygon(int count);
 	cPolygon GeomMakeSquare(float h);
 	cPolygon GeomMakeBox(float hx, float hy);
+	cPolygon GeomMakeBox(cVec2 min, cVec2 max);
 	cPolygon GeomMakeOffsetBox(float hx, float hy, cVec2 center, float angle = 0.0f);
 }

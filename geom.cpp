@@ -60,6 +60,24 @@ namespace chiori
 		return poly;
 	}
 
+	cPolygon GeomMakeBox(cVec2 min, cVec2 max)
+	{
+		cPolygon poly;
+
+		poly.count = 4;
+		poly.vertices[0] = { min.x, min.y };
+		poly.vertices[1] = { max.x, min.y };
+		poly.vertices[2] = { max.x, max.y };
+		poly.vertices[3] = { min.x, max.y };
+		poly.normals[0] = { 0.0f, -1.0f };
+		poly.normals[1] = { 1.0f, 0.0f };
+		poly.normals[2] = { 0.0f, 1.0f };
+		poly.normals[3] = { -1.0f, 0.0f };
+		poly.radius = 0.0f;
+		
+		return poly;
+	}
+
 	cPolygon GeomMakeSquare(float h) {
 		return GeomMakeBox(h, h);
 	}
