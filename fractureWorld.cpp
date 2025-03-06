@@ -143,6 +143,22 @@ bool cFractureWorld::CreateFracturePattern(
 	for (auto& p : finalKeptPoints)
 	{
 		vd.v_points.push_back(p);
+		
+		// Find the index of this newly stored Voronoi point
+		unsigned newIndex = vd.v_points.size() - 1;
+
+		// We need to check if a vertex is holding a reference to this old point and update it
+		for (auto& v : vd.vertices) // unfortunate O(n^2) here
+		{
+			// Update seedIndices if this vertex originally referenced the old point
+			for (auto& seedIdx : v.seedIndices) // max 3
+			{
+				if (inDiagram.v_points[seedIdx] == p) // If it referenced an old point
+				{
+					seedIdx = newIndex; // Update to new reference
+				}
+			}
+		}
 	}
 
 	vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);

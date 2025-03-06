@@ -7,7 +7,7 @@ namespace chiori
 	{
 		cassert(inCount > 2 && inCount <= MAX_POLYGON_VERTICES);
 		count = inCount;
-
+		
 		// Copy vertices.
 		for (int i = 0; i < count; ++i)
 			vertices[i] = inPoints[i];

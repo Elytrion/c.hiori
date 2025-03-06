@@ -472,22 +472,26 @@ public:
 class CutScene : public VoronoiScene
 {
     std::vector<cVec2> points;
-    int numPoints = 100;
+    int numPoints = 10;
     float extents = 80.0f;
     cAABB aabb;
     bool hasCut = false;
 
+    std::vector<cVCell> cells;
+
     std::vector<cVec2> clippedVerts{};
+
+    bool drawCellsShaded = true;
 
 public:
     CutScene(DebugGraphics* drawer) : VoronoiScene(drawer) {}
 
     void Load() override
     {
-        int bufferEdgeWidth = 80;
+        int bufferEdgeWidth = 400;
         for (int i = 0; i < numPoints; i++) {
             float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
-            float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
+            float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth / 2);
             points.push_back({ x,y });
         }
         tris = cVoronoiDiagram::triangulateDelaunator(points);
@@ -495,6 +499,9 @@ public:
 
         aabb = CreateAABB(extents, extents);
         hasCut = false;
+
+
+        cells = voronoi.getCells();
     }
 
     void Update(float dt) override
@@ -521,6 +528,112 @@ public:
         CP_Graphics_DrawLine(exaabb.max.x, exaabb.max.y, exaabb.max.x, exaabb.min.y);
         CP_Graphics_DrawLine(exaabb.max.x, exaabb.min.y, exaabb.min.x, exaabb.min.y);
 
+        
+
+        if (cells.size() > 0 && drawCellsShaded)
+        {
+            auto drawCell = [&](const cVCell& cell)
+                {
+                    CP_Settings_Fill(cell.infinite ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
+                        : CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
+                    CP_Graphics_BeginShape();
+                    
+                    std::vector<cVec2> verts;
+                    for (size_t i = 0; i < cell.vertices.size(); i++)
+                    {
+                        const cVVert& v = cell.vertices[i];
+
+                        if (cell.infinite)
+                        {
+                            if (cell.vertices.size() == 1) // degen cell
+                            {
+                                // vert is the order of 
+                                // inf edge 1 , self, inf edge 2
+                                // do we know order who the fuck knows we just pray first its first to last
+                                cVec2 extendedA = v.site, extendedB = v.site;
+                                bool hasA = false;
+                                for (unsigned i : v.edgeIndices)
+                                {
+                                    if (voronoi.edges[i].infinite)
+                                    {
+                                        if (hasA)
+                                            extendedB += voronoi.edges[i].endDir * 1000.0f;
+                                        else
+                                        {
+                                            extendedA += voronoi.edges[i].endDir * 1000.0f;
+                                            hasA = true;
+                                        }
+                                    }
+                                }
+                                verts.push_back(extendedA);
+                                verts.push_back(v.site);
+                                verts.push_back(extendedB);
+                                
+                            }
+                            else
+                            {
+                                // we are guaranteed the first and second are the infinite verts
+                                if (i == 0 || i == 1)
+                                {
+                                    cVec2 extended = v.site;     
+                                    float closer = -FLT_MAX;
+                                    for (unsigned i : v.edgeIndices)
+                                    {
+                                        if (voronoi.edges[i].infinite)
+                                        {
+                                            // do a dot product from the site to the cell,
+                                            // if the result is closer we use it
+                                            cVec2 l = v.site + voronoi.edges[i].endDir.normalized();
+                                            float dot = l.dot(voronoi.v_points[cell.seedIndex] - v.site);
+                                            if (closer < dot)
+                                            {
+                                                closer = dot;
+                                                extended = voronoi.edges[i].origin + voronoi.edges[i].endDir * 1000.0f;
+                                            }
+                                        }
+                                    }
+                                    if (i == 0)
+                                    {
+                                        verts.push_back(v.site);
+                                        verts.push_back(extended);
+                                    }
+                                    else
+                                    {
+                                        verts.push_back(extended);
+                                        verts.push_back(v.site);
+                                    }
+                                }
+                                else
+                                    verts.push_back(v.site);
+                            }
+                        }
+                        else
+                            verts.push_back(v.site);
+                    }
+
+
+
+                    
+                    for (auto& pt : verts)
+                    {
+                        CP_Graphics_AddVertex(pt.x, pt.y);
+                    }
+                    CP_Graphics_EndShape();
+                    
+
+                };
+
+            for (auto& cell : cells)
+            {
+                drawCell(cell);
+            }
+        }
+   
+        if (CP_Input_KeyTriggered(KEY_S))
+        {
+            drawCellsShaded = !drawCellsShaded;
+        }
+
         if (CP_Input_KeyTriggered(KEY_C) && !hasCut)
         {
             hasCut = true;
@@ -532,6 +645,7 @@ public:
             cPolygon poly = GeomMakeBox(aabb.min, aabb.max);
             clippedVerts = ClipVoronoiWithPolygon(voronoi, poly.vertices, poly.normals, poly.count);
             tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+            cells = voronoi.getCells();
         }
 
         VoronoiScene::Update(dt);
@@ -552,6 +666,7 @@ public:
         VoronoiScene::Unload();
         points.clear();
         clippedVerts.clear();
+        cells.clear();
         hasCut = false;
     }
 };

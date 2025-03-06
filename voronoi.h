@@ -17,13 +17,21 @@ namespace chiori
 
 	struct cVVert
 	{
-		cVec2 site;							// the centriod/site of the vertex
+		cVec2 site;								// the centriod/site of the vertex
 		std::vector<unsigned> edgeIndices{};	// the indices of the edges that make up this vertex
+		std::vector<unsigned> seedIndices{};	// the indices of the seed points that define this vertex (max 3)
 
 		bool operator==(const cVVert& other) const
 		{
 			return (site == other.site) && (edgeIndices.size() == other.edgeIndices.size());
 		}
+	};
+
+	struct cVCell
+	{
+		unsigned seedIndex{ 0 };		// the index of the cell seed
+		std::vector<cVVert> vertices{};	// the vertices of the cell, in CCW order
+		bool infinite{ false };			// does this cell have infinite area (has infinite edges that comprise it)
 	};
 
 
@@ -53,6 +61,11 @@ namespace chiori
 				vertex.site = circumcenters[i];
 
 				for (size_t j = 0; j < 3; j++) {
+
+					size_t seedIndex = std::distance(v_points.begin(),
+						std::find(v_points.begin(), v_points.end(), triangles[i][j]));
+					vertex.seedIndices.push_back(seedIndex);  // Store the index of the seed point
+					
 					size_t edgeStart = j;
 					size_t edgeEnd = (j + 1) % 3;
 
@@ -129,6 +142,8 @@ namespace chiori
 		}
 
 		void transform(const cVec2& translation, const cRot& rotation, const cVec2& scale = cVec2::one);
+
+		std::vector<cVCell> getCells() const;
 
 		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
 		{
@@ -214,7 +229,7 @@ namespace chiori
 	std::vector<cVec2> ClipVoronoiWithPolygon(
 		const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count);
 
-	//static std::vector<std::vector<cVec2>> FracturePolygon(const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count);
+
 
 	#define VORONOI_EXTENSION ".vdf"
 	#define VORONOI_FOLDER_NAME "voronoi_data"

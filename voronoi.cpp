@@ -1,9 +1,141 @@
 #include "pch.h"
 #include "voronoi.h"
 #include "aabb.h"
+#include <numeric>
 
 namespace chiori
 {
+	float Orientation(cVec2 a, cVec2 b, cVec2 c) {
+		return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+	}
+	// Compute convex hull using Graham's Scan
+	std::vector<unsigned> ComputeConvexHull(const std::vector<cVec2>& points) {
+		std::vector<unsigned> hull;
+
+		if (points.size() < 3) return hull; // Convex hull is undefined for less than 3 points
+
+		// Find the lowest point (leftmost in case of tie)
+		unsigned start = 0;
+		for (unsigned i = 1; i < points.size(); i++) {
+			if (points[i].y < points[start].y || (points[i].y == points[start].y && points[i].x < points[start].x)) {
+				start = i;
+			}
+		}
+
+		// Sort points based on polar angle relative to start point
+		std::vector<unsigned> sorted(points.size());
+		std::iota(sorted.begin(), sorted.end(), 0);
+		std::sort(sorted.begin(), sorted.end(), [&](unsigned a, unsigned b) {
+			float cross = Orientation(points[start], points[a], points[b]);
+			return (cross > 0) || (cross == 0 && (points[a] - points[start]).sqrMagnitude() < (points[b] - points[start]).sqrMagnitude());
+			});
+
+		// Build the hull
+		for (unsigned index : sorted) {
+			while (hull.size() >= 2 && Orientation(points[hull[hull.size() - 2]], points[hull.back()], points[index]) <= 0) {
+				hull.pop_back();
+			}
+			hull.push_back(index);
+		}
+
+		return hull; // Returns the indices of points in the convex hull
+	}
+
+	// omg this an expensive algorithm, lets only use it if absolutely required
+	std::vector<cVCell> cVoronoiDiagram::getCells() const
+	{
+		unsigned seedCount = v_points.size();
+		std::vector<cVCell> cells(seedCount);
+
+		std::vector<unsigned> convexHull = ComputeConvexHull(v_points);
+		std::unordered_set<unsigned> hullSet(convexHull.begin(), convexHull.end()); // Fast lookup
+
+		for (unsigned seedIndex = 0; seedIndex < seedCount; ++seedIndex) {
+			std::vector<cVVert> cellVertices;
+			bool isInfinite = (hullSet.count(seedIndex) > 0);;
+
+			for (const cVVert& vertex : vertices) {
+				if (std::find(vertex.seedIndices.begin(), vertex.seedIndices.end(), seedIndex) != vertex.seedIndices.end()) {
+					cellVertices.push_back(vertex);
+				}
+			}
+
+			// cleanup into CCW convex + infinite cell setting
+			if (!cellVertices.empty()) {
+				cVec2 centroid = v_points[seedIndex];
+
+				std::sort(cellVertices.begin(), cellVertices.end(), [centroid](const cVVert& a, const cVVert& b)
+					{
+						return atan2(a.site.y - centroid.y, a.site.x - centroid.x) < atan2(b.site.y - centroid.y, b.site.x - centroid.x);
+					});
+
+				if (isInfinite) 
+				{
+					auto isInfiniteVert = [&](const cVVert& vert) -> bool
+						{
+							for (unsigned i : vert.edgeIndices)
+							{
+								if (edges[i].infinite)
+									return true;
+							}
+							return false;
+						};
+
+					int vertCount = cellVertices.size();
+					int infIndexA = -1, infIndexB = -1;
+
+					if (vertCount == 1)
+					{
+						cells[seedIndex] = { seedIndex, cellVertices, isInfinite };
+						continue; // degenerate cell, handle externally!
+					}
+
+					// potential for wait how
+
+					// Step 1: Find the first infinite vertex
+					for (int i = 0; i < vertCount; ++i)
+					{
+						if (isInfiniteVert(cellVertices[i]))
+						{
+							infIndexA = i;
+							break;
+						}
+					}
+
+					// Step 2: Find the second infinite vertex (always adjacent)
+					infIndexB = (infIndexA + 1) % vertCount;
+				
+					// Edge case: The last vertex might be the second infinite one
+					if (infIndexA == 0 && isInfiniteVert(cellVertices[vertCount - 1]))
+					{
+						infIndexB = 0;
+						infIndexA = vertCount - 1;
+					}
+
+					// Step 3: Reorder vertices such that the first two are always infinite
+					std::vector<cVVert> rearranged;
+					rearranged.push_back(cellVertices[infIndexA]);
+					rearranged.push_back(cellVertices[infIndexB]);
+
+					// Step 4: Add remaining vertices in CCW order
+					int index = (infIndexB + 1) % vertCount;
+					while (index != infIndexA)
+					{
+						rearranged.push_back(cellVertices[index]);
+						index = (index + 1) % vertCount;
+					}
+
+					// Step 5: Swap rearranged list into `cellVertices`
+					cellVertices.swap(rearranged);
+				}
+
+				cells[seedIndex] = { seedIndex, cellVertices, isInfinite };
+			}
+		}
+
+		return cells;
+	}
+	
 	// check if a point is on the LEFT side of an edge
 	bool is_inside(cVec2 point, cVec2 a, cVec2 b) {
 		return (cross(a - b, point) + cross(b, a)) < 0.0f;
@@ -77,4 +209,6 @@ namespace chiori
 		}
 		return { verts.begin(), verts.end() };
 	}
+	
+
 }
