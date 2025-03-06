@@ -534,8 +534,13 @@ public:
         {
             auto drawCell = [&](const cVCell& cell)
                 {
-                    CP_Settings_Fill(cell.infinite ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
-                        : CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
+                    CP_Settings_Fill(CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
+
+                    if (cell.infinite)
+                    {
+                        CP_Settings_Fill((cell.vertices.size() != 1) ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
+                            : CP_Color_Create(50, 200, 100, 255)); // degen cells in blue
+                    }
                     CP_Graphics_BeginShape();
                     
                     std::vector<cVec2> verts;
@@ -565,9 +570,9 @@ public:
                                         }
                                     }
                                 }
-                                verts.push_back(extendedA);
-                                verts.push_back(v.site);
-                                verts.push_back(extendedB);
+                                //verts.push_back(extendedA);
+                                //verts.push_back(v.site);
+                                //verts.push_back(extendedB);
                                 
                             }
                             else
@@ -581,11 +586,13 @@ public:
                                     {
                                         if (voronoi.edges[i].infinite)
                                         {
-                                            // do a dot product from the site to the cell,
-                                            // if the result is closer we use it
-                                            cVec2 l = v.site + voronoi.edges[i].endDir.normalized();
-                                            float dot = l.dot(voronoi.v_points[cell.seedIndex] - v.site);
-                                            if (closer < dot)
+                                            // Compare direction of edge with vector to seed
+                                            cVec2 edgeDir = voronoi.edges[i].endDir.normalized();
+                                            cVec2 toSeed = (voronoi.v_points[cell.seedIndex] - v.site).normalized();
+                                            float dot = edgeDir.dot(toSeed);
+
+                                            // Higher dot means better alignment
+                                            if (dot > closer)
                                             {
                                                 closer = dot;
                                                 extended = voronoi.edges[i].origin + voronoi.edges[i].endDir * 1000.0f;

@@ -90,33 +90,60 @@ namespace chiori
 						continue; // degenerate cell, handle externally!
 					}
 
-					// potential for wait how
+					std::vector<std::pair<float, int>> infiniteEdges; // (dot product, vertex index)
 
-					// Step 1: Find the first infinite vertex
 					for (int i = 0; i < vertCount; ++i)
 					{
 						if (isInfiniteVert(cellVertices[i]))
 						{
-							infIndexA = i;
-							break;
+							cVec2 toSeed = (v_points[seedIndex] - cellVertices[i].site).normalized();
+
+							for (unsigned edgeIdx : cellVertices[i].edgeIndices)
+							{
+								if (edges[edgeIdx].infinite)
+								{
+									cVec2 edgeDir = edges[edgeIdx].endDir.normalized();
+									float dot = edgeDir.dot(toSeed); // Find best-aligned infinite edge
+									infiniteEdges.emplace_back(dot, i);
+								}
+							}
 						}
 					}
 
-					// Step 2: Find the second infinite vertex (always adjacent)
-					infIndexB = (infIndexA + 1) % vertCount;
-				
-					// Edge case: The last vertex might be the second infinite one
-					if (infIndexA == 0 && isInfiniteVert(cellVertices[vertCount - 1]))
-					{
-						infIndexB = 0;
-						infIndexA = vertCount - 1;
-					}
+					std::sort(infiniteEdges.begin(), infiniteEdges.end(),
+						[](const std::pair<float, int>& a, const std::pair<float, int>& b) {
+							return a.first > b.first; // Higher dot product = better alignment
+						});
+
+					infIndexA = infiniteEdges[0].second;
+					infIndexB = infiniteEdges[1].second;
+
+					//// Step 1: Find the first infinite vertex
+					//for (int i = 0; i < vertCount; ++i)
+					//{
+					//	if (isInfiniteVert(cellVertices[i]))
+					//	{
+					//		infIndexA = i;
+					//		break;
+					//	}
+					//}
+					//// Step 2: Find the second infinite vertex (always adjacent)
+					//infIndexB = (infIndexA + 1) % vertCount;	
+					//// Edge case: The last vertex might be the second infinite one
+					//if (infIndexA == 0 && isInfiniteVert(cellVertices[vertCount - 1]))
+					//{
+					//	infIndexB = 0;
+					//	infIndexA = vertCount - 1;
+					//}
 
 					// Step 3: Reorder vertices such that the first two are always infinite
+
 					std::vector<cVVert> rearranged;
+					rearranged.reserve(vertCount);
 					rearranged.push_back(cellVertices[infIndexA]);
 					rearranged.push_back(cellVertices[infIndexB]);
-
+					std::cout << "Indices A: " << infIndexA << "/" << vertCount - 1 << std::endl;
+					std::cout << "Indices B: " << infIndexB << "/" << vertCount - 1<< std::endl;
 					// Step 4: Add remaining vertices in CCW order
 					int index = (infIndexB + 1) % vertCount;
 					while (index != infIndexA)
@@ -124,7 +151,7 @@ namespace chiori
 						rearranged.push_back(cellVertices[index]);
 						index = (index + 1) % vertCount;
 					}
-
+					std::cout << vertCount << "/" << rearranged.size() << std::endl;
 					// Step 5: Swap rearranged list into `cellVertices`
 					cellVertices.swap(rearranged);
 				}
