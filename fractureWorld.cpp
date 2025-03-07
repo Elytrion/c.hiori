@@ -188,10 +188,12 @@ bool cFractureWorld::CreateFracturePattern(
 	return true;
 }
 
+
+
 void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIterations, bool warmStart)
 {
 	step(inFDT, primaryIterations, secondaryIterations, warmStart);
-
+	fractorPointsMap.clear();
 	// fractor broadphase collision check, ignore all fractors unable to fracture this frame
 	std::unordered_map<int, std::vector<int>> fractorContactsMap;
 	for (int i = 0; i < f_fractors.size(); ++i)
@@ -294,6 +296,7 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		}
 	}
 
+	std::vector<int> fractorsToRemove;
 	for (const auto& [fractorID, fracturePoint] : fractorPointsMap)
 	{
 		cassert(f_fractors.isValid(fractorID));
@@ -324,15 +327,53 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			overlayPattern.transform(fracturePoint, actor->rot, scaleFactor);
 		}
 		
-		cShape* actorShape = p_shapes[actor->shapeList]; // get the first shape
-		const cPolygon& actorPoly = actorShape->polygon;
-		ClipVoronoiWithPolygon(overlayPattern, actorPoly.vertices, actorPoly.normals, actorPoly.count);
-		
 		//  create fragments by overlaying pattern (which is on local actor space) onto actual shape polygon
-		//  Reset the new COMs and masses to the individual fragments, including original fractor (resized to the largest piece)			//  Add additional fragments as fractors/actors (depending on if allow deep fractures) into system
-		//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
+		fractorsToRemove.push_back(fractorID);
+		cShape* actorShape = p_shapes[actor->shapeList]; // get the first shape
+		cVec2 actorLinVel = actor->linearVelocity;
+		float actorAngVel = actor->angularVelocity;
+
+		// prepping configs for new actors
+		ShapeConfig s_config;
+		s_config.density = actorShape->density;
+		s_config.friction = actorShape->friction;
+		s_config.restitution = actorShape->restitution;
+		ActorConfig a_config;
+		a_config.type = cActorType::DYNAMIC;
+		a_config.gravityScale = actor->gravityScale;
+
+		const cPolygon& actorPoly = actorShape->polygon;
+		std::vector<std::vector<cVec2>> fragments = ClipVoronoiWithPolygon(overlayPattern, actorPoly.vertices, actorPoly.normals, actorPoly.count);
+		
+		for (const auto& fragment : fragments)
+		{
+			// get centriod + actors pos to get new starting pos
+			cVec2 newCOM = cVec2::zero;
+			for (const auto& vert : fragment)
+				newCOM += vert;
+			newCOM /= fragment.size();
+			newCOM += actor->position;
+
+			// create new actor
+			a_config.position = newCOM;
+			//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
+			float dampFactor = c_max(1.0f, c_min(0.1f, getMaterialEnergyDampening(mat, actorLinVel))); // clamped, it shouldnt gain energy nor lose too much
+			a_config.linearVelocity = actorLinVel * dampFactor;
+			a_config.angularVelocity = actorAngVel * dampFactor;
+
+			// adds new actor into world
+			int newActorIndex = CreateActor(a_config);
+			cPolygon fragShape{ fragment.data(), static_cast<int>(fragment.size()) };
+			CreateShape(newActorIndex, s_config, &fragShape);
+		}
 	}
 
+	for (const auto& fractorID : fractorsToRemove)
+	{
+		int actorIndex = f_fractors[fractorID]->actorIndex;
+		MakeUnfracturable(fractorID);
+		RemoveActor(actorIndex);
+	}
 
 	// loop through all fracturing fractors, as above
 	//  loop through each collision manifold

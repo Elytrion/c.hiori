@@ -532,6 +532,12 @@ public:
         //            {1081, 586},
         //            {937, 517},
         //            {563, 581} };
+
+        //points = { {0, 25}, {25, -25}, {-25, -25} };
+        //for (cVec2& p : points)
+        //{
+        //    p += {300, 200};
+        //}
         
         tris = cVoronoiDiagram::triangulateDelaunator(points);
         voronoi.create(points.data(), points.size());

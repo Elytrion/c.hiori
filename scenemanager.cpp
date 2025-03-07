@@ -626,10 +626,10 @@ public:
         fmat.k = 0.0f;
         pWorld->MakeFracturable(boxID, fmat);
 
-        a_config.position = { 3.0f, 3.0f };
-        int box2ID = pWorld->CreateActor(a_config);
-        int boxShape2Index = pWorld->CreateShape(box2ID, s_config, &box);
-        pWorld->MakeFracturable(box2ID, fmat);
+        //a_config.position = { 3.0f, 3.0f };
+        //int box2ID = pWorld->CreateActor(a_config);
+        //int boxShape2Index = pWorld->CreateShape(box2ID, s_config, &box);
+        //pWorld->MakeFracturable(box2ID, fmat);
             
         // configure camera
         {
@@ -846,15 +846,15 @@ void SceneManager::Update(float dt)
         uimanager->Update();
     }
 
-    cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
-    for (const auto& [fID, fracturePoint] : pWorld->fractorPointsMap)
-    {
-        int actorIndex = pWorld->f_fractors[fID]->actorIndex;
-        const cActor* actor = pWorld->p_actors[actorIndex];
-        const cVec2& transformedPoint = cTransformVec(actor->getTransform(), fracturePoint);
-        std::cout << actorIndex  << " | " << fID << " | " << fracturePoint << std::endl;
-        drawer->DrawCircle(transformedPoint, 0.1f, cDebugColor::Blue);
-    }
+    //cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
+    //for (const auto& [fID, fracturePoint] : pWorld->fractorPointsMap)
+    //{
+    //    int actorIndex = pWorld->f_fractors[fID]->actorIndex;
+    //    const cActor* actor = pWorld->p_actors[actorIndex];
+    //    const cVec2& transformedPoint = cTransformVec(actor->getTransform(), fracturePoint);
+    //    std::cout << actorIndex  << " | " << fID << " | " << fracturePoint << std::endl;
+    //    drawer->DrawCircle(transformedPoint, 0.1f, cDebugColor::Blue);
+    //}
 }
 
 void SceneManager::HandleCameraInput()

@@ -90,22 +90,42 @@ namespace chiori
 					cVCell& cell = cells[seedIndex];
 					cell = { seedIndex, cellVerticesIndices, isInfinite };			
 
-					// CASE 1: Degenerate cell, 1 vertex, 2 infinite edges that comprise the entire cell
+					// CASE 1: Degenerate cell, 1 vertex, 2 infinite edges that comprise the entire cell, vertex may have all edges as infinite
 					if (vertCount == 1)
 					{
 						// get infinite edges
-						for (unsigned edgeIdx : vertices[cellVerticesIndices[0]].edgeIndices)
+						const cVVert& v = vertices[cellVerticesIndices[0]];
+						cVec2 toSeed = (v_points[seedIndex] - v.site).normalized(); // Direction from vertex to seed
+
+						int infEdge1 = -1, infEdge2 = -1;
+						float bestDot1 = -FLT_MAX, bestDot2 = -FLT_MAX;
+
+						// Step 1: Find the two best infinite edges
+						for (unsigned edgeIdx : v.edgeIndices)
 						{
 							if (edges[edgeIdx].infinite)
 							{
-								if (infVIndexA < 0)
-									infEIndexA = edgeIdx;
-								else
-									infEIndexB = edgeIdx;
+								cVec2 edgeDir = edges[edgeIdx].endDir.normalized();
+								float dot = edgeDir.dot(toSeed); // Compare with seed direction
+
+								if (dot > bestDot1) // Best match
+								{
+									bestDot2 = bestDot1;
+									infEdge2 = infEdge1;
+									bestDot1 = dot;
+									infEdge1 = edgeIdx;
+								}
+								else if (dot > bestDot2) // Second-best match
+								{
+									bestDot2 = dot;
+									infEdge2 = edgeIdx;
+								}
 							}
 						}
-						cell.infEdgeA = infEIndexA; // Edge A index
-						cell.infEdgeB = infEIndexB; // Edge B index
+
+						// Step 2: Store the two best infinite edges
+						cell.infEdgeA = infEdge1;
+						cell.infEdgeB = infEdge2;
 						continue;
 					}
 
@@ -397,22 +417,11 @@ namespace chiori
 			{
 				// vert is the order of 
 				// inf edge 1 , self, inf edge 2
-				cVec2 extendedA = v.site, extendedB = v.site;
-				bool hasA = false;
-				for (unsigned i : v.edgeIndices)
-				{
-					if (pattern.edges[i].infinite)
-					{
-						if (!hasA)
-						{
-							extendedA += pattern.edges[i].endDir * extensionFactor;
-							hasA = true;
-						}
-						else
-							extendedB += pattern.edges[i].endDir * extensionFactor;
-					}
-				}
-				finalVerts = { extendedA, v.site, extendedB };
+				const cVEdge& infEA = pattern.edges[cell.infEdgeA];
+				const cVEdge& infEB = pattern.edges[cell.infEdgeB];
+				const cVec2 exA = v.site + (infEA.endDir.normalized() * extensionFactor);
+				const cVec2 exB = v.site + (infEB.endDir.normalized() * extensionFactor);
+				finalVerts = { exA, v.site, exB };
 				continue;
 			}
 
@@ -472,12 +481,14 @@ namespace chiori
 		std::vector<std::vector<cVec2>> clippedPolys;
 
 		auto& cells = inPattern.getCells();
-
+		std::vector<std::vector<cVec2>> polys;
 		for (auto& cell : cells)
 		{
 			std::vector<cVec2> poly = buildCell(inPattern, cell, extensionFactor * 2);
+			polys.push_back(poly);
 			std::vector<cVec2> ce = suther_land_hodgman(poly, { p_vertices, p_vertices + p_count });
-			clippedPolys.push_back(ce);
+			if (ce.size() > 2)
+				clippedPolys.push_back(ce);
 		}
 
 		std::sort(clippedPolys.begin(), clippedPolys.end(),

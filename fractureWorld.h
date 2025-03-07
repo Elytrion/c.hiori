@@ -30,8 +30,7 @@ namespace chiori
 		cFractureMaterial f_material; // material to use to fracture object
 
 		int actorIndex{ -1 };
-		int patternIndex{ -1 };
-		bool onceFracturable{ true }; // if true, child fragments will not be cFracturables, instead normal actors. 
+		int patternIndex{ 0 };
 
 		float minRRot{ 0.0f }; // the maximum rotation used to randomize the fracture pattern
 		float maxRRot{ 0.0f }; // the minimum rotation used to randomize the fracture pattern
@@ -45,7 +44,13 @@ namespace chiori
 		explicit cFractureWorld(Allocator alloc = Allocator()) :
 			cPhysicsWorld(alloc),
 			f_patterns{ allocator.get() }, f_fractors{ allocator.get() }
-		{}
+		{
+			// make base pattern
+			cVoronoiDiagram basePattern;
+			std::vector<cVec2> verts = { { 0, 25 }, { 25, -25 }, { -25, -25 } };
+			basePattern.create(verts.data(), 3);
+			CreateNewFracturePattern(basePattern, { {-26, -26 }, {26,26} });
+		}
 
 		~cFractureWorld() = default;
 		
@@ -100,4 +105,21 @@ namespace chiori
 			return false;
 		}
 	};
+
+	inline float getMaterialEnergyDampening(const cFractureMaterial& material, const cVec2& fractureDirection) {
+		float beta = material.brittleness;  // Brittle materials lose energy faster
+		float toughness = material.toughness;  // Higher toughness resists energy loss
+		float elasticity = material.elasticity;  // Higher elasticity retains energy
+		float anisotropyFactor = material.anisotropyFactor;  // Strength of directional effect
+		float k = material.k;  // Fine-tuning factor
+
+		// Compute anisotropic scaling (dot product of preferred direction & fracture motion)
+		float anisotropyEffect = std::abs(material.anisotropy.dot(fractureDirection));
+
+		// Final dampening factor
+		float dampeningFactor = k * std::exp(-((beta / toughness) * (1.0f - elasticity)) * (1.0f - anisotropyFactor * anisotropyEffect));
+
+		return dampeningFactor;
+	}
+
 }
