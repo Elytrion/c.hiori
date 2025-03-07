@@ -29,9 +29,11 @@ namespace chiori
 
 	struct cVCell
 	{
-		unsigned seedIndex{ 0 };		// the index of the cell seed
-		std::vector<cVVert> vertices{};	// the vertices of the cell, in CCW order
-		bool infinite{ false };			// does this cell have infinite area (has infinite edges that comprise it)
+		unsigned seedIndex{ 0 };			// the index of the cell seed
+		std::vector<unsigned> vertices{};	// the indices of the vertices of the cell, in CCW order
+		bool infinite{ false };				// does this cell have infinite area? (has 2 infinite edges that comprise it)
+		unsigned infVertA, infVertB;		// the indices of the vertices that comprise the infinite edges of the cell (based on this cells vertices array!)
+		unsigned infEdgeA, infEdgeB;		// the indices of the infinite edges that comprise the infinite cell walls segments
 	};
 
 

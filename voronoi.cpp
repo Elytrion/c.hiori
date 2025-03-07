@@ -51,22 +51,27 @@ namespace chiori
 		std::unordered_set<unsigned> hullSet(convexHull.begin(), convexHull.end()); // Fast lookup
 
 		for (unsigned seedIndex = 0; seedIndex < seedCount; ++seedIndex) {
-			std::vector<cVVert> cellVertices;
-			bool isInfinite = (hullSet.count(seedIndex) > 0);;
+			std::vector<unsigned> cellVerticesIndices;
+			bool isInfinite = (hullSet.count(seedIndex) > 0); // a cell is infinite if is the at the edge of the convex hull of the point cloud
 
-			for (const cVVert& vertex : vertices) {
+			unsigned verticesCount = vertices.size();
+			for (int i = 0; i < verticesCount; ++i)
+			{
+				const cVVert& vertex = vertices[i];
 				if (std::find(vertex.seedIndices.begin(), vertex.seedIndices.end(), seedIndex) != vertex.seedIndices.end()) {
-					cellVertices.push_back(vertex);
+					cellVerticesIndices.push_back(i);
 				}
 			}
 
 			// cleanup into CCW convex + infinite cell setting
-			if (!cellVertices.empty()) {
-				cVec2 centroid = v_points[seedIndex];
+			if (!cellVerticesIndices.empty()) {
+				cVec2 seed = v_points[seedIndex];
 
-				std::sort(cellVertices.begin(), cellVertices.end(), [centroid](const cVVert& a, const cVVert& b)
+				
+				std::sort(cellVerticesIndices.begin(), cellVerticesIndices.end(), [&](unsigned& ia, unsigned& ib)
 					{
-						return atan2(a.site.y - centroid.y, a.site.x - centroid.x) < atan2(b.site.y - centroid.y, b.site.x - centroid.x);
+						auto& a = vertices[ia]; auto& b = vertices[ib];
+						return atan2(a.site.y - seed.y, a.site.x - seed.x) < atan2(b.site.y - seed.y, b.site.x - seed.x);
 					});
 
 				if (isInfinite) 
@@ -81,82 +86,144 @@ namespace chiori
 							return false;
 						};
 
-					int vertCount = cellVertices.size();
-					int infIndexA = -1, infIndexB = -1;
-
+					int vertCount = cellVerticesIndices.size();
+					int infVIndexA = -1, infVIndexB = -1;
+					int infEIndexA = -1, infEIndexB = -1;
+					cVCell& cell = cells[seedIndex];
+					cell = { seedIndex, cellVerticesIndices, isInfinite };				
 					if (vertCount == 1)
-					{
-						cells[seedIndex] = { seedIndex, cellVertices, isInfinite };
 						continue; // degenerate cell, handle externally!
+
+					if (vertCount == 2) // straight line, unique case we can handle quickly
+					{
+						const cVVert& v1 = vertices[cellVerticesIndices[0]];
+						const cVVert& v2 = vertices[cellVerticesIndices[1]];
+						infVIndexA = 0; infVIndexB = 1;
+						// get the outer facing line normal, the one in the same dir as the seed
+						const cVec2 line = v2.site - v1.site;
+						cVec2 tangent = line.tangent().normalized();
+						if (tangent.dot(v_points[seedIndex] - v1.site) < 0)
+							tangent = -tangent;
+						
+						float bestDotA = -FLT_MAX, bestDotB = -FLT_MAX;
+						for (unsigned edgeIdx : v1.edgeIndices) // go through its 3 edges
+						{
+							if (edges[edgeIdx].infinite) // find only the infinite edges
+							{
+								cVec2 edgeDir = edges[edgeIdx].endDir.normalized(); // get the dir of the edge
+								float dot = (edgeDir.dot(tangent));
+								if (dot > bestDotA)
+								{
+									bestDotA = dot;
+									infEIndexA = edgeIdx;
+								}
+							}
+						}
+
+						for (unsigned edgeIdx : v2.edgeIndices) // go through its 3 edges
+						{
+							if (edges[edgeIdx].infinite) // find only the infinite edges
+							{
+								cVec2 edgeDir = edges[edgeIdx].endDir.normalized(); // get the dir of the edge
+								float dot = (edgeDir.dot(tangent));
+								if (dot > bestDotB)
+								{
+									bestDotB = dot;
+									infEIndexB = edgeIdx;
+								}
+							}
+						}
+
+						cell.infVertA = infVIndexA; // Vertex A index
+						cell.infEdgeA = infEIndexA; // Edge A index
+						cell.infVertB = infVIndexB; // Vertex B index
+						cell.infEdgeB = infEIndexB; // Edge B index
+						continue;
 					}
-
-					std::vector<std::pair<float, int>> infiniteEdges; // (dot product, vertex index)
-
+								
 					for (int i = 0; i < vertCount; ++i)
 					{
-						if (isInfiniteVert(cellVertices[i]))
+						const cVVert& v = vertices[cellVerticesIndices[i]];
+						if (isInfiniteVert(v)) // if the vertex has infinite edges
 						{
-							cVec2 toSeed = (v_points[seedIndex] - cellVertices[i].site).normalized();
-
-							for (unsigned edgeIdx : cellVertices[i].edgeIndices)
+							for (unsigned edgeIdx : v.edgeIndices) // go through its 3 edges
 							{
-								if (edges[edgeIdx].infinite)
+								if (edges[edgeIdx].infinite) // find only the infinite edges
 								{
-									cVec2 edgeDir = edges[edgeIdx].endDir.normalized();
-									float dot = edgeDir.dot(toSeed); // Find best-aligned infinite edge
-									infiniteEdges.emplace_back(dot, i);
+									cVec2 edgeDir = edges[edgeIdx].endDir.normalized(); // get the dir of the edge
+
+									int nextIndex = (i + 1) % vertCount;
+									int prevIndex = (i - 1 + vertCount) % vertCount;
+									cVec2 nxtVert = vertices[cellVerticesIndices[nextIndex]].site;
+									cVec2 prevVert = vertices[cellVerticesIndices[prevIndex]].site;
+									cVec2 edgeToNext = (nxtVert - v.site).normalized();
+									cVec2 edgeFromPrev = (v.site - prevVert).normalized();
+									bool ccwNext = edgeDir.dot(-edgeToNext.tangent()) >= 0;
+									bool ccwPrev = edgeDir.dot(-edgeFromPrev.tangent()) >= 0;
+									if (ccwNext || ccwPrev) // if it doesnt keep CCW rotation for both the next or prev edge, it cannot be the correct edge
+									{
+										if (infVIndexA < 0)
+										{
+											infVIndexA = i;
+											infEIndexA = edgeIdx;
+										}
+										else
+										{
+											infVIndexB = i;
+											infEIndexB = edgeIdx;
+										}
+									}
 								}
 							}
 						}
 					}
 
-					std::sort(infiniteEdges.begin(), infiniteEdges.end(),
-						[](const std::pair<float, int>& a, const std::pair<float, int>& b) {
-							return a.first > b.first; // Higher dot product = better alignment
-						});
+					cell.infVertA = infVIndexA; // Vertex A index
+					cell.infEdgeA = infEIndexA; // Edge A index
+					cell.infVertB = infVIndexB; // Vertex B index
+					cell.infEdgeB = infEIndexB; // Edge B index
+					
+					//infIndexA = infiniteEdges[0].second;
+					//infIndexB = infiniteEdges[1].second;
+					////// Step 1: Find the first infinite vertex
+					////for (int i = 0; i < vertCount; ++i)
+					////{
+					////	if (isInfiniteVert(cellVertices[i]))
+					////	{
+					////		infIndexA = i;
+					////		break;
+					////	}
+					////}
+					////// Step 2: Find the second infinite vertex (always adjacent)
+					////infIndexB = (infIndexA + 1) % vertCount;	
+					////// Edge case: The last vertex might be the second infinite one
+					////if (infIndexA == 0 && isInfiniteVert(cellVertices[vertCount - 1]))
+					////{
+					////	infIndexB = 0;
+					////	infIndexA = vertCount - 1;
+					////}
 
-					infIndexA = infiniteEdges[0].second;
-					infIndexB = infiniteEdges[1].second;
+					//// Step 3: Reorder vertices such that the first two are always infinite
 
-					//// Step 1: Find the first infinite vertex
-					//for (int i = 0; i < vertCount; ++i)
+					//std::vector<cVVert> rearranged;
+					//rearranged.reserve(vertCount);
+					//rearranged.push_back(cellVerticesIndices[infIndexA]);
+					//rearranged.push_back(cellVerticesIndices[infIndexB]);
+					//std::cout << "Indices A: " << infIndexA << "/" << vertCount - 1 << std::endl;
+					//std::cout << "Indices B: " << infIndexB << "/" << vertCount - 1<< std::endl;
+					//// Step 4: Add remaining vertices in CCW order
+					//int index = (infIndexB + 1) % vertCount;
+					//while (index != infIndexA)
 					//{
-					//	if (isInfiniteVert(cellVertices[i]))
-					//	{
-					//		infIndexA = i;
-					//		break;
-					//	}
+					//	rearranged.push_back(cellVerticesIndices[index]);
+					//	index = (index + 1) % vertCount;
 					//}
-					//// Step 2: Find the second infinite vertex (always adjacent)
-					//infIndexB = (infIndexA + 1) % vertCount;	
-					//// Edge case: The last vertex might be the second infinite one
-					//if (infIndexA == 0 && isInfiniteVert(cellVertices[vertCount - 1]))
-					//{
-					//	infIndexB = 0;
-					//	infIndexA = vertCount - 1;
-					//}
-
-					// Step 3: Reorder vertices such that the first two are always infinite
-
-					std::vector<cVVert> rearranged;
-					rearranged.reserve(vertCount);
-					rearranged.push_back(cellVertices[infIndexA]);
-					rearranged.push_back(cellVertices[infIndexB]);
-					std::cout << "Indices A: " << infIndexA << "/" << vertCount - 1 << std::endl;
-					std::cout << "Indices B: " << infIndexB << "/" << vertCount - 1<< std::endl;
-					// Step 4: Add remaining vertices in CCW order
-					int index = (infIndexB + 1) % vertCount;
-					while (index != infIndexA)
-					{
-						rearranged.push_back(cellVertices[index]);
-						index = (index + 1) % vertCount;
-					}
-					std::cout << vertCount << "/" << rearranged.size() << std::endl;
-					// Step 5: Swap rearranged list into `cellVertices`
-					cellVertices.swap(rearranged);
+					//std::cout << vertCount << "/" << rearranged.size() << std::endl;
+					//// Step 5: Swap rearranged list into `cellVertices`
+					//cellVerticesIndices.swap(rearranged);
 				}
-
-				cells[seedIndex] = { seedIndex, cellVertices, isInfinite };
+				else
+					cells[seedIndex] = { seedIndex, cellVerticesIndices, isInfinite };
 			}
 		}
 
