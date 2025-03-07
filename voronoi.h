@@ -228,7 +228,7 @@ namespace chiori
 		}
 	}
 	
-	std::vector<cVec2> ClipVoronoiWithPolygon(
+	std::vector<std::vector<cVec2>> ClipVoronoiWithPolygon(
 		const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count);
 
 

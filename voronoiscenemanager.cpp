@@ -479,7 +479,7 @@ class CutScene : public VoronoiScene
 
     std::vector<cVCell> cells;
 
-    std::vector<cVec2> clippedVerts{};
+    std::vector<std::vector<cVec2>> clippedVerts{};
 
     bool drawCellsAll = true;
     bool drawCellsSingle = false;
@@ -488,6 +488,14 @@ class CutScene : public VoronoiScene
 
 public:
     CutScene(DebugGraphics* drawer) : VoronoiScene(drawer) {}
+
+    CP_Color GetIndexedColor(int index)
+    {
+        int r = (index * 97) % 255;  // Multiply by a prime number for better distribution
+        int g = (index * 47) % 255;
+        int b = (index * 67) % 255;
+        return CP_Color_Create(r, g, b, 255);
+    }
 
     void Load() override
     {
@@ -559,260 +567,161 @@ public:
         CP_Graphics_DrawLine(exaabb.max.x, exaabb.max.y, exaabb.max.x, exaabb.min.y);
         CP_Graphics_DrawLine(exaabb.max.x, exaabb.min.y, exaabb.min.x, exaabb.min.y);
 
-       
-        //if (cells.size() > 0)
-        //{
-        //    auto drawCell = [&](const cVCell& cell)
+   
+        //auto drawCell = [&](const cVCell& cell)
+        //    {
+        //        std::vector<cVec2> verts;
+        //        
+        //        for (size_t i = 0; i < cell.vertices.size(); i++)
         //        {
-        //            CP_Settings_Fill(CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
-
-        //            if (cell.infinite)
+        //            const cVVert& v = voronoi.vertices[cell.vertices[i]];
+		//            
+        //            if (!cell.infinite)
         //            {
-        //                CP_Settings_Fill((cell.vertices.size() != 1) ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
-        //                    : CP_Color_Create(50, 200, 100, 255)); // degen cells in blue
+        //                verts.push_back(v.site);
+        //                continue;
         //            }
-        //            CP_Graphics_BeginShape();
-        //            
-        //            std::vector<cVec2> verts;
-        //            for (size_t i = 0; i < cell.vertices.size(); i++)
+        //
+        //            if (cell.vertices.size() == 1) // degen cell
         //            {
-        //                const cVVert& v = cell.vertices[i];
-
-        //                if (cell.infinite)
+        //                // vert is the order of 
+        //                // inf edge 1 , self, inf edge 2
+        //                // do we know order who the fuck knows we just pray first its first to last
+        //                cVec2 extendedA = v.site, extendedB = v.site;
+        //                bool hasA = false;
+        //                for (unsigned i : v.edgeIndices)
         //                {
-        //                    if (cell.vertices.size() == 1) // degen cell
+        //                    if (voronoi.edges[i].infinite)
         //                    {
-        //                        // vert is the order of 
-        //                        // inf edge 1 , self, inf edge 2
-        //                        // do we know order who the fuck knows we just pray first its first to last
-        //                        cVec2 extendedA = v.site, extendedB = v.site;
-        //                        bool hasA = false;
-        //                        for (unsigned i : v.edgeIndices)
-        //                        {
-        //                            if (voronoi.edges[i].infinite)
-        //                            {
-        //                                if (hasA)
-        //                                    extendedB += voronoi.edges[i].endDir * 1000.0f;
-        //                                else
-        //                                {
-        //                                    extendedA += voronoi.edges[i].endDir * 1000.0f;
-        //                                    hasA = true;
-        //                                }
-        //                            }
-        //                        }
-        //                        //verts.push_back(extendedA);
-        //                        //verts.push_back(v.site);
-        //                        //verts.push_back(extendedB);
-        //                        
-        //                    }
-        //                    else
-        //                    {
-        //                        // we are guaranteed the first and second are the infinite verts
-        //                        if (i == 0 || i == 1)
-        //                        {
-        //                            cVec2 extended = v.site;     
-        //                            float closer = -FLT_MAX;
-        //                            for (unsigned i : v.edgeIndices)
-        //                            {
-        //                                if (voronoi.edges[i].infinite)
-        //                                {
-        //                                    // Compare direction of edge with vector to seed
-        //                                    cVec2 edgeDir = voronoi.edges[i].endDir.normalized();
-        //                                    cVec2 toSeed = (voronoi.v_points[cell.seedIndex] - v.site).normalized();
-        //                                    float dot = edgeDir.dot(toSeed);
-
-        //                                    // Higher dot means better alignment
-        //                                    if (dot > closer)
-        //                                    {
-        //                                        closer = dot;
-        //                                        extended = voronoi.edges[i].origin + voronoi.edges[i].endDir * 1000.0f;
-        //                                    }
-        //                                }
-        //                            }
-        //                            if (i == 0)
-        //                            {
-        //                                verts.push_back(v.site);
-        //                                verts.push_back(extended);
-        //                            }
-        //                            else
-        //                            {
-        //                                verts.push_back(extended);
-        //                                verts.push_back(v.site);
-        //                            }
-        //                        }
+        //                        if (hasA)
+        //                            extendedB += voronoi.edges[i].endDir * 1000.0f;
         //                        else
-        //                            verts.push_back(v.site);
+        //                        {
+        //                            extendedA += voronoi.edges[i].endDir * 1000.0f;
+        //                            hasA = true;
+        //                        }
         //                    }
         //                }
-        //                else
-        //                    verts.push_back(v.site);
+        //                verts.push_back(extendedA);
+        //                verts.push_back(v.site);
+        //                verts.push_back(extendedB);
+        //                continue;
         //            }
-
-        //            
-        //            for (auto& pt : verts)
+        //
+        //            const cVVert& infVA = voronoi.vertices[cell.vertices[cell.infVertA]];
+        //            const cVVert& infVB = voronoi.vertices[cell.vertices[cell.infVertB]];
+        //            const cVEdge& infEA = voronoi.edges[cell.infEdgeA];
+        //            const cVEdge& infEB = voronoi.edges[cell.infEdgeB];
+        //
+        //            const cVec2 exA = infVA.site + (infEA.endDir.normalized() * 10000.0f);
+        //            const cVec2 exB = infVB.site + (infEB.endDir.normalized() * 10000.0f);
+        //
+        //            verts.push_back(exA);          // Extended infinite edge A
+        //            verts.push_back(infVA.site);    // Infinite vertex A
+        //            verts.push_back(infVB.site);    // Infinite vertex B
+        //            verts.push_back(exB);          // Extended infinite edge B
+        //
+        //            for (size_t j = 0; j < cell.vertices.size(); j++)
         //            {
-        //                CP_Graphics_AddVertex(pt.x, pt.y);
+        //                if (j != cell.infVertA && j != cell.infVertB)
+        //                {
+        //                    verts.push_back(voronoi.vertices[cell.vertices[j]].site);
+        //                }
         //            }
-        //            CP_Graphics_EndShape();
+        //            const cVec2& seedPt = voronoi.v_points[cell.seedIndex];
+        //            std::sort(verts.begin(), verts.end(), [seedPt](const cVec2& a, const cVec2& b)
+        //                {
+        //                    return atan2(a.y - seedPt.y, a.x - seedPt.x) < atan2(b.y - seedPt.y, b.x - seedPt.x);
+        //                });
         //            
-
-        //        };
+        //            //// A in magenta
+        //            //CP_Settings_Fill(CP_Color_Create(255, 50, 255, 255));
+        //            //CP_Settings_Stroke(CP_Color_Create(255, 50, 255, 255));
+        //            //CP_Graphics_DrawCircle(infVA.site.x, infVA.site.y, 5);
+        //            //// B in cyan
+        //            //CP_Settings_Fill(CP_Color_Create(50, 255, 255, 255));
+        //            //CP_Settings_Stroke(CP_Color_Create(50, 255, 255, 255));
+        //            //CP_Graphics_DrawCircle(infVB.site.x, infVB.site.y, 5);
+        //            //
+        //            //CP_Settings_StrokeWeight(3);
+        //            //
+        //            //CP_Settings_Stroke(CP_Color_Create(255, 50, 255, 255)); // A in magenta
+        //            //CP_Graphics_DrawLine(infVA.site.x, infVA.site.y, exA.x, exA.y);
+        //            //CP_Settings_Stroke(CP_Color_Create(50, 255, 255, 255)); // B in cyan
+        //            //CP_Graphics_DrawLine(infVB.site.x, infVB.site.y, exB.x, exB.y);
+        //        }
+        //
+        //        CP_Settings_Fill(CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
+        //        if (cell.infinite)
+        //        {
+        //            CP_Settings_Fill((cell.vertices.size() != 1) ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
+        //                : CP_Color_Create(50, 200, 100, 255)); // degen cells in whatever
+        //        }            
+        //        CP_Graphics_BeginShape();
+        //        for (auto& pt : verts)
+        //        {
+        //            CP_Graphics_AddVertex(pt.x, pt.y);
+        //        }
+        //        CP_Graphics_EndShape();
+        //
+        //    };
+        //
+        //if (cells.size() > 0)
+        //{
+        //    if (drawCellsSingle)
+        //    {
+        //        auto& cell = cells[currentCell];
+        //        drawCell(cell);
+        //    }
+        //    else if (drawCellsAll)
+        //    {
+        //        for (auto& cell : cells)
+        //        {
+        //            drawCell(cell);
+        //        }
+        //    }
         //}
-   
-        auto drawCell = [&](const cVCell& cell)
-            {
-                std::vector<cVec2> verts;
-                
-                for (size_t i = 0; i < cell.vertices.size(); i++)
-                {
-                    const cVVert& v = voronoi.vertices[cell.vertices[i]];
-
-                    if (!cell.infinite)
-                    {
-                        verts.push_back(v.site);
-                        continue;
-                    }
-
-                    if (cell.vertices.size() == 1) // degen cell
-                    {
-                        // vert is the order of 
-                        // inf edge 1 , self, inf edge 2
-                        // do we know order who the fuck knows we just pray first its first to last
-                        cVec2 extendedA = v.site, extendedB = v.site;
-                        bool hasA = false;
-                        for (unsigned i : v.edgeIndices)
-                        {
-                            if (voronoi.edges[i].infinite)
-                            {
-                                if (hasA)
-                                    extendedB += voronoi.edges[i].endDir * 1000.0f;
-                                else
-                                {
-                                    extendedA += voronoi.edges[i].endDir * 1000.0f;
-                                    hasA = true;
-                                }
-                            }
-                        }
-                        verts.push_back(extendedA);
-                        verts.push_back(v.site);
-                        verts.push_back(extendedB);
-                        continue;
-                    }
-
-                    const cVVert& infVA = voronoi.vertices[cell.vertices[cell.infVertA]];
-                    const cVVert& infVB = voronoi.vertices[cell.vertices[cell.infVertB]];
-                    const cVEdge& infEA = voronoi.edges[cell.infEdgeA];
-                    const cVEdge& infEB = voronoi.edges[cell.infEdgeB];
-
-                    const cVec2 exA = infVA.site + (infEA.endDir.normalized() * 10000.0f);
-                    const cVec2 exB = infVB.site + (infEB.endDir.normalized() * 10000.0f);
-
-                    verts.push_back(exA);          // Extended infinite edge A
-                    verts.push_back(infVA.site);    // Infinite vertex A
-                    verts.push_back(infVB.site);    // Infinite vertex B
-                    verts.push_back(exB);          // Extended infinite edge B
-
-                    for (size_t j = 0; j < cell.vertices.size(); j++)
-                    {
-                        if (j != cell.infVertA && j != cell.infVertB)
-                        {
-                            verts.push_back(voronoi.vertices[cell.vertices[j]].site);
-                        }
-                    }
-                    const cVec2& seedPt = voronoi.v_points[cell.seedIndex];
-                    std::sort(verts.begin(), verts.end(), [seedPt](const cVec2& a, const cVec2& b)
-                        {
-                            return atan2(a.y - seedPt.y, a.x - seedPt.x) < atan2(b.y - seedPt.y, b.x - seedPt.x);
-                        });
-                    
-                    //// A in magenta
-                    //CP_Settings_Fill(CP_Color_Create(255, 50, 255, 255));
-                    //CP_Settings_Stroke(CP_Color_Create(255, 50, 255, 255));
-                    //CP_Graphics_DrawCircle(infVA.site.x, infVA.site.y, 5);
-                    //// B in cyan
-                    //CP_Settings_Fill(CP_Color_Create(50, 255, 255, 255));
-                    //CP_Settings_Stroke(CP_Color_Create(50, 255, 255, 255));
-                    //CP_Graphics_DrawCircle(infVB.site.x, infVB.site.y, 5);
-                    //
-                    //CP_Settings_StrokeWeight(3);
-                    //
-                    //CP_Settings_Stroke(CP_Color_Create(255, 50, 255, 255)); // A in magenta
-                    //CP_Graphics_DrawLine(infVA.site.x, infVA.site.y, exA.x, exA.y);
-                    //CP_Settings_Stroke(CP_Color_Create(50, 255, 255, 255)); // B in cyan
-                    //CP_Graphics_DrawLine(infVB.site.x, infVB.site.y, exB.x, exB.y);
-                }
-
-                CP_Settings_Fill(CP_Color_Create(50, 50, 200, 255)); // Normal cells in blue
-                if (cell.infinite)
-                {
-                    CP_Settings_Fill((cell.vertices.size() != 1) ? CP_Color_Create(200, 50, 50, 128)  // Infinite cells in red
-                        : CP_Color_Create(50, 200, 100, 255)); // degen cells in whatever
-                }            
-                CP_Graphics_BeginShape();
-                for (auto& pt : verts)
-                {
-                    CP_Graphics_AddVertex(pt.x, pt.y);
-                }
-                CP_Graphics_EndShape();
-
-            };
-
-        if (cells.size() > 0)
-        {
-            if (drawCellsSingle)
-            {
-                auto& cell = cells[currentCell];
-                drawCell(cell);
-            }
-            else if (drawCellsAll)
-            {
-                for (auto& cell : cells)
-                {
-                    drawCell(cell);
-                }
-            }
-        }
-        
-        if (CP_Input_KeyTriggered(KEY_S))
-        {
-            drawCellsAll = !drawCellsAll;
-            drawCellsSingle = !drawCellsSingle;
-        }
-        if (drawCellsSingle)
-        {
-            auto& pt = voronoi.v_points[cells[currentCell].seedIndex];
-            CP_Settings_Fill(CP_Color_Create(255, 255, 255, 255));
-            CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
-            CP_Graphics_DrawCircle(pt.x, pt.y, 5);
-            cVec2 trueCentriod;
-            for (auto& vi : cells[currentCell].vertices)
-            {
-                trueCentriod += voronoi.vertices[vi].site;
-            }
-            trueCentriod /= cells[currentCell].vertices.size();
-            CP_Settings_Stroke(CP_Color_Create(0, 0, 0, 255));
-            CP_Graphics_DrawCircle(trueCentriod.x, trueCentriod.y, 5);
-        }
-        if (CP_Input_KeyTriggered(KEY_I))
-        {
-            currentCell = (currentCell + 1) % cells.size();
-            std::cout << "\nSHOWING CELL " << currentCell << " with SEED " 
-                << cells[currentCell].seedIndex << "(" << voronoi.v_points[cells[currentCell].seedIndex] 
-                << ")" << std::endl;
-            if (cells[currentCell].infinite)
-            {
-                auto& cell = cells[currentCell];
-                std::cout << "Inf Verts: " << cell.infVertA << ", " << cell.infVertB << " | " << cell.vertices.size() << std::endl;
-                std::cout << "Inf Edges: " << cell.infEdgeA << ", " << cell.infEdgeB << " | " << voronoi.edges.size() << std::endl;
-            }
-        }
-        if (CP_Input_KeyTriggered(KEY_Z))
-        {
-            for (auto& pt : voronoi.v_points)
-            {
-                std::cout << pt << std::endl;
-            }
-        }
+        //
+        //if (CP_Input_KeyTriggered(KEY_S))
+        //{
+        //    drawCellsAll = !drawCellsAll;
+        //    drawCellsSingle = !drawCellsSingle;
+        //}
+        //if (drawCellsSingle)
+        //{
+        //    auto& pt = voronoi.v_points[cells[currentCell].seedIndex];
+        //    CP_Settings_Fill(CP_Color_Create(255, 255, 255, 255));
+        //    CP_Settings_Stroke(CP_Color_Create(255, 255, 255, 255));
+        //    CP_Graphics_DrawCircle(pt.x, pt.y, 5);
+        //    cVec2 trueCentriod;
+        //    for (auto& vi : cells[currentCell].vertices)
+        //    {
+        //        trueCentriod += voronoi.vertices[vi].site;
+        //    }
+        //    trueCentriod /= cells[currentCell].vertices.size();
+        //    CP_Settings_Stroke(CP_Color_Create(0, 0, 0, 255));
+        //    CP_Graphics_DrawCircle(trueCentriod.x, trueCentriod.y, 5);
+        //}
+        //if (CP_Input_KeyTriggered(KEY_I))
+        //{
+        //    currentCell = (currentCell + 1) % cells.size();
+        //    std::cout << "\nSHOWING CELL " << currentCell << " with SEED " 
+        //        << cells[currentCell].seedIndex << "(" << voronoi.v_points[cells[currentCell].seedIndex] 
+        //        << ")" << std::endl;
+        //    if (cells[currentCell].infinite)
+        //    {
+        //        auto& cell = cells[currentCell];
+        //        std::cout << "Inf Verts: " << cell.infVertA << ", " << cell.infVertB << " | " << cell.vertices.size() << std::endl;
+        //        std::cout << "Inf Edges: " << cell.infEdgeA << ", " << cell.infEdgeB << " | " << voronoi.edges.size() << std::endl;
+        //    }
+        //}
+        //if (CP_Input_KeyTriggered(KEY_Z))
+        //{
+        //    for (auto& pt : voronoi.v_points)
+        //    {
+        //        std::cout << pt << std::endl;
+        //    }
+        //}
 
         if (CP_Input_KeyTriggered(KEY_C) && !hasCut)
         {
@@ -823,6 +732,7 @@ public:
             voronoi.clear();
             voronoi = fp.pattern;
             cPolygon poly = GeomMakeBox(aabb.min, aabb.max);
+            clippedVerts.clear();
             clippedVerts = ClipVoronoiWithPolygon(voronoi, poly.vertices, poly.normals, poly.count);
             tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
             cells = voronoi.getCells();
@@ -832,11 +742,18 @@ public:
 
         if (clippedVerts.size() > 0)
         {
-            for (auto& v : clippedVerts)
+            for (int j = 0; j < clippedVerts.size(); ++j)
             {
-                CP_Settings_Stroke(CP_Color_Create(0, 0, 255, 255));
-                CP_Settings_Fill(CP_Color_Create(0, 0, 255, 255));
-                CP_Graphics_DrawCircle(v.x, v.y, 5);
+                auto& poly = clippedVerts[j];
+                // create random color                
+                CP_Color color = GetIndexedColor(j);// CP_Color_Create(CP_Random_RangeInt(0, 255), CP_Random_RangeInt(0, 255), CP_Random_RangeInt(0, 255), 255);
+                CP_Settings_Fill(color);
+                CP_Graphics_BeginShape();
+                for (int i = 0; i < poly.size(); ++i)
+                {
+                    CP_Graphics_AddVertex(poly[i].x, poly[i].y);
+                }
+                CP_Graphics_EndShape();
             }
         }
     }

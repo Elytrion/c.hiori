@@ -70,55 +70,6 @@ bool cFractureWorld::CreateFracturePattern(
 	std::unordered_set<unsigned> keptEdges;
 	std::unordered_set<cVec2, cVec2Hash> keptPoints;
 	std::unordered_set<cVec2, cVec2Hash> finalKeptPoints;
-	for (int i = 0; i < inDiagram.vertices.size(); ++i)
-	{
-		const cVVert& vt = inDiagram.vertices[i];
-		if (!exBounds.contains(vt.site))
-			continue; // ignore verts outside the bounds
-		cVec2 localPos = vt.site - center; // Transform to local space
-		cVVert newVt = vt;
-		vd.vertices.push_back(newVt);
-		unsigned index = vd.vertices.size() - 1;
-
-		for (unsigned edge : vt.edgeIndices) // add connected edges
-		{
-			keptEdges.insert(edge);
-			edgeVertMap[edge] = index;
-		}
-	}
-
-	for (const unsigned& i : keptEdges)
-	{
-		cVEdge vedge = inDiagram.edges[i];
-		cVVert& vt = vd.vertices[edgeVertMap[i]];
-
-		int index = -1;
-		for (int j = 0; j < vt.edgeIndices.size(); ++j)
-		{
-			if (vt.edgeIndices[j] == i)
-			{
-				index = j;
-				break;
-			}
-		}
-		cassert(index >= 0);
-		if (!exBounds.contains(vedge.origin) && !vedge.infinite)
-		{
-			std::swap(vedge.origin, vedge.endDir);
-			cVec2 nDir = vedge.endDir - vedge.origin;
-			vedge.endDir = nDir;
-			vedge.infinite = true;
-		}
-		else if (!exBounds.contains(vedge.endDir) && !vedge.infinite)
-		{
-			cVec2 nDir = vedge.endDir - vedge.origin;
-			vedge.endDir = nDir;
-			vedge.infinite = true;
-		}
-
-		vd.edges.push_back(vedge);
-		vt.edgeIndices[index] = vd.edges.size() - 1;
-	}
 
 	for (unsigned i = 0; i < inDiagram.v_points.size(); i++) {
 		if (!exBounds.contains(inDiagram.v_points[i]))
@@ -139,29 +90,93 @@ bool cFractureWorld::CreateFracturePattern(
 			}
 		}
 	}
+	std::vector<cVec2> finalKeptPointsVec(finalKeptPoints.begin(), finalKeptPoints.end());
+	vd.clear();
+	vd.create(finalKeptPointsVec.data(), finalKeptPointsVec.size());
 
-	for (auto& p : finalKeptPoints)
-	{
-		vd.v_points.push_back(p);
-		
-		// Find the index of this newly stored Voronoi point
-		unsigned newIndex = vd.v_points.size() - 1;
-
-		// We need to check if a vertex is holding a reference to this old point and update it
-		for (auto& v : vd.vertices) // unfortunate O(n^2) here
-		{
-			// Update seedIndices if this vertex originally referenced the old point
-			for (auto& seedIdx : v.seedIndices) // max 3
-			{
-				if (inDiagram.v_points[seedIdx] == p) // If it referenced an old point
-				{
-					seedIdx = newIndex; // Update to new reference
-				}
-			}
-		}
-	}
-
-	vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);
+	//for (int i = 0; i < inDiagram.vertices.size(); ++i)
+	//{
+	//	const cVVert& vt = inDiagram.vertices[i];
+	//	if (!exBounds.contains(vt.site))
+	//		continue; // ignore verts outside the bounds
+	//	cVec2 localPos = vt.site - center; // Transform to local space
+	//	cVVert newVt = vt;
+	//	vd.vertices.push_back(newVt);
+	//	unsigned index = vd.vertices.size() - 1;
+	//	for (unsigned edge : vt.edgeIndices) // add connected edges
+	//	{
+	//		keptEdges.insert(edge);
+	//		edgeVertMap[edge] = index;
+	//	}
+	//}
+	//for (const unsigned& i : keptEdges)
+	//{
+	//	cVEdge vedge = inDiagram.edges[i];
+	//	cVVert& vt = vd.vertices[edgeVertMap[i]];
+	//	int index = -1;
+	//	for (int j = 0; j < vt.edgeIndices.size(); ++j)
+	//	{
+	//		if (vt.edgeIndices[j] == i)
+	//		{
+	//			index = j;
+	//			break;
+	//		}
+	//	}
+	//	cassert(index >= 0);
+	//	if (!exBounds.contains(vedge.origin) && !vedge.infinite)
+	//	{
+	//		std::swap(vedge.origin, vedge.endDir);
+	//		cVec2 nDir = vedge.endDir - vedge.origin;
+	//		vedge.endDir = nDir;
+	//		vedge.infinite = true;
+	//	}
+	//	else if (!exBounds.contains(vedge.endDir) && !vedge.infinite)
+	//	{
+	//		cVec2 nDir = vedge.endDir - vedge.origin;
+	//		vedge.endDir = nDir;
+	//		vedge.infinite = true;
+	//	}
+	//	vd.edges.push_back(vedge);
+	//	vt.edgeIndices[index] = vd.edges.size() - 1;
+	//}
+	//for (unsigned i = 0; i < inDiagram.v_points.size(); i++) {
+	//	if (!exBounds.contains(inDiagram.v_points[i]))
+	//		continue;
+	//	keptPoints.insert(inDiagram.v_points[i]);
+	//}
+	//for (const auto& tri : inDiagram.triangles)
+	//{
+	//	for (int i = 0; i < 3; ++i)
+	//	{
+	//		if (keptPoints.count(tri[i]))
+	//		{
+	//			finalKeptPoints.insert(tri[0]);
+	//			finalKeptPoints.insert(tri[1]);
+	//			finalKeptPoints.insert(tri[2]);
+	//			break;
+	//		}
+	//	}
+	//}
+	//for (auto& p : finalKeptPoints)
+	//{
+	//	vd.v_points.push_back(p);
+	//	
+	//	// Find the index of this newly stored Voronoi point
+	//	unsigned newIndex = vd.v_points.size() - 1;
+	//	// We need to check if a vertex is holding a reference to this old point and update it
+	//	for (auto& v : vd.vertices)
+	//	{
+	//		// Update seedIndices if this vertex originally referenced the old point
+	//		for (auto& seedIdx : v.seedIndices) // max 3
+	//		{
+	//			if (inDiagram.v_points[seedIdx] == p) // If it referenced an old point
+	//			{
+	//				seedIdx = newIndex; // Update to new reference
+	//			}
+	//		}
+	//	}
+	//}
+	//vd.triangles = cVoronoiDiagram::triangulateDelaunator(vd.v_points);
 
 	if (shift)
 	{
@@ -296,6 +311,7 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		{
 			// no pattern create one!
 			// ignore for now
+			continue;
 		}
 		else
 		{
@@ -308,7 +324,9 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			overlayPattern.transform(fracturePoint, actor->rot, scaleFactor);
 		}
 		
-		
+		cShape* actorShape = p_shapes[actor->shapeList]; // get the first shape
+		const cPolygon& actorPoly = actorShape->polygon;
+		ClipVoronoiWithPolygon(overlayPattern, actorPoly.vertices, actorPoly.normals, actorPoly.count);
 		
 		//  create fragments by overlaying pattern (which is on local actor space) onto actual shape polygon
 		//  Reset the new COMs and masses to the individual fragments, including original fractor (resized to the largest piece)			//  Add additional fragments as fractors/actors (depending on if allow deep fractures) into system

@@ -378,25 +378,114 @@ namespace chiori
 		return ring;
 	}
 
-	std::vector<cVec2> ClipVoronoiWithPolygon(const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count)
+	std::vector<cVec2> buildCell(const cVoronoiDiagram& pattern, cVCell& cell, float extensionFactor)
+	{
+		std::vector<cVec2> finalVerts;
+		unsigned vertCount = cell.vertices.size();
+
+		for (unsigned i = 0; i < vertCount; i++)
+		{
+			const cVVert& v = pattern.vertices[cell.vertices[i]];
+
+			if (!cell.infinite)
+			{
+				finalVerts.push_back(v.site);
+				continue;
+			}
+
+			if (vertCount == 1) // degen cell
+			{
+				// vert is the order of 
+				// inf edge 1 , self, inf edge 2
+				cVec2 extendedA = v.site, extendedB = v.site;
+				bool hasA = false;
+				for (unsigned i : v.edgeIndices)
+				{
+					if (pattern.edges[i].infinite)
+					{
+						if (!hasA)
+						{
+							extendedA += pattern.edges[i].endDir * extensionFactor;
+							hasA = true;
+						}
+						else
+							extendedB += pattern.edges[i].endDir * extensionFactor;
+					}
+				}
+				finalVerts = { extendedA, v.site, extendedB };
+				continue;
+			}
+
+			const cVVert& infVA = pattern.vertices[cell.vertices[cell.infVertA]];
+			const cVVert& infVB = pattern.vertices[cell.vertices[cell.infVertB]];
+			const cVEdge& infEA = pattern.edges[cell.infEdgeA];
+			const cVEdge& infEB = pattern.edges[cell.infEdgeB];
+
+			const cVec2 exA = infVA.site + (infEA.endDir.normalized() * extensionFactor);
+			const cVec2 exB = infVB.site + (infEB.endDir.normalized() * extensionFactor);
+
+			finalVerts.push_back(exA);          // Extended infinite edge A
+			finalVerts.push_back(infVA.site);   // Infinite vertex A
+			finalVerts.push_back(infVB.site);   // Infinite vertex B
+			finalVerts.push_back(exB);          // Extended infinite edge B
+
+			for (size_t j = 0; j < cell.vertices.size(); j++)
+			{
+				if (j != cell.infVertA && j != cell.infVertB)
+				{
+					finalVerts.push_back(pattern.vertices[cell.vertices[j]].site);
+				}
+			}
+
+			const cVec2& seedPt = pattern.v_points[cell.seedIndex];
+			std::sort(finalVerts.begin(), finalVerts.end(), [seedPt](const cVec2& a, const cVec2& b)
+				{
+					return atan2(a.y - seedPt.y, a.x - seedPt.x) < atan2(b.y - seedPt.y, b.x - seedPt.x);
+				});
+		}
+
+
+		return finalVerts;
+	}
+
+	static float computePolygonArea(const std::vector<cVec2>& polygon) {
+		if (polygon.size() < 3) return 0.0f;  // A polygon must have at least 3 vertices
+
+		float area = 0.0f;
+		size_t n = polygon.size();
+
+		for (size_t i = 0; i < n; i++) {
+			const cVec2& p1 = polygon[i];
+			const cVec2& p2 = polygon[(i + 1) % n];  // Wraps around at the end
+			area += (p1.x * p2.y - p2.x * p1.y);
+		}
+
+		return std::abs(area) * 0.5f;  // Return absolute value
+	}
+
+
+	std::vector<std::vector<cVec2>> ClipVoronoiWithPolygon(const cVoronoiDiagram& inPattern, const cVec2* p_vertices, const cVec2* p_normals, int p_count)
 	{
 		cTransform ixf; // identity
 		cAABB bounds = CreateAABBHull(p_vertices, p_count, ixf);
 		float extensionFactor = bounds.getExtents().sqrMagnitude() + 1; // we add 1 to avoid any `on the edge` issues for bounds with a sqrmag of 1 or 0
-		std::unordered_set<cVec2, cVec2Hash> verts;
-		for (const auto& edge : inPattern.edges)
-		{
-			cVec2 o = edge.origin;
-			cVec2 e = (edge.infinite) ? (o + edge.endDir * extensionFactor) : edge.endDir;
+		std::vector<std::vector<cVec2>> clippedPolys;
 
-			std::vector<cVec2> poly{ p_vertices, p_vertices + p_count };
-			std::vector<cVec2> ce = suther_land_hodgman({ o,e }, poly);
-			for (auto& p : ce)
-			{
-				verts.insert(p);
-			}
+		auto& cells = inPattern.getCells();
+
+		for (auto& cell : cells)
+		{
+			std::vector<cVec2> poly = buildCell(inPattern, cell, extensionFactor * 2);
+			std::vector<cVec2> ce = suther_land_hodgman(poly, { p_vertices, p_vertices + p_count });
+			clippedPolys.push_back(ce);
 		}
-		return { verts.begin(), verts.end() };
+
+		std::sort(clippedPolys.begin(), clippedPolys.end(),
+			[](const std::vector<cVec2>& a, const std::vector<cVec2>& b) {
+				return computePolygonArea(a) > computePolygonArea(b);  // Largest to smallest
+			});
+
+		return clippedPolys;
 	}
 	
 
