@@ -65,9 +65,7 @@ namespace chiori
 
 			// cleanup into CCW convex + infinite cell setting
 			if (!cellVerticesIndices.empty()) {
-				cVec2 seed = v_points[seedIndex];
-
-				
+				const cVec2& seed = v_points[seedIndex];		
 				std::sort(cellVerticesIndices.begin(), cellVerticesIndices.end(), [&](unsigned& ia, unsigned& ib)
 					{
 						auto& a = vertices[ia]; auto& b = vertices[ib];
@@ -90,11 +88,31 @@ namespace chiori
 					int infVIndexA = -1, infVIndexB = -1;
 					int infEIndexA = -1, infEIndexB = -1;
 					cVCell& cell = cells[seedIndex];
-					cell = { seedIndex, cellVerticesIndices, isInfinite };				
-					if (vertCount == 1)
-						continue; // degenerate cell, handle externally!
+					cell = { seedIndex, cellVerticesIndices, isInfinite };			
 
-					if (vertCount == 2) // straight line, unique case we can handle quickly
+					// CASE 1: Degenerate cell, 1 vertex, 2 infinite edges that comprise the entire cell
+					if (vertCount == 1)
+					{
+						// get infinite edges
+						for (unsigned edgeIdx : vertices[cellVerticesIndices[0]].edgeIndices)
+						{
+							if (edges[edgeIdx].infinite)
+							{
+								if (infVIndexA < 0)
+									infEIndexA = edgeIdx;
+								else
+									infEIndexB = edgeIdx;
+							}
+						}
+						cell.infEdgeA = infEIndexA; // Edge A index
+						cell.infEdgeB = infEIndexB; // Edge B index
+						continue;
+					}
+
+					// CASE 2: Straight line cell, unique case we can handle quickly,
+					// since the edge vertices must contain the infinite edges that seal the cell
+					// simply looking for the correct edges that are in closest direction as the seed point
+					if (vertCount == 2)
 					{
 						const cVVert& v1 = vertices[cellVerticesIndices[0]];
 						const cVVert& v2 = vertices[cellVerticesIndices[1]];
@@ -141,42 +159,119 @@ namespace chiori
 						continue;
 					}
 								
+					// CASE 3: General case, 3 or more vertices. Much more complex, we need to find the correct end vertices with the correct infinite edges
+					// If a vertice has infinite edges in a cell with > 2 vertices, its gives us the following subcases
+					// 1. 2 infinite edges, 1 finite edge
+					//		This means the finite edge HAS to make up the edge of the cell
+					//		(else it means the cell has 2 infinite edges in 1 vertex, which is a degenerate vertex, filtered out earlier)
+					//		meaning one of the two infinite edges is the actual edge of the cell, the other points away from the cell.
+					//		If we take the inward facing tangent of the finite edge (pointing to the seed point),
+					//		the infinite edge that has the highest dot product with the tangent is the edge of the cell
+					// 2. 2 finite edges, 1 infinite edge
+					//	    This can be further broken down into 2 problems:
+					//		a. 2 finite edges make up the border of the cell, the infinite edge points away from the cell,
+					//			and hence is irrelevant, we need to ensure we dont store this as a valid infinite edge
+					//		b. 1 finite edge and the infinite edge make up the border of the cell, and the other finite edge is the border of another cell,
+					//		   thus we must make sure this infinite edge is stored as valid
+					// 
+					//      In the case of the valid infinite edge, the ccw check will at least return 1 true (Preservation of convexity).
+					//		Else, if its the infinite edge pointing away, the ccw check will return completely false!
+					// If we solve these subcases, it should solve the entire infinite cell problem
+
 					for (int i = 0; i < vertCount; ++i)
 					{
 						const cVVert& v = vertices[cellVerticesIndices[i]];
 						if (isInfiniteVert(v)) // if the vertex has infinite edges
 						{
+							// cases: 1 infinite edge vs 2 infinite edges (Cannot have 3 infinite edges, nor 3 finite edges here (An infinite cell that is not degenerate)
+							int infEdge1 = -1, infEdge2 = -1;
 							for (unsigned edgeIdx : v.edgeIndices) // go through its 3 edges
 							{
 								if (edges[edgeIdx].infinite) // find only the infinite edges
 								{
-									cVec2 edgeDir = edges[edgeIdx].endDir.normalized(); // get the dir of the edge
+									if (infEdge1 < 0)
+										infEdge1 = edgeIdx;
+									else
+										infEdge2 = edgeIdx;
+								}
+							}
 
-									int nextIndex = (i + 1) % vertCount;
-									int prevIndex = (i - 1 + vertCount) % vertCount;
-									cVec2 nxtVert = vertices[cellVerticesIndices[nextIndex]].site;
-									cVec2 prevVert = vertices[cellVerticesIndices[prevIndex]].site;
-									cVec2 edgeToNext = (nxtVert - v.site).normalized();
-									cVec2 edgeFromPrev = (v.site - prevVert).normalized();
-									bool ccwNext = edgeDir.dot(-edgeToNext.tangent()) >= 0;
-									bool ccwPrev = edgeDir.dot(-edgeFromPrev.tangent()) >= 0;
-									if (ccwNext || ccwPrev) // if it doesnt keep CCW rotation for both the next or prev edge, it cannot be the correct edge
+							if (infEdge2 < 0) // subcase 2 single infinite edge case
+							{
+								//	    This can be further broken down into 2 problems:
+								//		a. 2 finite edges make up the border of the cell, the infinite edge points away from the cell,
+								//			and hence is irrelevant, we need to ensure we dont store this as a valid infinite edge
+								//		b. 1 finite edge and the infinite edge make up the border of the cell, and the other finite edge is the border of another cell,
+								//		   thus we must make sure this infinite edge is stored as valid
+								//      In the case of the valid infinite edge, the ccw check will at least return 1 true (Preservation of convexity).
+								//		Else, if its the infinite edge pointing away, the ccw check will return completely false!
+
+								cVec2 edgeDir = edges[infEdge1].endDir.normalized(); // get the dir of the infinite edge
+
+								int nextIndex = (i + 1) % vertCount;
+								int prevIndex = (i - 1 + vertCount) % vertCount;
+								cVec2 nxtVert = vertices[cellVerticesIndices[nextIndex]].site;
+								cVec2 prevVert = vertices[cellVerticesIndices[prevIndex]].site;
+								cVec2 edgeToNext = (nxtVert - v.site).normalized();
+								cVec2 edgeFromPrev = (v.site - prevVert).normalized();
+								bool ccwNext = edgeDir.dot(-edgeToNext.tangent()) >= 0;
+								bool ccwPrev = edgeDir.dot(-edgeFromPrev.tangent()) >= 0;
+								if (ccwNext || ccwPrev) // if it doesnt keep CCW rotation for both the next or prev edge, it cannot be the correct edge and must be not an end vertex
+								{
+									if (infVIndexA < 0)
 									{
-										if (infVIndexA < 0)
-										{
-											infVIndexA = i;
-											infEIndexA = edgeIdx;
-										}
-										else
-										{
-											infVIndexB = i;
-											infEIndexB = edgeIdx;
-										}
+										infVIndexA = i;
+										infEIndexA = infEdge1;
 									}
+									else
+									{
+										infVIndexB = i;
+										infEIndexB = infEdge1;
+									}
+								}
+								
+							}
+							else // subcase 1 two infinite edge case
+							{
+								//		This means the finite edge HAS to make up the edge of the cell
+								//		(else it means the cell has 2 infinite edges in 1 vertex, which is a degenerate vertex, filtered out earlier)
+								//		meaning one of the two infinite edges is the actual edge of the cell, the other points away from the cell.
+								//		If we take the inward facing tangent of the finite edge (pointing to the seed point),
+								//		the infinite edge that has the highest dot product with the tangent is the edge of the cell
+								int finiteEdgeIndex = -1;
+								for (unsigned edgeIdx : v.edgeIndices) // go through its 3 edges
+								{
+									if (!edges[edgeIdx].infinite) // find only the finite edge
+									{
+										finiteEdgeIndex = edgeIdx;
+										break;
+									}
+								}
+								cVEdge finiteEdge = edges[finiteEdgeIndex]; // get the finite edge
+								cVec2 tangent = (finiteEdge.endDir - finiteEdge.origin).tangent().normalized();
+								if (tangent.dot(seed - finiteEdge.origin) < 0) // if the tangent points away from the seed, invert it
+									tangent = -tangent;
+								cVec2 edgeDir1 = edges[infEdge1].endDir.normalized(); // get the dir of the edge
+								cVec2 edgeDir2 = edges[infEdge2].endDir.normalized(); // get the dir of the edge
+
+								float dot1 = edgeDir1.dot(tangent);
+								float dot2 = edgeDir2.dot(tangent);
+								int finalIndex = (dot1 > dot2) ? infEdge1 : infEdge2;
+
+								if (infVIndexA < 0)
+								{
+									infVIndexA = i;
+									infEIndexA = finalIndex;
+								}
+								else
+								{
+									infVIndexB = i;
+									infEIndexB = finalIndex;
 								}
 							}
 						}
 					}
+
 
 					cell.infVertA = infVIndexA; // Vertex A index
 					cell.infEdgeA = infEIndexA; // Edge A index

@@ -472,7 +472,7 @@ public:
 class CutScene : public VoronoiScene
 {
     std::vector<cVec2> points;
-    int numPoints = 6;
+    int numPoints = 60;
     float extents = 80.0f;
     cAABB aabb;
     bool hasCut = false;
@@ -481,8 +481,8 @@ class CutScene : public VoronoiScene
 
     std::vector<cVec2> clippedVerts{};
 
-    bool drawCellsAll = false;
-    bool drawCellsSingle = true;
+    bool drawCellsAll = true;
+    bool drawCellsSingle = false;
     
     int currentCell = 0;
 
@@ -491,7 +491,7 @@ public:
 
     void Load() override
     {
-        int bufferEdgeWidth = 400;
+        int bufferEdgeWidth = 100;
         for (int i = 0; i < numPoints; i++) {
             float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
             float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth / 2);
@@ -517,6 +517,13 @@ public:
         //            {808, 594},
         //            {1132, 435},
         //            {1141, 554} };
+
+        //points = { {556, 457},
+        //            {684, 457},
+        //            {948, 673},
+        //            {1081, 586},
+        //            {937, 517},
+        //            {563, 581} };
         
         tris = cVoronoiDiagram::triangulateDelaunator(points);
         voronoi.create(points.data(), points.size());
