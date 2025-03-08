@@ -324,7 +324,7 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			const cVec2 f_extents = (fpat->max_extent - fpat->min_extent) * 0.5f;
 			const cVec2 scaleFactor = extents.cdiv(f_extents);
 			overlayPattern = fpat->pattern; // copy
-			overlayPattern.transform(fracturePoint, actor->rot, scaleFactor);
+			overlayPattern.transform(/*fracturePoint*/ cVec2::zero, actor->rot, scaleFactor);
 		}
 		
 		//  create fragments by overlaying pattern (which is on local actor space) onto actual shape polygon
@@ -343,19 +343,28 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		a_config.gravityScale = actor->gravityScale;
 
 		const cPolygon& actorPoly = actorShape->polygon;
-		std::vector<std::vector<cVec2>> fragments = ClipVoronoiWithPolygon(overlayPattern, actorPoly.vertices, actorPoly.normals, actorPoly.count);
+		// we need to rotate the polygon but keep the relative positions of the vertices around local 0,0
+		cPolygon localPoly;
+		localPoly.count = actorPoly.count;
+		cRot actorRot = actor->rot;
+		for (int i = 0; i < localPoly.count; ++i)
+		{
+			localPoly.vertices[i] = actorPoly.vertices[i].rotated(actorRot);
+			localPoly.normals[i] = actorPoly.normals[i].rotated(actorRot);
+		}
+		std::vector<std::vector<cVec2>> fragments = ClipVoronoiWithPolygon(overlayPattern, localPoly.vertices, localPoly.normals, localPoly.count);
 		
 		for (const auto& fragment : fragments)
 		{
-			// get centriod + actors pos to get new starting pos
-			cVec2 newCOM = cVec2::zero;
-			for (const auto& vert : fragment)
-				newCOM += vert;
-			newCOM /= fragment.size();
-			newCOM += actor->position;
+			//// get centriod + actors pos to get new starting pos
+			//cVec2 newCOM = cVec2::zero;
+			//for (const auto& vert : fragment)
+			//	newCOM += vert;
+			//newCOM /= fragment.size();
+			//newCOM = actor->position;
 
 			// create new actor
-			a_config.position = newCOM;
+			a_config.position = actor->position;
 			//  Apply initial velocity and angular velocity using a dividng formula and dampening based on material properties to each fragment
 			float dampFactor = c_max(1.0f, c_min(0.1f, getMaterialEnergyDampening(mat, actorLinVel))); // clamped, it shouldnt gain energy nor lose too much
 			a_config.linearVelocity = actorLinVel * dampFactor;

@@ -17,6 +17,7 @@ void PhysicsScene::Unload()
         if (pWorld->p_actors.isValid(i))
             pWorld->RemoveActor(i);
     }
+    pWorld->f_fractors.Clear();
 }
 
 void PhysicsScene::Update(float dt)
@@ -626,10 +627,10 @@ public:
         fmat.k = 0.0f;
         pWorld->MakeFracturable(boxID, fmat);
 
-        //a_config.position = { 3.0f, 3.0f };
-        //int box2ID = pWorld->CreateActor(a_config);
-        //int boxShape2Index = pWorld->CreateShape(box2ID, s_config, &box);
-        //pWorld->MakeFracturable(box2ID, fmat);
+        a_config.position = { 3.0f, 3.0f };
+        int box2ID = pWorld->CreateActor(a_config);
+        int boxShape2Index = pWorld->CreateShape(box2ID, s_config, &box);
+        pWorld->MakeFracturable(box2ID, fmat);
             
         // configure camera
         {

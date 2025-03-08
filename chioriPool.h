@@ -355,6 +355,29 @@ namespace chiori
 			--p_count;
 		}
 
+		void Clear()
+		{
+			// Call the destructor on all allocated objects
+			for (size_t i = 0; i < p_capacity; ++i)
+			{
+				T* obj = &pool[i];
+				if (obj->header.next == obj->header.index)
+				{
+					obj->~T();
+				}
+			}
+
+			// Reset the free list
+			freeList = 0;
+			for (size_t i = 0; i < p_capacity - 1; ++i)
+			{
+				pool[i].header.next = static_cast<unsigned>(i + 1);
+			}
+			pool[p_capacity - 1].header.next = invalid_index;
+
+			p_count = 0;
+		}
+
 		size_t size() const { return p_count; }
 		size_t capacity() const { return p_capacity; }
 		T* operator[](int index)
