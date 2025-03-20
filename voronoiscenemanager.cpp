@@ -352,18 +352,18 @@ public:
             voronoi.remove(fpoint);
         }
 
-        if (CP_Input_KeyTriggered(KEY_S))
-        {
-            cVoronoiDiagram::save("saved_scene", voronoi);
-        }
-        else if (CP_Input_KeyTriggered(KEY_L))
-        {
-            voronoi.clear();
-            points.clear();
-            voronoi = cVoronoiDiagram::load("saved_scene");
-            points = voronoi.v_points;
-            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
-        }
+        //if (CP_Input_KeyTriggered(KEY_S))
+        //{
+        //    cVoronoiDiagram::save("saved_scene", voronoi);
+        //}
+        //else if (CP_Input_KeyTriggered(KEY_L))
+        //{
+        //    voronoi.clear();
+        //    points.clear();
+        //    voronoi = cVoronoiDiagram::load("saved_scene");
+        //    points = voronoi.v_points;
+        //    tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+        //}
     }
     
     void Unload() override
@@ -472,7 +472,7 @@ public:
 class CutScene : public VoronoiScene
 {
     std::vector<cVec2> points;
-    int numPoints = 60;
+    int numPoints = 20;
     float extents = 80.0f;
     cAABB aabb;
     bool hasCut = false;

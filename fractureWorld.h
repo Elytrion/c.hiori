@@ -19,7 +19,7 @@ namespace chiori
 		float brittleness{ 0.5f };              // Brittleness factor. 
 		cVec2 anisotropy{ cVec2::zero };		// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
-		float k{ 1.0f };						// Scaling factor for custom fine tuning
+		float k{ 0.0f };						// Scaling factor for custom fine tuning
 	};
 
 	class cFracturable

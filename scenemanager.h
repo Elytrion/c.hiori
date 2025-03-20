@@ -54,6 +54,7 @@ public:
 	bool drawInstructions{ true };
 	bool drawStats{ false };
 	bool drawUI{ true };
+	bool inVoronoiEditor{ false };
 
 	int currentScene{ -1 };
 	int sceneCount{ 0 };
@@ -63,6 +64,8 @@ public:
 	
 	void ChangeScene(int sceneIndex);
 	void Update(float dt);
+	void UpdatePhysics(float dt);
+	void UpdateVoronoi(float dt);
 	void AddScene(PhysicsScene* scene);
 	void RemoveScene(int sceneIndex);
 	void HandleCameraInput();

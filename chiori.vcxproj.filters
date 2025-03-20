@@ -176,5 +176,8 @@
     <ClInclude Include="fractureWorld.h">
       <Filter>Headers\Fracture</Filter>
     </ClInclude>
+    <ClInclude Include="parser.hpp">
+      <Filter>Headers\GUI</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -250,6 +250,7 @@ xcopy "$(ProjectDir)CProcessing\lib\x64\fmod.dll" "$(OutDir)" /s /r /y /q</Comma
     <ClInclude Include="graphics.h" />
     <ClInclude Include="integrators.h" />
     <ClInclude Include="manifold.h" />
+    <ClInclude Include="parser.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="physicsWorld.h" />
     <ClInclude Include="scenemanager.h" />

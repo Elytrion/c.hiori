@@ -5,6 +5,7 @@
 #include "graphics.h"
 #include "cprocessing.h"
 #include "uimanager.h"
+#include "parser.hpp"
 
 using namespace chiori;
 
@@ -640,6 +641,20 @@ public:
         }
     }
 };
+
+class CustomScene : public PhysicsScene
+{
+public:
+    CustomScene(DebugGraphics* drawer, void* world) : PhysicsScene(drawer, world) {}
+
+    void Load() override
+    {
+        cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
+
+        SceneParser parser(pWorld);
+        parser.loadFromFile();
+    }
+};
 #pragma endregion
 
 #pragma region Scene Manager
@@ -648,14 +663,13 @@ SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* wo
 {
 
     AddScene(new FractureTestScene(drawer, world));
-    AddScene(new DefaultScene(drawer, world));
+    //AddScene(new DefaultScene(drawer, world));
     AddScene(new StackScene(drawer, world));
     AddScene(new RampScene(drawer, world));
     AddScene(new DominoScene(drawer, world));
-    AddScene(new ArchScene(drawer, world));
+    //AddScene(new ArchScene(drawer, world));
     AddScene(new OverlapRecoveryScene(drawer, world));
     AddScene(new PolygonScene(drawer, world));
-    AddScene(new SelfBalancingBoxScene(drawer, world));
 
 	ChangeScene(0);
 }
@@ -846,16 +860,6 @@ void SceneManager::Update(float dt)
         drawer->DrawUI();
         uimanager->Update();
     }
-
-    //cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
-    //for (const auto& [fID, fracturePoint] : pWorld->fractorPointsMap)
-    //{
-    //    int actorIndex = pWorld->f_fractors[fID]->actorIndex;
-    //    const cActor* actor = pWorld->p_actors[actorIndex];
-    //    const cVec2& transformedPoint = cTransformVec(actor->getTransform(), fracturePoint);
-    //    std::cout << actorIndex  << " | " << fID << " | " << fracturePoint << std::endl;
-    //    drawer->DrawCircle(transformedPoint, 0.1f, cDebugColor::Blue);
-    //}
 }
 
 void SceneManager::HandleCameraInput()

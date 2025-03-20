@@ -3,8 +3,6 @@
 #include "gjk.h"
 #include "cShape.h"
 
-#include "cprocessing.h" //!!TO REMOVE!!
-
 namespace chiori
 {
 

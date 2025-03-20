@@ -268,7 +268,7 @@ namespace chiori
 
 		// Step 2: Broadphase + Narrowphase + Contact Generation
 		// Update collision pairs, and create all new contacts for this frame
-		// This includes the broadphase AABB tree query, narrowphase using GJK
+		// This includes the broadphase AABB tree query
 		// and contact generation in one sweep
 		m_broadphase.UpdatePairs(
 			[this](void* userDataA, void* userDataB)

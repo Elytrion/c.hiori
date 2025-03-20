@@ -236,8 +236,6 @@ namespace chiori
 			T* newPool = static_cast<T*>(allocator->allocate(newCapacity * sizeof(T)));
 
 			// Copy memory from the old array into the new one 
-			// (WARNING: for trivial types only; safe for POD or trivial. 
-			//           If T is not trivial, consider manually re-constructing/moving.)
 			if (pool)
 			{
 				std::memcpy(newPool, pool, p_capacity * sizeof(T));
