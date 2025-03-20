@@ -143,3 +143,8 @@ void UIManager::Update()
         }
     }
 }
+
+void UIManager::ClearUI()
+{
+    uiComponents.clear();
+}

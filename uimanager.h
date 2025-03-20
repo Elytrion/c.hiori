@@ -69,4 +69,6 @@ public:
 
 	void AddEventToUIComponent(int index, UIEventTrigger event);
 	void ChangeConfig(int index, UIComponentConfig config);
+
+	void ClearUI();
 };

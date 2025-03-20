@@ -55,6 +55,7 @@ public:
 	bool drawStats{ false };
 	bool drawUI{ true };
 	bool inVoronoiEditor{ false };
+	bool loadedUI{ false };
 
 	int currentScene{ -1 };
 	int sceneCount{ 0 };
@@ -70,4 +71,7 @@ public:
 	void RemoveScene(int sceneIndex);
 	void HandleCameraInput();
 	PhysicsScene* GetCurrentScene();
+
+	void LoadPhysicsUI();
+	void LoadVoronoiUI();
 };

@@ -661,7 +661,7 @@ public:
 SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world)
     : drawer(drawer), uimanager(uimanager), world(world)
 {
-
+    AddScene(new CustomScene(drawer, world));
     AddScene(new FractureTestScene(drawer, world));
     //AddScene(new DefaultScene(drawer, world));
     AddScene(new StackScene(drawer, world));
@@ -697,6 +697,53 @@ void SceneManager::ChangeScene(int sceneIndex)
 
 void SceneManager::Update(float dt)
 {
+    HandleCameraInput();
+
+    if (CP_Input_KeyTriggered(KEY_I))
+    {
+        drawInstructions = !drawInstructions;
+    }
+    if (CP_Input_KeyTriggered(KEY_C))
+    {
+        drawCamera = !drawCamera;
+    }
+    if (CP_Input_KeyTriggered(KEY_S))
+    {
+        drawStats = !drawStats;
+    }
+    if (CP_Input_KeyTriggered(KEY_U))
+    {
+        drawUI = !drawUI;
+    }
+    
+    if (inVoronoiEditor)
+    {
+        if (!loadedUI)
+        {
+            uimanager->ClearUI();
+            LoadVoronoiUI();
+        }
+        UpdateVoronoi(dt);
+    }
+    else
+    {
+        if (!loadedUI)
+        {
+            uimanager->ClearUI();
+            LoadPhysicsUI();
+        }
+        UpdatePhysics(dt);
+    }
+
+    if (drawUI)
+    {
+        drawer->DrawUI();
+        uimanager->Update();
+    }
+}
+
+void SceneManager::UpdatePhysics(float dt)
+{
     if (!isPaused)
     {
         scenes[currentScene]->Update(CP_System_GetDt());
@@ -718,22 +765,6 @@ void SceneManager::Update(float dt)
         }
     }
 
-    if (CP_Input_KeyTriggered(KEY_I))
-    {
-        drawInstructions = !drawInstructions;
-    }
-    if (CP_Input_KeyTriggered(KEY_C))
-    {
-		drawCamera = !drawCamera;
-	}
-    if (CP_Input_KeyTriggered(KEY_S))
-    {
-        drawStats = !drawStats;
-    }
-    if (CP_Input_KeyTriggered(KEY_U))
-    {
-        drawUI = !drawUI;
-    }
     if (CP_Input_KeyTriggered(KEY_F1))
     {
         if (!isPaused)
@@ -744,14 +775,18 @@ void SceneManager::Update(float dt)
         {
             scenes[currentScene]->settings.runBasicSolver = !scenes[currentScene]->settings.runBasicSolver;
         }
-	}
+    }
+    if (CP_Input_KeyTriggered(KEY_V))
+    {
+        loadedUI = false;
+        inVoronoiEditor = true;
+    }
     if (CP_Input_KeyTriggered(KEY_ESCAPE))
     {
         // reload the current scene
         ChangeScene(currentScene);
     }
 
-    HandleCameraInput();
     drawer->DrawPhysicsWorld(world);
     cVec2 displayDim = drawer->getScreenDimensions();
     // draw camera
@@ -825,6 +860,10 @@ void SceneManager::Update(float dt)
         snprintf(buffer, 64, "Press F1 to toggle solvers");
         drawer->DrawUIText(x, y, buffer, 15, textColor);
         y += 20;
+        
+        snprintf(buffer, 64, "Press V to edit patterns");
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
     }
 
     if (drawStats)
@@ -854,11 +893,25 @@ void SceneManager::Update(float dt)
         sprintf_s(nbuffer, 100, "FPS: %f", CP_System_GetFrameRate());
         CP_Font_DrawText(nbuffer, 20, 20);
     }
+}
 
-    if (drawUI)
+void SceneManager::UpdateVoronoi(float dt)
+{
+    if (CP_Input_KeyTriggered(KEY_V))
     {
-        drawer->DrawUI();
-        uimanager->Update();
+        loadedUI = false;
+        inVoronoiEditor = false;
+    }
+    cVec2 displayDim = drawer->getScreenDimensions();
+    if (drawInstructions)
+    {
+        char buffer[64];
+        CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
+        float x = displayDim.x - 220;
+        float y = 20;
+        snprintf(buffer, 64, "Press V to close editor");
+        drawer->DrawUIText(x, y, buffer, 15, textColor);
+        y += 20;
     }
 }
 
@@ -925,5 +978,117 @@ void SceneManager::RemoveScene(int sceneIndex)
 PhysicsScene* SceneManager::GetCurrentScene()
 {
 	return scenes[currentScene];
+}
+
+void SceneManager::LoadPhysicsUI()
+{
+    std::vector<UIEventTrigger> events;
+    UIEventTrigger drawAABBtrigger;
+    drawAABBtrigger.type = UIEventType::OnMouseTriggered;
+    drawAABBtrigger.mouse = MOUSE_BUTTON_1;
+    drawAABBtrigger.callback = [&]() {
+        printf("Toggling AABB display\n");
+        drawer->draw.drawAABBs = !drawer->draw.drawAABBs;
+        };
+    events.push_back(drawAABBtrigger);
+
+    UIEventTrigger drawTreeAABBtrigger;
+    drawTreeAABBtrigger.type = UIEventType::OnMouseTriggered;
+    drawTreeAABBtrigger.mouse = MOUSE_BUTTON_1;
+    drawTreeAABBtrigger.callback = [&]() {
+        printf("Toggling Tree AABB display\n");
+        drawer->draw.drawTreeAABBs = !drawer->draw.drawTreeAABBs;
+        };
+    events.push_back(drawTreeAABBtrigger);
+
+    UIEventTrigger drawMassTrigger;
+    drawMassTrigger.type = UIEventType::OnMouseTriggered;
+    drawMassTrigger.mouse = MOUSE_BUTTON_1;
+    drawMassTrigger.callback = [&]() {
+        printf("Toggling transform/mass display\n");
+        drawer->draw.drawMass = !drawer->draw.drawMass;
+        };
+    events.push_back(drawMassTrigger);
+
+    UIEventTrigger drawContactPointsTrigger;
+    drawContactPointsTrigger.type = UIEventType::OnMouseTriggered;
+    drawContactPointsTrigger.mouse = MOUSE_BUTTON_1;
+    drawContactPointsTrigger.callback = [&]() {
+        printf("Toggling contact point display\n");
+        drawer->draw.drawContactPoints = !drawer->draw.drawContactPoints;
+        };
+    events.push_back(drawContactPointsTrigger);
+
+    UIEventTrigger drawContactNormalsTrigger;
+    drawContactNormalsTrigger.type = UIEventType::OnMouseTriggered;
+    drawContactNormalsTrigger.mouse = MOUSE_BUTTON_1;
+    drawContactNormalsTrigger.callback = [&]() {
+        printf("Toggling contact normal display\n");
+        drawer->draw.drawContactNormals = !drawer->draw.drawContactNormals;
+        };
+    events.push_back(drawContactNormalsTrigger);
+
+    UIEventTrigger drawContactImpulsesTrigger;
+    drawContactImpulsesTrigger.type = UIEventType::OnMouseTriggered;
+    drawContactImpulsesTrigger.mouse = MOUSE_BUTTON_1;
+    drawContactImpulsesTrigger.callback = [&]() {
+        printf("Toggling contact impulse display\n");
+        drawer->draw.drawContactImpulses = drawer->draw.drawContactImpulses;
+        };
+    events.push_back(drawContactImpulsesTrigger);
+
+    UIEventTrigger drawFrictionImpulsesTrigger;
+    drawFrictionImpulsesTrigger.type = UIEventType::OnMouseTriggered;
+    drawFrictionImpulsesTrigger.mouse = MOUSE_BUTTON_1;
+    drawFrictionImpulsesTrigger.callback = [&]() {
+        printf("Toggling friction impulse display\n");
+        drawer->draw.drawFrictionImpulses = !drawer->draw.drawFrictionImpulses;
+        };
+    events.push_back(drawFrictionImpulsesTrigger);
+
+    std::vector<std::string> buttonNames = {
+        "Toggle AABBs",
+        "Toggle Tree AABBs",
+        "Toggle Mass",
+        "Toggle Contact Points",
+        "Toggle Contact Normals",
+        "Toggle Contact Impulses",
+        "Toggle Friction Impulses"
+    };
+
+    std::vector<cVec2> nameOffsets =
+    {
+        {-20.0f, 20.0f},
+        {10.0f, 20.0f},
+        {10.0f, 20.0f},
+        {10.0f, 20.0f},
+        {10.0f, 20.0f},
+        {10.0f, 20.0f},
+        {10.0f, 20.0f}
+    };
+
+    float spacing = 100.0f;
+    float startX = spacing; // Initial horizontal offset
+    float y = 40.0f;        // Fixed Y position near the top of the screen
+    cVec2 btnDim = { 30.0f, 30.0f };
+    std::vector<int> indices = {};
+    for (int i = 0; i < 7; ++i)
+    {
+        // Define button configuration
+        UIComponentConfig buttonConfig{
+            startX + spacing * i, y,    // x, y position
+            btnDim.x, btnDim.y,         // width, height
+            0.9f, 0.9f, 0.9f, 1.0f,     // RGBA color
+            buttonNames[i],      // Button text
+            nameOffsets[i].x, nameOffsets[i].y,                // Text offset
+            0.1f, 0.1f, 0.1f, 1.0f,     // Text color
+            15.0f                       // Text size
+        };
+        uimanager->AddRectUIButton(buttonConfig, { events[i] });
+    }
+}
+void SceneManager::LoadVoronoiUI()
+{
+
 }
 #pragma endregion
