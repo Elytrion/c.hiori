@@ -70,5 +70,7 @@ public:
 	void DrawPhysicsWorld(void* world);
 	void DrawUI(); // always call this AFTER draw frame
 
+	void ClearUI() { uiElements.clear(); }
+
 	std::vector<UIElement>& getUIElements() { return uiElements; }
 };

@@ -267,7 +267,7 @@ public:
 class VoronoiParser
 {
 public:
-    void saveDiagram(const cVoronoiDiagram& diagram)
+    static void saveDiagram(const cVoronoiDiagram& diagram)
     {
         std::string filename = SaveFileDialog("Voronoi Files (*.vdf)\0*.vdf\0All Files (*.*)\0*.*\0", "Save Voronoi Diagram", "vdf");
 
@@ -324,7 +324,7 @@ public:
         file.close();
     }
 
-    cVoronoiDiagram loadDiagram()
+    static cVoronoiDiagram loadDiagram()
     {
         std::string filename = OpenFileDialog("Voronoi Files (*.vdf)\0*.vdf\0All Files (*.*)\0*.*\0", "Load Voronoi Diagram");
 

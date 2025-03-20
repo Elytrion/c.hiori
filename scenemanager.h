@@ -47,9 +47,12 @@ private:
 	void* world{ nullptr };
 	std::vector<PhysicsScene*> scenes{};
 	
+	void* voronoi{ nullptr };	
+	
 	bool isPaused{ true };
 	bool stepOnce{ false };
 public:
+
 	bool drawCamera{ false };
 	bool drawInstructions{ true };
 	bool drawStats{ false };
@@ -60,7 +63,7 @@ public:
 	int currentScene{ -1 };
 	int sceneCount{ 0 };
 
-	SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world);
+	SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world, void* vd);
 	~SceneManager();
 	
 	void ChangeScene(int sceneIndex);
