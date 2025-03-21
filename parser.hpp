@@ -69,6 +69,50 @@ std::string SaveFileDialog(const char* filter, const char* title, const char* de
     return ""; // User canceled
 }
 
+#include <shobjidl.h>  // For IFileDialog
+std::string OpenFolderDialog(const std::wstring& title = L"Select Folder")
+{
+    std::string result;
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (SUCCEEDED(hr))
+    {
+        IFileDialog* pFileDialog;
+        hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
+            IID_IFileDialog, reinterpret_cast<void**>(&pFileDialog));
+
+        if (SUCCEEDED(hr))
+        {
+            DWORD options;
+            pFileDialog->GetOptions(&options);
+            pFileDialog->SetOptions(options | FOS_PICKFOLDERS); // Important: Pick folders
+
+            pFileDialog->SetTitle(title.c_str());
+
+            if (SUCCEEDED(pFileDialog->Show(nullptr)))
+            {
+                IShellItem* pItem;
+                if (SUCCEEDED(pFileDialog->GetResult(&pItem)))
+                {
+                    PWSTR path = nullptr;
+                    if (SUCCEEDED(pItem->GetDisplayName(SIGDN_FILESYSPATH, &path)))
+                    {
+                        char buffer[MAX_PATH];
+                        wcstombs_s(nullptr, buffer, path, MAX_PATH);
+                        result = buffer;
+                        CoTaskMemFree(path);
+                    }
+                    pItem->Release();
+                }
+            }
+            pFileDialog->Release();
+        }
+        CoUninitialize();
+    }
+    return result;
+}
+
+
 class VoronoiParser
 {
 public:
@@ -444,29 +488,38 @@ class SceneParser
 
     void processVDFList(std::ifstream& file)
     {
-        std::string folderPath = OpenFileDialog("Select any .vdf in your target folder\0*.vdf\0All Files (*.*)\0*.*\0", "Locate VDF Folder");
+        std::string folderPath = OpenFolderDialog(L"Select Folder Containing VDF Files");
         if (folderPath.empty())
         {
             std::cerr << "VDF folder selection canceled.\n";
             return;
         }
 
-        // Strip down to folder path
-        std::filesystem::path vdfPath(folderPath);
-        vdfPath = vdfPath.parent_path();
+        std::filesystem::path vdfPath(folderPath); // No need to parent_path anymore
 
+        // Multiline block parsing
         std::string line;
-        if (!std::getline(file, line)) return;
+        std::string combinedList;
+        while (std::getline(file, line))
+        {
+            // Remove comments or trailing whitespace
+            line = line.substr(0, line.find("//")); // strip inline comments
+            line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 
-        // Extract everything between { and }
-        size_t start = line.find('{');
-        size_t end = line.find('}');
-        if (start == std::string::npos || end == std::string::npos || end <= start) return;
+            if (line.empty())
+                continue;
 
-        std::string list = line.substr(start + 1, end - start - 1);
+            if (line.find('{') != std::string::npos)
+                continue; // Skip line with just '{'
+
+            if (line.find('}') != std::string::npos)
+                break; // End of block
+
+            combinedList += line; // Accumulate lines like: "trapezoid.vdf,x.vdf"
+        }
 
         // Split by commas
-        std::stringstream ss(list);
+        std::stringstream ss(combinedList);
         std::string filename;
 
         while (std::getline(ss, filename, ','))
