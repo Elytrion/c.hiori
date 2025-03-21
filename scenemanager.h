@@ -47,16 +47,17 @@ private:
 	void* world{ nullptr };
 	std::vector<PhysicsScene*> scenes{};
 	
-	void* voronoi{ nullptr };	
+	void* voronoi{ nullptr };
 	
 	bool isPaused{ true };
 	bool stepOnce{ false };
 public:
 
-	bool drawCamera{ false };
+	bool drawCamera{ true };
 	bool drawInstructions{ true };
-	bool drawStats{ false };
+	bool drawStats{ true };
 	bool drawUI{ true };
+	bool drawAABBVoronoi{ false };
 	bool inVoronoiEditor{ false };
 	bool loadedUI{ false };
 

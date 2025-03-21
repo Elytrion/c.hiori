@@ -33,7 +33,7 @@ private:
 	
 public:
 	DebugGraphics(float screenWidth, float screenHeight) : screenDimensions(screenWidth, screenHeight), initScreenDimensions(screenWidth, screenHeight) {}
-
+	float getZoom() { return zoomScale; }
 	chiori::cVec2 getCameraWorldPos();
 	chiori::cVec2 getCameraScreenPos();
 	chiori::cVec2 getScreenDimensions() { return screenDimensions;}

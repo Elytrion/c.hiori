@@ -69,201 +69,6 @@ std::string SaveFileDialog(const char* filter, const char* title, const char* de
     return ""; // User canceled
 }
 
-
-class SceneParser
-{
-	cFractureWorld* world;
-	
-    std::vector<std::string> tokenize(const std::string& line)
-    {
-        std::vector<std::string> tokens;
-        std::stringstream ss(line);
-        std::string token;
-        while (ss >> token)
-        {
-            tokens.push_back(token);
-        }
-        return tokens;
-    }
-
-    cVec2 parseVec2(const std::string& str)
-    {
-        float x, y;
-        sscanf_s(str.c_str(), "(%f,%f)", &x, &y);
-        return cVec2{ x, y };
-    }
-
-    std::vector<int> parseIntList(const std::string& str)
-    {
-        std::vector<int> indices;
-        std::stringstream ss(str);
-        std::string segment;
-        while (std::getline(ss, segment, ']'))
-        {
-            if (segment.find('[') != std::string::npos)
-            {
-                size_t start = segment.find('[') + 1;
-                size_t end = segment.find(']');
-                std::string data = segment.substr(start, end - start);
-
-                std::stringstream intStream(data);
-                std::string num;
-                while (std::getline(intStream, num, ','))
-                {
-                    indices.push_back(std::stoi(num));
-                }
-            }
-        }
-        return indices;
-    }
-
-    std::vector<cVec2> parseVertices(const std::string& str)
-    {
-        std::vector<cVec2> vertices;
-        std::stringstream ss(str);
-        std::string segment;
-        while (std::getline(ss, segment, ']'))
-        {
-            if (segment.find('[') != std::string::npos)
-            {
-                size_t start = segment.find('[') + 1;
-                size_t end = segment.find(']');
-                std::string data = segment.substr(start, end - start);
-                vertices.push_back(parseVec2(data));
-            }
-        }
-        return vertices;
-    }
-
-    void processActor(std::ifstream& file)
-    {
-        ActorConfig config;
-        bool isFracturable = false;
-        cFractureMaterial fractureMaterial;
-        int fracturePatternIndex = -1;
-
-        std::string line;
-        while (std::getline(file, line) && line.find("}") == std::string::npos)
-        {
-            auto tokens = tokenize(line);
-            if (tokens.size() < 2) continue;
-
-            if (tokens[0] == "type:")
-            {
-                if (tokens[1] == "DYNAMIC") config.type = DYNAMIC;
-                else if (tokens[1] == "STATIC") config.type = STATIC;
-                else if (tokens[1] == "KINEMATIC") config.type = KINEMATIC;
-            }
-            else if (tokens[0] == "position:") config.position = parseVec2(tokens[1]);
-            else if (tokens[0] == "angle:") config.angle = std::stof(tokens[1]);
-            else if (tokens[0] == "linearVelocity:") config.linearVelocity = parseVec2(tokens[1]);
-            else if (tokens[0] == "angularVelocity:") config.angularVelocity = std::stof(tokens[1]);
-            else if (tokens[0] == "gravityScale:") config.gravityScale = std::stof(tokens[1]);
-            else if (tokens[0] == "fractureMaterial:")
-            {
-                isFracturable = true;
-                processFractureMaterial(file, fractureMaterial);
-            }
-            else if (tokens[0] == "fracturePatternIndex:")
-            {
-                isFracturable = true;
-                fracturePatternIndex = std::stoi(tokens[1]);
-            }
-        }
-
-        int actorIndex = world->CreateActor(config);
-
-        if (isFracturable)
-        {
-            int fractureIndex = world->MakeFracturable(actorIndex, fractureMaterial);
-            if (fracturePatternIndex >= 0)
-            {
-                world->SetFracturePattern(fracturePatternIndex, fractureIndex);
-            }
-        }
-    }
-
-    void processShape(std::ifstream& file)
-    {
-        ShapeConfig config;
-        int actorIndex = -1;
-        std::string line;
-        std::vector<cVec2> verts;
-        
-        while (std::getline(file, line) && line.find("}") == std::string::npos)
-        {
-            auto tokens = tokenize(line);
-
-            if (tokens.size() < 2) continue;
-
-            if (tokens[0] == "actorIndex:") actorIndex = std::stoi(tokens[1]);
-            else if (tokens[0] == "friction:") config.friction = std::stof(tokens[1]);
-            else if (tokens[0] == "restitution:") config.restitution = std::stof(tokens[1]);
-            else if (tokens[0] == "vertices:") verts = parseVertices(line);
-        }
-
-        if (actorIndex >= 0)
-        {
-            cPolygon poly{ verts.data(), static_cast<int>(verts.size()) };
-            world->CreateShape(actorIndex, config, &poly);
-        }
-    }
-
-    void processFractureMaterial(std::ifstream& file, cFractureMaterial& material)
-    {
-        std::string line;
-        while (std::getline(file, line) && line.find("}") == std::string::npos)
-        {
-            auto tokens = tokenize(line);
-            if (tokens.size() < 2) continue;
-
-            if (tokens[0] == "toughness:") material.toughness = std::stof(tokens[1]);
-            else if (tokens[0] == "elasticity:") material.elasticity = std::stof(tokens[1]);
-            else if (tokens[0] == "brittleness:") material.brittleness = std::stof(tokens[1]);
-            else if (tokens[0] == "anisotropy:") material.anisotropy = parseVec2(tokens[1]);
-            else if (tokens[0] == "anisotropyFactor:") material.anisotropyFactor = std::stof(tokens[1]);
-            else if (tokens[0] == "k:") material.k = std::stof(tokens[1]);
-        }
-    }
-
-public:
-    explicit SceneParser(cFractureWorld* inWorld) : world(inWorld) {}
-
-    void SceneParser::loadFromFile()
-    {
-        std::string filename = OpenFileDialog("Scene Files (*.phys)\0*.phys\0All Files (*.*)\0*.*\0", "Load Physics Scene");
-
-        if (filename.empty())
-        {
-            std::cerr << "Scene loading canceled.\n";
-            return;
-        }
-
-        std::ifstream file(filename);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("Failed to open file: " + filename);
-        }
-
-        std::string line;
-        while (std::getline(file, line))
-        {
-            if (line.find("Actor {") != std::string::npos)
-            {
-                processActor(file);
-            }
-            else if (line.find("Shape {") != std::string::npos)
-            {
-                processShape(file);
-            }
-        }
-
-        file.close();
-        std::cout << "Loaded Scene: " << filename << std::endl;
-    }
-
-};
-
 class VoronoiParser
 {
 public:
@@ -388,4 +193,357 @@ public:
 
         return result;
     }
+
+    static cVoronoiDiagram loadDiagramFromStream(std::ifstream& file)
+    {
+        if (!file)
+        {
+            std::cerr << "Error: Could not open file for reading " << std::endl;
+            return cVoronoiDiagram();
+        }
+
+        cVoronoiDiagram result;
+        // Read number of vertices
+        size_t vertexCount;
+        file.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+        result.vertices.resize(vertexCount);
+
+        // Read vertices
+        for (auto& vert : result.vertices)
+        {
+            file.read(reinterpret_cast<char*>(&vert.site), sizeof(cVec2));
+
+            size_t edgeCount;
+            file.read(reinterpret_cast<char*>(&edgeCount), sizeof(edgeCount));
+            vert.edgeIndices.resize(edgeCount);
+            file.read(reinterpret_cast<char*>(vert.edgeIndices.data()), edgeCount * sizeof(unsigned));
+
+            size_t seedCount;
+            file.read(reinterpret_cast<char*>(&seedCount), sizeof(seedCount));
+            vert.seedIndices.resize(seedCount);
+            file.read(reinterpret_cast<char*>(vert.seedIndices.data()), seedCount * sizeof(unsigned));
+        }
+
+        // Read number of edges
+        size_t edgeCount;
+        file.read(reinterpret_cast<char*>(&edgeCount), sizeof(edgeCount));
+        result.edges.resize(edgeCount);
+
+        // Read edges
+        for (auto& edge : result.edges)
+        {
+            file.read(reinterpret_cast<char*>(&edge.origin), sizeof(cVec2));
+            file.read(reinterpret_cast<char*>(&edge.endDir), sizeof(cVec2));
+            file.read(reinterpret_cast<char*>(&edge.infinite), sizeof(bool));
+        }
+
+        // Read number of v_points
+        size_t pointCount;
+        file.read(reinterpret_cast<char*>(&pointCount), sizeof(pointCount));
+        result.v_points.resize(pointCount);
+
+        // Read v_points
+        file.read(reinterpret_cast<char*>(result.v_points.data()), pointCount * sizeof(cVec2));
+
+        file.close();
+
+        return result;
+    }
 };
+
+class SceneParser
+{
+	cFractureWorld* world;
+	
+    std::vector<std::string> tokenize(const std::string& line)
+    {
+        std::vector<std::string> tokens;
+        std::stringstream ss(line);
+        std::string token;
+        while (ss >> token)
+        {
+            tokens.push_back(token);
+        }
+        return tokens;
+    }
+
+    cVec2 parseVec2(const std::string& str)
+    {
+        float x, y;
+        sscanf_s(str.c_str(), "(%f,%f)", &x, &y);
+        return cVec2{ x, y };
+    }
+
+    std::vector<int> parseIntList(const std::string& str)
+    {
+        std::vector<int> indices;
+        std::stringstream ss(str);
+        std::string segment;
+        while (std::getline(ss, segment, ']'))
+        {
+            if (segment.find('[') != std::string::npos)
+            {
+                size_t start = segment.find('[') + 1;
+                size_t end = segment.find(']');
+                std::string data = segment.substr(start, end - start);
+
+                std::stringstream intStream(data);
+                std::string num;
+                while (std::getline(intStream, num, ','))
+                {
+                    indices.push_back(std::stoi(num));
+                }
+            }
+        }
+        return indices;
+    }
+
+    std::vector<cVec2> parseVertices(const std::string& str)
+    {
+        std::vector<cVec2> vertices;
+        std::stringstream ss(str);
+        std::string segment;
+        while (std::getline(ss, segment, ']'))
+        {
+            if (segment.find('[') != std::string::npos)
+            {
+                size_t start = segment.find('[') + 1;
+                size_t end = segment.find(']');
+                std::string data = segment.substr(start, end - start);
+                vertices.push_back(parseVec2(data));
+            }
+        }
+        return vertices;
+    }
+
+    void processActor(std::ifstream& file)
+    {
+        ActorConfig config;
+        bool isFracturable = false;
+        cFractureMaterial fractureMaterial;
+        int fracturePatternIndex = -1;
+
+        std::string line;
+        while (std::getline(file, line) && line.find("}") == std::string::npos)
+        {
+            auto tokens = tokenize(line);
+            if (tokens.size() < 2) continue;
+
+            if (tokens[0] == "type:")
+            {
+                if (tokens[1] == "DYNAMIC") config.type = DYNAMIC;
+                else if (tokens[1] == "STATIC") config.type = STATIC;
+                else if (tokens[1] == "KINEMATIC") config.type = KINEMATIC;
+            }
+            else if (tokens[0] == "position:") config.position = parseVec2(tokens[1]);
+            else if (tokens[0] == "angle:") config.angle = std::stof(tokens[1]);
+            else if (tokens[0] == "linearVelocity:") config.linearVelocity = parseVec2(tokens[1]);
+            else if (tokens[0] == "angularVelocity:") config.angularVelocity = std::stof(tokens[1]);
+            else if (tokens[0] == "gravityScale:") config.gravityScale = std::stof(tokens[1]);
+            else if (tokens[0] == "linearDamping:") config.linearDamping = std::stof(tokens[1]);
+            else if (tokens[0] == "angularDamping:") config.angularDamping = std::stof(tokens[1]);
+            else if (tokens[0] == "fractureMaterial:")
+            {
+                isFracturable = true;
+                processFractureMaterial(file, fractureMaterial);
+            }
+            else if (tokens[0] == "fracturePatternIndex:")
+            {
+                isFracturable = true;
+                fracturePatternIndex = std::stoi(tokens[1]);
+            }
+        }
+
+        int actorIndex = world->CreateActor(config);
+
+        if (isFracturable)
+        {
+            int fractureIndex = world->MakeFracturable(actorIndex, fractureMaterial);
+            if (fracturePatternIndex >= 0)
+            {
+                world->SetFracturePattern(fracturePatternIndex, fractureIndex);
+            }
+        }
+    }
+
+    void processShape(std::ifstream& file)
+    {
+        ShapeConfig config;
+        int actorIndex = -1;
+        std::string line;
+        cPolygon poly;
+        bool shapeSet = false;
+        
+        while (std::getline(file, line) && line.find("}") == std::string::npos)
+        {
+            auto tokens = tokenize(line);
+
+            if (tokens.size() < 2) continue;
+
+            if (tokens[0] == "actorIndex:") actorIndex = std::stoi(tokens[1]);
+            else if (tokens[0] == "friction:") config.friction = std::stof(tokens[1]);
+            else if (tokens[0] == "restitution:") config.restitution = std::stof(tokens[1]);
+            else if (tokens[0] == "box:")
+            {
+                cVec2 halfExtents = parseVec2(tokens[1]);
+                poly = GeomMakeBox(halfExtents.x, halfExtents.y);
+                shapeSet = true;
+            }
+            else if (tokens[0] == "offsetBox:")
+            {
+                // Format: (hx, hy, (cx, cy), angle)
+                float hx, hy, angle = 0.0f;
+                cVec2 center;
+                sscanf_s(tokens[1].c_str(), "(%f,%f,(%f,%f),%f)", &hx, &hy, &center.x, &center.y, &angle);
+                poly = GeomMakeOffsetBox(hx, hy, center, angle);
+                shapeSet = true;
+            }
+            else if (tokens[0] == "square:")
+            {
+                float h = std::stof(tokens[1]);
+                poly = GeomMakeSquare(h);
+                shapeSet = true;
+            }
+            else if (tokens[0] == "regular:")
+            {
+                int count = std::stoi(tokens[1]);
+                poly = GeomMakeRegularPolygon(count);
+                shapeSet = true;
+            }
+            else if (tokens[0] == "vertices:")
+            {
+                auto verts = parseVertices(line);
+                poly = cPolygon{ verts.data(), static_cast<int>(verts.size()) };
+                shapeSet = true;
+            }
+        }
+
+        if (actorIndex >= 0)
+        {
+            cassert(shapeSet);
+            world->CreateShape(actorIndex, config, &poly);
+        }
+    }
+
+    void processFractureMaterial(std::ifstream& file, cFractureMaterial& material)
+    {
+        std::string line;
+        while (std::getline(file, line) && line.find("}") == std::string::npos)
+        {
+            auto tokens = tokenize(line);
+            if (tokens.size() < 2) continue;
+
+            if (tokens[0] == "toughness:") material.toughness = std::stof(tokens[1]);
+            else if (tokens[0] == "elasticity:") material.elasticity = std::stof(tokens[1]);
+            else if (tokens[0] == "brittleness:") material.brittleness = std::stof(tokens[1]);
+            else if (tokens[0] == "anisotropy:") material.anisotropy = parseVec2(tokens[1]);
+            else if (tokens[0] == "anisotropyFactor:") material.anisotropyFactor = std::stof(tokens[1]);
+            else if (tokens[0] == "k:") material.k = std::stof(tokens[1]);
+        }
+    }
+
+    void processVDFList(std::ifstream& file)
+    {
+        std::string folderPath = OpenFileDialog("Select any .vdf in your target folder\0*.vdf\0All Files (*.*)\0*.*\0", "Locate VDF Folder");
+        if (folderPath.empty())
+        {
+            std::cerr << "VDF folder selection canceled.\n";
+            return;
+        }
+
+        // Strip down to folder path
+        std::filesystem::path vdfPath(folderPath);
+        vdfPath = vdfPath.parent_path();
+
+        std::string line;
+        if (!std::getline(file, line)) return;
+
+        // Extract everything between { and }
+        size_t start = line.find('{');
+        size_t end = line.find('}');
+        if (start == std::string::npos || end == std::string::npos || end <= start) return;
+
+        std::string list = line.substr(start + 1, end - start - 1);
+
+        // Split by commas
+        std::stringstream ss(list);
+        std::string filename;
+
+        while (std::getline(ss, filename, ','))
+        {
+            // Trim whitespace
+            filename.erase(0, filename.find_first_not_of(" \t"));
+            filename.erase(filename.find_last_not_of(" \t") + 1);
+
+            if (filename.empty()) continue;
+
+            auto fullPath = vdfPath / filename;
+
+            std::ifstream vfile(fullPath, std::ios::binary);
+            if (!vfile)
+            {
+                std::cerr << "Failed to open VDF: " << fullPath << "\n";
+                continue;
+            }
+
+            cVoronoiDiagram diagram = VoronoiParser::loadDiagramFromStream(vfile);
+            vfile.close();
+            cAABB aabb{ {-350,-350} , {350,350} };
+            world->CreateNewFracturePattern(diagram, aabb); // TODO: Add bounds
+            std::cout << "Loaded VDF pattern: " << filename << "\n";
+        }
+    }
+
+
+public:
+    explicit SceneParser(cFractureWorld* inWorld) : world(inWorld) {}
+
+    void SceneParser::loadFromFile()
+    {
+        std::string filename = OpenFileDialog("Scene Files (*.phys)\0*.phys\0All Files (*.*)\0*.*\0", "Load Physics Scene");
+
+        if (filename.empty())
+        {
+            std::cerr << "Scene loading canceled.\n";
+            return;
+        }
+
+        std::ifstream file(filename);
+        if (!file.is_open())
+        {
+            throw std::runtime_error("Failed to open file: " + filename);
+        }
+
+        // First pass – look for VDF block
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (line.find("VDF {") != std::string::npos)
+            {
+                processVDFList(file);
+                break; // Only one VDF block supported
+            }
+        }
+
+        // Second pass – rewind and load actors/shapes
+        file.clear(); // Clear EOF flag
+        file.seekg(0); // Go back to start
+
+        while (std::getline(file, line))
+        {
+            if (line.find("Actor {") != std::string::npos)
+            {
+                processActor(file);
+            }
+            else if (line.find("Shape {") != std::string::npos)
+            {
+                processShape(file);
+            }
+        }
+
+        file.close();
+        std::cout << "Loaded Scene: " << filename << std::endl;
+    }
+
+};
+

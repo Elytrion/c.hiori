@@ -653,6 +653,12 @@ public:
 
 		SceneParser parser(pWorld);
 		parser.loadFromFile();
+
+		{
+			currentZoom = 90.0f;
+			drawer->ChangeZoom(currentZoom);
+			drawer->SetCamera({ 0.0f, 3.0f });
+		}
 	}
 };
 #pragma endregion
@@ -661,8 +667,8 @@ public:
 SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world, void* vd)
 	: drawer(drawer), uimanager(uimanager), world(world), voronoi(vd)
 {
-	AddScene(new StackScene(drawer, world));
 	AddScene(new CustomScene(drawer, world));
+	AddScene(new StackScene(drawer, world));
 	AddScene(new FractureTestScene(drawer, world));
 	//AddScene(new DefaultScene(drawer, world));
 	AddScene(new RampScene(drawer, world));
@@ -807,6 +813,8 @@ void SceneManager::UpdatePhysics(float dt)
 		CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
 		snprintf(buffer, 64, "Cam World Pos: (%.2f, %.2f)", drawer->getCameraWorldPos().x, drawer->getCameraWorldPos().y);
 		drawer->DrawUIText(displayDim.x - 200, displayDim.y - 20, buffer, 15, textColor);
+		snprintf(buffer, 64, "Cam Zoom: (%.2f)", drawer->getZoom());
+		drawer->DrawUIText(displayDim.x - 200, displayDim.y - 40, buffer, 15, textColor);
 
 		// draw 2 lines +x +y from camera pos
 		cVec2 camScreenPos = drawer->getCameraScreenPos();
@@ -938,9 +946,9 @@ static void DrawVoronoiDiagram(const cVoronoiDiagram& voronoi)
 	}
 }
 
-cVec2* selectedPoint{ nullptr };
 cVec2 originalPoint{ cVec2::zero };
-float baseTimer = 0.1f;
+cVec2 selectedPoint{ cVec2::zero };
+float baseTimer = 0.05f;
 float timer = 0.0f;
 void SceneManager::UpdateVoronoi(float dt)
 {
@@ -954,16 +962,70 @@ void SceneManager::UpdateVoronoi(float dt)
 		inVoronoiEditor = false;
 	}
 
+	
+	cVec2 displayDim = drawer->getScreenDimensions();
+	if (drawInstructions)
+	{
+		char buffer[64];
+		CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
+		float x = displayDim.x - 220;
+		float y = 20;
+		snprintf(buffer, 64, "Press F1 to show cutting AABB");
+		drawer->DrawUIText(x, y, buffer, 15, textColor);
+		y += 20;
+		snprintf(buffer, 64, "Press A to add a point");
+		drawer->DrawUIText(x, y, buffer, 15, textColor);
+		y += 20;
+		snprintf(buffer, 64, "Press D to remove a point");
+		drawer->DrawUIText(x, y, buffer, 15, textColor);
+		y += 20;
+		snprintf(buffer, 64, "Hold RMB to move a point");
+		drawer->DrawUIText(x, y, buffer, 15, textColor);
+		y += 20;
+		snprintf(buffer, 64, "Press V to close editor");
+		drawer->DrawUIText(x, y, buffer, 15, textColor);
+		y += 20;
+	}
+
+	if (CP_Input_KeyTriggered(KEY_F1))
+	{
+		drawAABBVoronoi = !drawAABBVoronoi;
+	}
+
+	if (drawAABBVoronoi)
+	{
+		cVec2 middle = displayDim / 2;
+		cAABB aabb{ {middle.x - 350, middle.y - 350 }, {middle.x + 350, middle.y + 350} };
+		//cAABB exaabb = aabb;
+		//exaabb.min = aabb.min - (aabb.getExtents());
+		//exaabb.max = aabb.max + (aabb.getExtents());
+		cVec2 center = aabb.getCenter();
+		CP_Settings_StrokeWeight(2);
+		CP_Settings_Stroke(CP_Color_Create(200, 100, 0, 255));
+		CP_Graphics_DrawLine(aabb.min.x, aabb.min.y, aabb.min.x, aabb.max.y);
+		CP_Graphics_DrawLine(aabb.min.x, aabb.max.y, aabb.max.x, aabb.max.y);
+		CP_Graphics_DrawLine(aabb.max.x, aabb.max.y, aabb.max.x, aabb.min.y);
+		CP_Graphics_DrawLine(aabb.max.x, aabb.min.y, aabb.min.x, aabb.min.y);
+		CP_Graphics_DrawCircle(center.x, center.y, 3);
+		//CP_Settings_Stroke(CP_Color_Create(200, 100, 0, 255));
+		//CP_Graphics_DrawLine(exaabb.min.x, exaabb.min.y, exaabb.min.x, exaabb.max.y);
+		//CP_Graphics_DrawLine(exaabb.min.x, exaabb.max.y, exaabb.max.x, exaabb.max.y);
+		//CP_Graphics_DrawLine(exaabb.max.x, exaabb.max.y, exaabb.max.x, exaabb.min.y);
+		//CP_Graphics_DrawLine(exaabb.max.x, exaabb.min.y, exaabb.min.x, exaabb.min.y);
+	}
+
+
+
 	cVec2 mousePos = { CP_Input_GetMouseX(), CP_Input_GetMouseY() };
 	if (CP_Input_MouseDown(MOUSE_BUTTON_2))
 	{
-		if (!selectedPoint)
+		if (selectedPoint == cVec2::zero)
 		{
 			for (cVec2& pt : vdiagram.v_points)
 			{
-				if (distanceSqr(pt, mousePos) < 25.0f) // 5 ^ 2
+				if (distanceSqr(pt, mousePos) < 25.0f)
 				{
-					selectedPoint = &pt;
+					selectedPoint = pt;
 					originalPoint = pt;
 					break;
 				}
@@ -971,10 +1033,11 @@ void SceneManager::UpdateVoronoi(float dt)
 			return;
 		}
 
-		selectedPoint->x = mousePos.x;
-		selectedPoint->y = mousePos.y;
 
-		if (distanceSqr(*selectedPoint, originalPoint) <= 4.0f)
+		selectedPoint.x = mousePos.x;
+		selectedPoint.y = mousePos.y;
+
+		if (distanceSqr(selectedPoint, originalPoint) <= 4.0f)
 			return; // hasn't move far enough to care about changing;
 
 		timer -= dt;
@@ -982,19 +1045,19 @@ void SceneManager::UpdateVoronoi(float dt)
 		{
 			timer = baseTimer;
 			vdiagram.remove(originalPoint, false);
-			vdiagram.add(*selectedPoint);
-			originalPoint = *selectedPoint;
+			vdiagram.add(selectedPoint);
+			originalPoint = selectedPoint;
 		}
 	}
 	else if (CP_Input_MouseReleased(MOUSE_BUTTON_2))
 	{
-		if (!selectedPoint)
+		if (selectedPoint == cVec2::zero)
 			return;
 
 		vdiagram.remove(originalPoint, false);
-		vdiagram.add(*selectedPoint);
+		vdiagram.add(selectedPoint);
 		originalPoint = cVec2::zero;
-		selectedPoint = nullptr;
+		selectedPoint = cVec2::zero;
 		return;
 	}
 
@@ -1005,53 +1068,36 @@ void SceneManager::UpdateVoronoi(float dt)
 	else if (CP_Input_KeyTriggered(KEY_D))
 	{
 		if (vdiagram.v_points.size() <= 3)
+		{
+			std::cout << "Voronoi Diagram MUST have at least 3 points!";
 			return; // minimum viable diagram
+		}
 
 		std::vector<cVec2>& points = vdiagram.v_points;
 		auto itr = std::find_if(points.begin(), points.end(), [&](const cVec2& p) {
-			return distanceSqr(p, mousePos) <= 4.0f;
+			return distanceSqr(p, mousePos) <= 5.0f;
 			});
 		if (itr == points.end())
 			return; // point not in diagram, ignore
 		cVec2 fpoint = *itr;
 		vdiagram.remove(fpoint);
 	}
-
-	
-	cVec2 displayDim = drawer->getScreenDimensions();
-	if (drawInstructions)
-	{
-		char buffer[64];
-		CP_Color textColor = CP_Color{ 50, 255, 50, 255 };
-		float x = displayDim.x - 220;
-		float y = 20;
-		snprintf(buffer, 64, "Press A to add a point");
-		drawer->DrawUIText(x, y, buffer, 15, textColor);
-		y += 20;
-		snprintf(buffer, 64, "Press D to remove a point");
-		drawer->DrawUIText(x, y, buffer, 15, textColor);
-		y += 20;
-		snprintf(buffer, 64, "Press V to close editor");
-		drawer->DrawUIText(x, y, buffer, 15, textColor);
-		y += 20;
-	}
-
-
-	
 }
 
 void SceneManager::HandleCameraInput()
 {
-	float& camZoom = scenes[currentScene]->currentZoom;
+	float camZoom = scenes[currentScene]->currentZoom;
 	if (CP_Input_KeyDown(KEY_LEFT_BRACKET))
 	{
 		camZoom = c_clamp(camZoom - 0.5f, 1.0f, 1000.0f);
 		drawer->ChangeZoom(camZoom);
+		scenes[currentScene]->currentZoom = camZoom;
 	}
 	else if (CP_Input_KeyDown(KEY_RIGHT_BRACKET))
 	{
 		camZoom = c_clamp(camZoom + 0.5f, 1.0f, 1000.0f);
 		drawer->ChangeZoom(camZoom);
+		scenes[currentScene]->currentZoom = camZoom;
 	}
 
 	cVec2 moveDelta = cVec2::zero;
@@ -1239,7 +1285,10 @@ void SceneManager::LoadVoronoiUI()
 	saveDiagram.callback = [&]() {
 		printf("Saving Diagram...\n");
 		cVoronoiDiagram* vd = static_cast<cVoronoiDiagram*>(voronoi);
+		cVec2 displayMid = drawer->getScreenDimensions() / 2;
+		(*vd).transform(-displayMid, cRot::iden);
 		VoronoiParser::saveDiagram(*vd);
+		(*vd).transform(displayMid, cRot::iden);
 		};
 	events.push_back(saveDiagram);
 
@@ -1251,6 +1300,8 @@ void SceneManager::LoadVoronoiUI()
 		cVoronoiDiagram vd = VoronoiParser::loadDiagram();
 		cVoronoiDiagram* rvd = static_cast<cVoronoiDiagram*>(voronoi);
 		*rvd = vd;
+		cVec2 displayMid = drawer->getScreenDimensions() / 2;
+		(*rvd).transform(displayMid, cRot::iden);
 		};
 	events.push_back(loadDiagram);
 
@@ -1269,6 +1320,17 @@ void SceneManager::LoadVoronoiUI()
 	generateDiagram.mouse = MOUSE_BUTTON_1;
 	generateDiagram.callback = [&]() {
 		printf("Generating Diagram...\n");
+		cVoronoiDiagram* vd = static_cast<cVoronoiDiagram*>(voronoi);
+		vd->clear();
+		int bufferEdgeWidth = 350;
+		int numPoints = CP_Random_RangeInt(3, 33);
+		std::vector<cVec2> points(numPoints);
+		for (int i = 0; i < numPoints; i++) {
+			float x = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowWidth() - bufferEdgeWidth);
+			float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth / 2);
+			points.push_back({ x,y });
+		}
+		vd->create(points.data(), points.size());
 		};
 	events.push_back(generateDiagram);
 
