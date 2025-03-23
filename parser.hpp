@@ -360,7 +360,7 @@ class SceneParser
         return vertices;
     }
 
-    void processActor(std::ifstream& file)
+    void processActor(std::ifstream& file, bool succeedFracPattern)
     {
         ActorConfig config;
         bool isFracturable = false;
@@ -403,7 +403,7 @@ class SceneParser
         if (isFracturable)
         {
             int fractureIndex = world->MakeFracturable(actorIndex, fractureMaterial);
-            if (fracturePatternIndex >= 0)
+            if (fracturePatternIndex >= 0 && succeedFracPattern)
             {
                 world->SetFracturePattern(fracturePatternIndex, fractureIndex);
             }
@@ -486,13 +486,13 @@ class SceneParser
         }
     }
 
-    void processVDFList(std::ifstream& file)
+    bool processVDFList(std::ifstream& file)
     {
         std::string folderPath = OpenFolderDialog(L"Select Folder Containing VDF Files");
         if (folderPath.empty())
         {
             std::cerr << "VDF folder selection canceled.\n";
-            return;
+            return false;
         }
 
         std::filesystem::path vdfPath(folderPath); // No need to parent_path anymore
@@ -541,10 +541,13 @@ class SceneParser
 
             cVoronoiDiagram diagram = VoronoiParser::loadDiagramFromStream(vfile);
             vfile.close();
-            cAABB aabb{ {-350,-350} , {350,350} };
-            world->CreateNewFracturePattern(diagram, aabb); // TODO: Add bounds
+            //cAABB aabb{ {-350,-350} , {350,350} };
+            int patternIndex = world->CreateNewFracturePattern(diagram); // TODO: Add bounds
+            cFracturePattern& pattern = *(world->f_patterns[patternIndex]);
             std::cout << "Loaded VDF pattern: " << filename << "\n";
         }
+
+        return true;
     }
 
 
@@ -569,11 +572,12 @@ public:
 
         // First pass – look for VDF block
         std::string line;
+        bool success = false;
         while (std::getline(file, line))
         {
             if (line.find("VDF {") != std::string::npos)
             {
-                processVDFList(file);
+                success = processVDFList(file);
                 break; // Only one VDF block supported
             }
         }
@@ -586,7 +590,7 @@ public:
         {
             if (line.find("Actor {") != std::string::npos)
             {
-                processActor(file);
+                processActor(file, success);
             }
             else if (line.find("Shape {") != std::string::npos)
             {

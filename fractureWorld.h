@@ -12,7 +12,7 @@ namespace chiori
 		cVoronoiDiagram pattern;
 	};
 	
-	struct cFractureMaterial
+	struct	cFractureMaterial
 	{
 		float toughness{ 0.5f };				// Toughness of the material.
 		float elasticity{ 10.0f };              // Young's Modulus (elasticity). 
@@ -47,9 +47,9 @@ namespace chiori
 		{
 			// make base pattern
 			cVoronoiDiagram basePattern;
-			std::vector<cVec2> verts = { { 0, 25 }, { 25, -25 }, { -25, -25 } };
-			basePattern.create(verts.data(), 3);
-			CreateNewFracturePattern(basePattern, { {-26, -26 }, {26,26} });
+			std::vector<cVec2> verts = { { 27, 27 }, { -25, 25 }, { -27, -27 }, { 25, -25 } };
+			basePattern.create(verts.data(), verts.size());
+			CreateNewFracturePattern(basePattern, { {-28, -28 }, {28,28} });
 		}
 
 		~cFractureWorld() = default;

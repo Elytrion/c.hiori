@@ -496,6 +496,7 @@ namespace chiori
 				return computePolygonArea(a) > computePolygonArea(b);  // Largest to smallest
 			});
 
+
 		return clippedPolys;
 	}
 	

@@ -667,14 +667,18 @@ SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* wo
 	: drawer(drawer), uimanager(uimanager), world(world), voronoi(vd)
 {
 	AddScene(new CustomScene(drawer, world));
+
+	AddScene(new PolygonScene(drawer, world));
+	AddScene(new RampScene(drawer, world));
+
 	AddScene(new StackScene(drawer, world));
 	AddScene(new FractureTestScene(drawer, world));
 	//AddScene(new DefaultScene(drawer, world));
-	AddScene(new RampScene(drawer, world));
+
 	AddScene(new DominoScene(drawer, world));
 	//AddScene(new ArchScene(drawer, world));
 	AddScene(new OverlapRecoveryScene(drawer, world));
-	AddScene(new PolygonScene(drawer, world));
+
 
 	ChangeScene(0);
 }

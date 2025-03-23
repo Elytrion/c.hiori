@@ -321,7 +321,11 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			cassert(f_patterns.isValid(fractor->patternIndex));
 			cFracturePattern* fpat = f_patterns[fractor->patternIndex];
 
-			const cVec2 f_extents = (fpat->max_extent - fpat->min_extent) * 0.5f;
+			cVec2 f_extents = (fpat->max_extent - fpat->min_extent) * 0.5f;
+			if (f_extents == cVec2::zero)
+			{
+				f_extents = cVec2{ 1, 1 }; // prevent divide by zero
+			}
 			const cVec2 scaleFactor = extents.cdiv(f_extents);
 			overlayPattern = fpat->pattern; // copy
 			overlayPattern.transform(/*fracturePoint*/ cVec2::zero, actor->rot, scaleFactor);
@@ -354,6 +358,12 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 		}
 		std::vector<std::vector<cVec2>> fragments = ClipVoronoiWithPolygon(overlayPattern, localPoly.vertices, localPoly.normals, localPoly.count);
 		
+		if (fragments.size() == 0)
+		{
+			fractorsToRemove.pop_back();
+			continue; // no fragments, ignore
+		}
+
 		for (const auto& fragment : fragments)
 		{
 			//// get centriod + actors pos to get new starting pos
