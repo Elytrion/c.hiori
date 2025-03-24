@@ -34,13 +34,13 @@ void cFractureWorld::SetFracturePattern(int inPatternIndex, int inFractorIndex)
 	fractor->patternIndex = inPatternIndex;
 }
 
-int cFractureWorld::CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds)
+int cFractureWorld::CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds, bool shift)
 {
 	if (CheckDupePattern(inDiagram))
 		return -1; // duplicate
 	cFracturePattern* n_pattern = f_patterns.Alloc();
 	bool success =
-		CreateFracturePattern(*n_pattern, inDiagram, inBounds);
+		CreateFracturePattern(*n_pattern, inDiagram, inBounds, shift);
 	if (!success)
 		return -1; // failed clip
 	return f_patterns.getIndex(n_pattern);
@@ -77,7 +77,13 @@ bool cFractureWorld::CreateFracturePattern(
 		keptPoints.insert(inDiagram.v_points[i]);
 	}
 
-	for (const auto& tri : inDiagram.triangles)
+	std::vector<std::vector<cVec2>> tris = inDiagram.triangles;
+	if (tris.size() <= 0)
+	{
+		tris = cVoronoiDiagram::triangulate(inDiagram.v_points);
+	}
+
+	for (const auto& tri : tris)
 	{
 		for (int i = 0; i < 3; ++i)
 		{

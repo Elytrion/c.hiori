@@ -47,9 +47,9 @@ namespace chiori
 		{
 			// make base pattern
 			cVoronoiDiagram basePattern;
-			std::vector<cVec2> verts = { { 27, 27 }, { -25, 25 }, { -27, -27 }, { 25, -25 } };
+			std::vector<cVec2> verts = { { 0, 25 }, { 25, -25 }, { -25, -25 } };
 			basePattern.create(verts.data(), verts.size());
-			CreateNewFracturePattern(basePattern, { {-28, -28 }, {28,28} });
+			CreateNewFracturePattern(basePattern, { {-26,-26 }, {26,26} });
 		}
 
 		~cFractureWorld() = default;
@@ -63,7 +63,7 @@ namespace chiori
 		void SetFracturePattern(int inPatternIndex, int inFractorIndex);
 		
 		static bool CreateFracturePattern(cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds, bool shift = true);
-		int CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds = cAABB());
+		int CreateNewFracturePattern(const cVoronoiDiagram& inDiagram, const cAABB& inBounds = cAABB(), bool shift = true);
 	
 		// call this instead of step when using fractureWorld!
 		void f_step(float inFDT, int primaryIterations = 4, int secondaryIterations = 2, bool warmStart = true);

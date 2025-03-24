@@ -1288,10 +1288,13 @@ void SceneManager::LoadVoronoiUI()
 	saveDiagram.callback = [&]() {
 		printf("Saving Diagram...\n");
 		cVoronoiDiagram* vd = static_cast<cVoronoiDiagram*>(voronoi);
-		cVec2 displayMid = drawer->getScreenDimensions() / 2;
-		(*vd).transform(-displayMid, cRot::iden);
-		VoronoiParser::saveDiagram(*vd);
-		(*vd).transform(displayMid, cRot::iden);
+		cVec2 middle = drawer->getScreenDimensions() / 2;
+		cFracturePattern savedPattern;
+		savedPattern.pattern = *vd;
+		savedPattern.pattern.transform(-middle, cRot::iden);
+		savedPattern.min_extent = {middle.x - 350, middle.y - 350 };
+		savedPattern.max_extent = {middle.x + 350, middle.y + 350 };
+		VoronoiParser::saveDiagram(savedPattern);
 		};
 	events.push_back(saveDiagram);
 
@@ -1300,9 +1303,9 @@ void SceneManager::LoadVoronoiUI()
 	loadDiagram.mouse = MOUSE_BUTTON_1;
 	loadDiagram.callback = [&]() {
 		printf("Loading Diagram\n");
-		cVoronoiDiagram vd = VoronoiParser::loadDiagram();
+		cFracturePattern pattern = VoronoiParser::loadDiagram();
 		cVoronoiDiagram* rvd = static_cast<cVoronoiDiagram*>(voronoi);
-		*rvd = vd;
+		*rvd = pattern.pattern;
 		cVec2 displayMid = drawer->getScreenDimensions() / 2;
 		(*rvd).transform(displayMid, cRot::iden);
 		};

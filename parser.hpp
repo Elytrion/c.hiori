@@ -116,13 +116,13 @@ std::string OpenFolderDialog(const std::wstring& title = L"Select Folder")
 class VoronoiParser
 {
 public:
-    static void saveDiagram(const cVoronoiDiagram& diagram)
+    static void saveDiagram(const cFracturePattern& pattern)
     {
         std::string filename = SaveFileDialog("Voronoi Files (*.vdf)\0*.vdf\0All Files (*.*)\0*.*\0", "Save Voronoi Diagram", "vdf");
 
         if (filename.empty())
         {
-            std::cerr << "Voronoi diagram saving canceled.\n";
+            std::cerr << "Pattern saving canceled.\n";
             return;
         }
 
@@ -132,7 +132,7 @@ public:
             return;
         }
 
-
+        auto& diagram = pattern.pattern;
         // Write number of vertices
         size_t vertexCount = diagram.vertices.size();
         file.write(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
@@ -170,90 +170,42 @@ public:
         // Write v_points
         file.write(reinterpret_cast<const char*>(diagram.v_points.data()), pointCount * sizeof(cVec2));
 
+        // Write extents
+        file.write(reinterpret_cast<const char*>(&pattern.min_extent), sizeof(cVec2));
+        file.write(reinterpret_cast<const char*>(&pattern.max_extent), sizeof(cVec2));
+
         file.close();
     }
 
-    static cVoronoiDiagram loadDiagram()
+    static cFracturePattern loadDiagram()
     {
         std::string filename = OpenFileDialog("Voronoi Files (*.vdf)\0*.vdf\0All Files (*.*)\0*.*\0", "Load Voronoi Diagram");
-
         if (filename.empty())
         {
             std::cerr << "Voronoi diagram loading canceled.\n";
-            return cVoronoiDiagram();
+            return cFracturePattern();
         }
 
         std::ifstream file(filename, std::ios::binary);
-        if (!file)
-        {
-            std::cerr << "Error: Could not open file for reading: " << filename << "\n";
-            return cVoronoiDiagram();
-        }
-
-        cVoronoiDiagram result;
-        // Read number of vertices
-        size_t vertexCount;
-        file.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
-        result.vertices.resize(vertexCount);
-
-        // Read vertices
-        for (auto& vert : result.vertices)
-        {
-            file.read(reinterpret_cast<char*>(&vert.site), sizeof(cVec2));
-
-            size_t edgeCount;
-            file.read(reinterpret_cast<char*>(&edgeCount), sizeof(edgeCount));
-            vert.edgeIndices.resize(edgeCount);
-            file.read(reinterpret_cast<char*>(vert.edgeIndices.data()), edgeCount * sizeof(unsigned));
-
-            size_t seedCount;
-            file.read(reinterpret_cast<char*>(&seedCount), sizeof(seedCount));
-            vert.seedIndices.resize(seedCount);
-            file.read(reinterpret_cast<char*>(vert.seedIndices.data()), seedCount * sizeof(unsigned));
-        }
-
-        // Read number of edges
-        size_t edgeCount;
-        file.read(reinterpret_cast<char*>(&edgeCount), sizeof(edgeCount));
-        result.edges.resize(edgeCount);
-
-        // Read edges
-        for (auto& edge : result.edges)
-        {
-            file.read(reinterpret_cast<char*>(&edge.origin), sizeof(cVec2));
-            file.read(reinterpret_cast<char*>(&edge.endDir), sizeof(cVec2));
-            file.read(reinterpret_cast<char*>(&edge.infinite), sizeof(bool));
-        }
-
-        // Read number of v_points
-        size_t pointCount;
-        file.read(reinterpret_cast<char*>(&pointCount), sizeof(pointCount));
-        result.v_points.resize(pointCount);
-
-        // Read v_points
-        file.read(reinterpret_cast<char*>(result.v_points.data()), pointCount * sizeof(cVec2));
-
-        file.close();
-
-        return result;
+        return VoronoiParser::loadDiagramFromStream(file);
     }
 
-    static cVoronoiDiagram loadDiagramFromStream(std::ifstream& file)
-    {
+    static cFracturePattern loadDiagramFromStream(std::ifstream& file)
+    { 
         if (!file)
         {
-            std::cerr << "Error: Could not open file for reading " << std::endl;
-            return cVoronoiDiagram();
+            std::cerr << "Error: Could not open file for reading" << "\n";
+            return cFracturePattern();
         }
-
-        cVoronoiDiagram result;
+        cFracturePattern result;
+        cVoronoiDiagram pattern;
         // Read number of vertices
         size_t vertexCount;
         file.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
-        result.vertices.resize(vertexCount);
+        pattern.vertices.resize(vertexCount);
 
         // Read vertices
-        for (auto& vert : result.vertices)
+        for (auto& vert : pattern.vertices)
         {
             file.read(reinterpret_cast<char*>(&vert.site), sizeof(cVec2));
 
@@ -271,10 +223,10 @@ public:
         // Read number of edges
         size_t edgeCount;
         file.read(reinterpret_cast<char*>(&edgeCount), sizeof(edgeCount));
-        result.edges.resize(edgeCount);
+        pattern.edges.resize(edgeCount);
 
         // Read edges
-        for (auto& edge : result.edges)
+        for (auto& edge : pattern.edges)
         {
             file.read(reinterpret_cast<char*>(&edge.origin), sizeof(cVec2));
             file.read(reinterpret_cast<char*>(&edge.endDir), sizeof(cVec2));
@@ -284,12 +236,20 @@ public:
         // Read number of v_points
         size_t pointCount;
         file.read(reinterpret_cast<char*>(&pointCount), sizeof(pointCount));
-        result.v_points.resize(pointCount);
+        pattern.v_points.resize(pointCount);
 
         // Read v_points
-        file.read(reinterpret_cast<char*>(result.v_points.data()), pointCount * sizeof(cVec2));
+        file.read(reinterpret_cast<char*>(pattern.v_points.data()), pointCount * sizeof(cVec2));
+
+        cVec2 minExtent, maxExtent;
+        file.read(reinterpret_cast<char*>(&minExtent), sizeof(cVec2));
+        file.read(reinterpret_cast<char*>(&maxExtent), sizeof(cVec2));
 
         file.close();
+
+        result.min_extent = minExtent;
+        result.max_extent = maxExtent;
+        result.pattern = pattern;
 
         return result;
     }
@@ -539,10 +499,10 @@ class SceneParser
                 continue;
             }
 
-            cVoronoiDiagram diagram = VoronoiParser::loadDiagramFromStream(vfile);
+            cFracturePattern diagram = VoronoiParser::loadDiagramFromStream(vfile);
             vfile.close();
-            //cAABB aabb{ {-350,-350} , {350,350} };
-            int patternIndex = world->CreateNewFracturePattern(diagram); // TODO: Add bounds
+            cAABB aabb{ diagram.min_extent, diagram.max_extent };
+            int patternIndex = world->CreateNewFracturePattern(diagram.pattern, aabb, false);
             cFracturePattern& pattern = *(world->f_patterns[patternIndex]);
             std::cout << "Loaded VDF pattern: " << filename << "\n";
         }

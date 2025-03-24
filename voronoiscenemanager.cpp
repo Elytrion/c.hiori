@@ -87,7 +87,7 @@ public:
             float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
             points.push_back({ x,y });
         }
-        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        tris = cVoronoiDiagram::triangulate(points);
         voronoi.create(points.data(), points.size());
     }
 
@@ -120,7 +120,7 @@ public:
             else
                 points.push_back({ x, y });
         }
-        tris = cVoronoiDiagram::triangulateDelaunator(u_points);
+        tris = cVoronoiDiagram::triangulate(u_points);
         voronoi.create(u_points.data(), u_points.size());
     }
 
@@ -138,7 +138,7 @@ public:
                 points.erase(points.begin());
                 tris.clear();
                 voronoi.clear();
-                tris = cVoronoiDiagram::triangulateDelaunator(u_points);
+                tris = cVoronoiDiagram::triangulate(u_points);
                 voronoi.create(u_points.data(), u_points.size());
             }
         }
@@ -230,7 +230,7 @@ public:
             float y = CP_Random_RangeInt(bufferEdgeWidth, CP_System_GetWindowHeight() - bufferEdgeWidth);
             points.push_back({ x, y });
         }
-        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        tris = cVoronoiDiagram::triangulate(points);
         voronoi.create(points.data(), points.size());
     }
 
@@ -319,7 +319,7 @@ public:
                 voronoi.remove(originalPoint, false);
                 voronoi.add(*selectedPoint);
                 originalPoint = *selectedPoint;
-                tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+                tris = cVoronoiDiagram::triangulate(voronoi.v_points);
             }
         }
         else if (CP_Input_MouseReleased(MOUSE_BUTTON_2))
@@ -331,7 +331,7 @@ public:
             voronoi.add(*selectedPoint);
             originalPoint = cVec2::zero;
             selectedPoint = nullptr;
-            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+            tris = cVoronoiDiagram::triangulate(voronoi.v_points);
             return;
         }
 
@@ -453,7 +453,7 @@ public:
         timer = baseTimer;
         tris.clear();
         voronoi.clear();
-        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        tris = cVoronoiDiagram::triangulate(points);
         voronoi.create(points.data(), points.size());
     }
 
@@ -539,7 +539,7 @@ public:
         //    p += {300, 200};
         //}
         
-        tris = cVoronoiDiagram::triangulateDelaunator(points);
+        tris = cVoronoiDiagram::triangulate(points);
         voronoi.create(points.data(), points.size());
 
         aabb = CreateAABB(extents, extents);
@@ -740,7 +740,7 @@ public:
             cPolygon poly = GeomMakeBox(aabb.min, aabb.max);
             clippedVerts.clear();
             clippedVerts = ClipVoronoiWithPolygon(voronoi, poly.vertices, poly.normals, poly.count);
-            tris = cVoronoiDiagram::triangulateDelaunator(voronoi.v_points);
+            tris = cVoronoiDiagram::triangulate(voronoi.v_points);
             cells = voronoi.getCells();
         }
 

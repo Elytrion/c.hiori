@@ -50,7 +50,7 @@ namespace chiori
 			clear();
 			v_points.resize(count);
 			v_points.assign(points, points + count);
-			triangles = triangulateDelaunator(v_points);
+			triangles = triangulate(v_points);
 
 			std::vector<cVec2> circumcenters;
 	
@@ -147,7 +147,7 @@ namespace chiori
 
 		std::vector<cVCell> getCells() const;
 
-		static std::vector<std::vector<cVec2>> triangulateDelaunator(const std::vector<cVec2>& points)
+		static std::vector<std::vector<cVec2>> triangulate(const std::vector<cVec2>& points)
 		{
 			if (points.size() < 3)
 				return {};
@@ -177,8 +177,6 @@ namespace chiori
 
 			return triangles;
 		}
-		static void save(const std::string& filename, const cVoronoiDiagram& diagram);
-		static cVoronoiDiagram load(const std::string& filename);
 	private:
 		cVec2 circumcenter(cVec2 a, cVec2 b, cVec2 c)
 		{
