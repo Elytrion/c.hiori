@@ -222,6 +222,9 @@ namespace chiori
 		bool operator<(const cVec2& other) const {
 			return (x < other.x) || ((x == other.x) && (y < other.y));
 		}
+		bool operator>(const cVec2& other) const {
+			return (x > other.x) || ((x == other.x) && (y > other.y));
+		}
 	};
 
 	inline constexpr cVec2 cVec2::zero = cVec2{ 0.0f, 0.0f };

@@ -1,17 +1,286 @@
 #include "pch.h"
 #include "geom.h"
+#include "aabb.h"
 
 namespace chiori
 {
+	struct cHull
+	{
+		cVec2 points[MAX_POLYGON_VERTICES];
+		int count{ 0 };
+	};
+
+	// quickhull recursion
+	static cHull qhRecurse(cVec2 p1, cVec2 p2, cVec2* ps, int32_t count)
+	{
+		cHull hull;
+		hull.count = 0;
+
+		if (count == 0)
+		{
+			return hull;
+		}
+
+		// create an edge vector pointing from p1 to p2
+		cVec2 e = (p2 - p1).normalized();
+
+		// discard points left of e and find point furthest to the right of e
+		cVec2 rightPoints[MAX_POLYGON_VERTICES];
+		int32_t rightCount = 0;
+
+		int32_t bestIndex = 0;
+		float bestDistance = cross((ps[bestIndex] - p1), e);
+		if (bestDistance > 0.0f)
+		{
+			rightPoints[rightCount++] = ps[bestIndex];
+		}
+
+		for (int32_t i = 1; i < count; ++i)
+		{
+			float distance = cross((ps[i] - p1), e);
+			if (distance > bestDistance)
+			{
+				bestIndex = i;
+				bestDistance = distance;
+			}
+
+			if (distance > 0.0f)
+			{
+				rightPoints[rightCount++] = ps[i];
+			}
+		}
+
+		if (bestDistance < 2.0f * commons::LINEAR_SLOP)
+		{
+			return hull;
+		}
+
+		cVec2 bestPoint = ps[bestIndex];
+
+		// compute hull to the right of p1-bestPoint
+		cHull hull1 = qhRecurse(p1, bestPoint, rightPoints, rightCount);
+
+		// compute hull to the right of bestPoint-p2
+		cHull hull2 = qhRecurse(bestPoint, p2, rightPoints, rightCount);
+
+		// stitch together hulls
+		for (int32_t i = 0; i < hull1.count; ++i)
+		{
+			hull.points[hull.count++] = hull1.points[i];
+		}
+
+		hull.points[hull.count++] = bestPoint;
+
+		for (int32_t i = 0; i < hull2.count; ++i)
+		{
+			hull.points[hull.count++] = hull2.points[i];
+		}
+
+		cassert(hull.count < MAX_POLYGON_VERTICES);
+
+		return hull;
+	}
+
+	// quickhull algorithm
+	// - merges vertices based on s2_linearSlop
+	// - removes collinear points using s2_linearSlop
+	// - returns an empty hull if it fails
+	cHull ComputeHull(const cVec2* points, int count)
+	{
+		cHull hull;
+		hull.count = 0;
+
+		if (count < 3 || count > MAX_POLYGON_VERTICES)
+		{
+			// check your data
+			return hull;
+		}
+
+		count = c_min(count, MAX_POLYGON_VERTICES);
+
+		cAABB aabb = { {FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX} };
+
+		// Perform aggressive point welding. First point always remains.
+		// Also compute the bounding box for later.
+		cVec2 ps[MAX_POLYGON_VERTICES];
+		int32_t n = 0;
+		const float tolSqr = 16.0f * commons::LINEAR_SLOP * commons::LINEAR_SLOP;
+		for (int32_t i = 0; i < count; ++i)
+		{
+			aabb.min = c_min(aabb.min, points[i]);
+			aabb.max = c_max(aabb.max, points[i]);
+
+			cVec2 vi = points[i];
+
+			bool unique = true;
+			for (int32_t j = 0; j < i; ++j)
+			{
+				cVec2 vj = points[j];
+
+				float distSqr = distanceSqr(vi, vj);
+				if (distSqr < tolSqr)
+				{
+					unique = false;
+					break;
+				}
+			}
+
+			if (unique)
+			{
+				ps[n++] = vi;
+			}
+		}
+
+		if (n < 3)
+		{
+			// all points very close together, check your data and check your scale
+			return hull;
+		}
+
+		// Find an extreme point as the first point on the hull
+		cVec2 c = aabb.getCenter();
+		int32_t f1 = 0;
+		float dsq1 = distanceSqr(c, ps[f1]);
+		for (int32_t i = 1; i < n; ++i)
+		{
+			float dsq = distanceSqr(c, ps[i]);
+			if (dsq > dsq1)
+			{
+				f1 = i;
+				dsq1 = dsq;
+			}
+		}
+
+		// remove p1 from working set
+		cVec2 p1 = ps[f1];
+		ps[f1] = ps[n - 1];
+		n = n - 1;
+
+		int32_t f2 = 0;
+		float dsq2 = distanceSqr(p1, ps[f2]);
+		for (int32_t i = 1; i < n; ++i)
+		{
+			float dsq = distanceSqr(p1, ps[i]);
+			if (dsq > dsq2)
+			{
+				f2 = i;
+				dsq2 = dsq;
+			}
+		}
+
+		// remove p2 from working set
+		cVec2 p2 = ps[f2];
+		ps[f2] = ps[n - 1];
+		n = n - 1;
+
+		// split the points into points that are left and right of the line p1-p2.
+		cVec2 rightPoints[MAX_POLYGON_VERTICES - 2];
+		int32_t rightCount = 0;
+
+		cVec2 leftPoints[MAX_POLYGON_VERTICES - 2];
+		int32_t leftCount = 0;
+
+		cVec2 e = (p2 - p1).normalized();
+
+		for (int32_t i = 0; i < n; ++i)
+		{
+			float d = cross((ps[i] - p1), e);
+
+			// slop used here to skip points that are very close to the line p1-p2
+			if (d >= 2.0f * commons::LINEAR_SLOP)
+			{
+				rightPoints[rightCount++] = ps[i];
+			}
+			else if (d <= -2.0f * commons::LINEAR_SLOP)
+			{
+				leftPoints[leftCount++] = ps[i];
+			}
+		}
+
+		// compute hulls on right and left
+		cHull hull1 = qhRecurse(p1, p2, rightPoints, rightCount);
+		cHull hull2 = qhRecurse(p2, p1, leftPoints, leftCount);
+
+		if (hull1.count == 0 && hull2.count == 0)
+		{
+			// all points collinear
+			return hull;
+		}
+
+		// stitch hulls together, preserving CCW winding order
+		hull.points[hull.count++] = p1;
+
+		for (int32_t i = 0; i < hull1.count; ++i)
+		{
+			hull.points[hull.count++] = hull1.points[i];
+		}
+
+		hull.points[hull.count++] = p2;
+
+		for (int32_t i = 0; i < hull2.count; ++i)
+		{
+			hull.points[hull.count++] = hull2.points[i];
+		}
+
+		cassert(hull.count <= MAX_POLYGON_VERTICES);
+
+		// merge collinear
+		bool searching = true;
+		while (searching && hull.count > 2)
+		{
+			searching = false;
+
+			for (int i = 0; i < hull.count; ++i)
+			{
+				int i1 = i;
+				int i2 = (i + 1) % hull.count;
+				int i3 = (i + 2) % hull.count;
+
+				cVec2 s1 = hull.points[i1];
+				cVec2 s2 = hull.points[i2];
+				cVec2 s3 = hull.points[i3];
+
+				// unit edge vector for s1-s3
+				cVec2 r = (s3 - s1).normalized();
+
+				float distance = cross((s2 - s1), r);
+				if (distance <= 2.0f * commons::LINEAR_SLOP)
+				{
+					// remove midpoint from hull
+					for (int j = i2; j < hull.count - 1; ++j)
+					{
+						hull.points[j] = hull.points[j + 1];
+					}
+					hull.count -= 1;
+
+					// continue searching for collinear points
+					searching = true;
+
+					break;
+				}
+			}
+		}
+
+		if (hull.count < 3)
+		{
+			// all points collinear, shouldn't be reached since this was validated above
+			hull.count = 0;
+		}
+
+		return hull;
+	}
+	
+
 	void cPolygon::Set(const cVec2* inPoints, int inCount)
 	{
 		cassert(inCount > 2 && inCount <= MAX_POLYGON_VERTICES);
-		count = inCount;
+
+		cHull hull = ComputeHull(inPoints, inCount);
 		
 		// Copy vertices.
-		for (int i = 0; i < count; ++i)
-			vertices[i] = inPoints[i];
-
+		for (int i = 0; i < hull.count; ++i)
+			vertices[i] = hull.points[i];
+		count = hull.count;
 		// Compute normals. Ensure the edges have non-zero length.
 		for (int i = 0; i < count; ++i)
 		{
