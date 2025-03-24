@@ -11,13 +11,20 @@ using namespace chiori;
 void PhysicsScene::Unload()
 {
 	cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
+	pWorld->f_patterns.Clear();
 	int capacity = pWorld->p_actors.capacity();
 	for (int i = capacity - 1; i >= 0; i--)
 	{
 		if (pWorld->p_actors.isValid(i))
+		{
+			int index = pWorld->IsFracturable(i);
+			if (index >= 0)
+			{
+				pWorld->MakeUnfracturable(index);
+			}
 			pWorld->RemoveActor(i);
+		}
 	}
-	pWorld->f_fractors.Clear();
 }
 
 void PhysicsScene::Update(float dt)
@@ -156,7 +163,6 @@ public:
 		}
 	}
 };
-
 // Loads in a scene with a row of 15 dominos, with the first one set to fall
 // The dominos should knock each other over, then at the end, 
 // the last domino should fall in a way to push all the previous dominos flat (double-domino effect)
@@ -207,7 +213,6 @@ public:
 		}
 	}
 };
-
 // Loads in a scene of a pyramid of boxes that are intially overlapping
 // The scene should recover from the overlap and stabilize
 class OverlapRecoveryScene : public PhysicsScene
@@ -255,7 +260,6 @@ public:
 		}
 	}
 };
-
 // Loads in a scene with a stack of 6 boxes on one side
 // and a Tower of Lire of 6 boxes on the other
 // The scene should demonstrate the stability of the physics simulation
@@ -320,7 +324,6 @@ public:
 		}
 	}
 };
-
 // Loads in a scene with an arch held up by friction and their contact points
 // The scene should further demonstrate the stability of the physics simulation
 class ArchScene : public PhysicsScene
@@ -418,7 +421,6 @@ public:
 
 	}
 };
-
 // Loads in a scene with a heap of polygons of varying sizes
 // Pressing R will apply a random force to a random polygon
 // This showcases the engine can support more complex shapes

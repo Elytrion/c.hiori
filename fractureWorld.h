@@ -60,6 +60,7 @@ namespace chiori
 
 		int MakeFracturable(int inActorIndex, cFractureMaterial inMaterial); // turn a regular actor into a fracturable object
 		void MakeUnfracturable(int inFractorIndex);
+		int IsFracturable(int inActorIndex);	// returns the index of the fractor if this actor is a fractor, -1 elsewise
 		void SetFracturePattern(int inPatternIndex, int inFractorIndex);
 		
 		static bool CreateFracturePattern(cFracturePattern& outPattern, const cVoronoiDiagram& inDiagram, const cAABB& inBounds, bool shift = true);

@@ -25,6 +25,17 @@ void cFractureWorld::MakeUnfracturable(int inFractorIndex)
 	f_fractors.Free(f_fractors[inFractorIndex]);
 }
 
+int cFractureWorld::IsFracturable(int inActorIndex)
+{
+	for (int i = 0; i < f_fractors.size(); i++)
+	{
+		const cFracturable* fractor = f_fractors[i];
+		if (fractor->actorIndex == inActorIndex)
+			return i; // found 
+	}
+	return -1;
+}
+
 void cFractureWorld::SetFracturePattern(int inPatternIndex, int inFractorIndex)
 {
 	cassert(f_patterns.isValid(inPatternIndex));
