@@ -11,8 +11,13 @@ using namespace chiori;
 void PhysicsScene::Unload()
 {
 	cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
-	pWorld->f_patterns.Clear();
-	int capacity = pWorld->p_actors.capacity();
+	int capacity = pWorld->f_patterns.capacity();
+	for (int i = capacity - 1; i > 0; i--)
+	{
+		if (pWorld->f_patterns.isValid(i))
+			pWorld->f_patterns.Free(pWorld->f_patterns[i]);
+	}
+	capacity = pWorld->p_actors.capacity();
 	for (int i = capacity - 1; i >= 0; i--)
 	{
 		if (pWorld->p_actors.isValid(i))
@@ -651,7 +656,7 @@ public:
 	void Load() override
 	{
 		cFractureWorld* pWorld = static_cast<cFractureWorld*>(world);
-
+		
 		SceneParser parser(pWorld);
 		parser.loadFromFile();
 
@@ -670,17 +675,13 @@ SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* wo
 {
 	AddScene(new CustomScene(drawer, world));
 
-	AddScene(new PolygonScene(drawer, world));
-	AddScene(new RampScene(drawer, world));
-
 	AddScene(new StackScene(drawer, world));
+	AddScene(new RampScene(drawer, world));
+	AddScene(new PolygonScene(drawer, world));
 	AddScene(new FractureTestScene(drawer, world));
-	//AddScene(new DefaultScene(drawer, world));
-
 	AddScene(new DominoScene(drawer, world));
-	//AddScene(new ArchScene(drawer, world));
+	AddScene(new ArchScene(drawer, world));
 	AddScene(new OverlapRecoveryScene(drawer, world));
-
 
 	ChangeScene(0);
 }
@@ -1294,8 +1295,8 @@ void SceneManager::LoadVoronoiUI()
 		cFracturePattern savedPattern;
 		savedPattern.pattern = *vd;
 		savedPattern.pattern.transform(-middle, cRot::iden);
-		savedPattern.min_extent = {middle.x - 350, middle.y - 350 };
-		savedPattern.max_extent = {middle.x + 350, middle.y + 350 };
+		savedPattern.min_extent = {-350, -350 };
+		savedPattern.max_extent = {350, 350 };
 		VoronoiParser::saveDiagram(savedPattern);
 		};
 	events.push_back(saveDiagram);
