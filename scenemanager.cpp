@@ -160,6 +160,26 @@ public:
 			pWorld->CreateShape(bodyId, s_config, &box);
 		}
 
+		ActorConfig frac_config;
+		frac_config.type = cActorType::DYNAMIC;
+		frac_config.position = { 6.5f, 1.5f };
+		int fracId = pWorld->CreateActor(frac_config);
+
+		cPolygon fracturableWall = GeomMakeBox(0.5f, 1.25f);
+		s_config.friction = 1.0f;
+		s_config.density = 4.0f;
+		pWorld->CreateShape(fracId, s_config, &fracturableWall);
+
+		cFractureMaterial fmat;
+		fmat.forceApplied = 500;
+		fmat.k = 1.0f;
+		int fID = pWorld->MakeFracturable(fracId, fmat);
+		cFracturePattern diagram = SceneParser::GetSavedVDF("C:\\Users\\Jedsf\\Desktop\\physics scenes\\test.vdf");
+		//cRot rot(PI);
+		diagram.pattern.transform(cVec2::zero, cRot::iden, {1 , -1});
+		cAABB aabb{ diagram.min_extent, diagram.max_extent };
+		int patternIndex = pWorld->CreateNewFracturePattern(diagram.pattern, aabb, false);
+		pWorld->SetFracturePattern(patternIndex, fID);
 
 		{
 			currentZoom = 45.0f;
@@ -673,7 +693,7 @@ public:
 SceneManager::SceneManager(DebugGraphics* drawer, UIManager* uimanager, void* world, void* vd)
 	: drawer(drawer), uimanager(uimanager), world(world), voronoi(vd)
 {
-	AddScene(new CustomScene(drawer, world));
+	//AddScene(new CustomScene(drawer, world));
 
 	AddScene(new StackScene(drawer, world));
 	AddScene(new RampScene(drawer, world));

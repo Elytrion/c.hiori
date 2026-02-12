@@ -514,6 +514,20 @@ class SceneParser
 public:
     explicit SceneParser(cFractureWorld* inWorld) : world(inWorld) {}
 
+    static cFracturePattern GetSavedVDF(const std::string& filePath)
+    {
+        if (filePath.empty()) return cFracturePattern();
+        std::ifstream vfile(filePath, std::ios::binary);
+        if (!vfile)
+        {
+            std::cerr << "Failed to open VDF: " << filePath << "\n";
+            return cFracturePattern();
+        }
+        cFracturePattern diagram = VoronoiParser::loadDiagramFromStream(vfile);
+        vfile.close();
+        return diagram;
+    }
+
     void SceneParser::loadFromFile()
     {
         std::string filename = OpenFileDialog("Scene Files (*.phys)\0*.phys\0All Files (*.*)\0*.*\0", "Load Physics Scene");

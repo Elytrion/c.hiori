@@ -290,6 +290,9 @@ void cFractureWorld::f_step(float inFDT, int primaryIterations, int secondaryIte
 			fractureStress *= anisotropyMultiplier;
 			fractureStress *= mat.k;
 
+			if (mat.forceApplied >= 0.0f)
+				fractureStress = mat.forceApplied * mat.k;
+
 			// Fracture condition check
 			if (appliedStress >= fractureStress)
 			{

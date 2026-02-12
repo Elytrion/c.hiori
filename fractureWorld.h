@@ -19,6 +19,7 @@ namespace chiori
 		float brittleness{ 0.5f };              // Brittleness factor. 
 		cVec2 anisotropy{ cVec2::zero };		// Anisotropy direction
 		float anisotropyFactor{ 0.0f };			// Anisotropy factor
+		float forceApplied{ 0.0f };				// If this is a value > 0.0f, we determine the direct impact force of a collision
 		float k{ 0.0f };						// Scaling factor for custom fine tuning
 	};
 
